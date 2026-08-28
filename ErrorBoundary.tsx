@@ -1,65 +1,53 @@
-import React, { Component, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {
-  children: ReactNode;
+  children?: ReactNode;
+  fallback?: ReactNode;
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
-  errorInfo: React.ErrorInfo | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+  public state: State = {
+    hasError: false,
+    error: null
+  };
+
+  public static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error, errorInfo: null };
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Uncaught error in ErrorBoundary:', error, errorInfo);
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    this.setState({ error, errorInfo });
-    console.error("ErrorBoundary caught an error", error, errorInfo);
-  }
+  private handleReset = () => {
+    this.setState({ hasError: false, error: null });
+  };
 
-  render() {
+  public render() {
     if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
       return (
-        <div className="fixed inset-0 z-[9999] bg-[#0A0B0D] flex items-center justify-center p-6 text-zinc-300 font-sans">
-          <div className="max-w-2xl w-full bg-zinc-900/50 border border-zinc-800/60 p-8 rounded-2xl shadow-2xl backdrop-blur-xl">
-            <div className="flex items-center gap-3 mb-6 border-b border-zinc-800/60 pb-4">
-              <div className="bg-rose-500/10 p-2 rounded-lg border border-rose-500/20">
-                <AlertTriangle className="h-6 w-6 text-rose-500" />
-              </div>
-              <h1 className="text-xl font-bold tracking-tight text-white">Application Exception Caught</h1>
-            </div>
-            
-            <p className="text-sm text-zinc-400 mb-6 leading-relaxed">
-              Vymx Terminal encountered a fatal runtime rendering error. The application has safely halted execution to prevent state corruption.
-            </p>
-            
-            <div className="bg-[#050607] rounded-xl border border-zinc-800/60 p-4 mb-6 overflow-auto max-h-[300px] custom-scrollbar">
-              <pre className="text-[11px] font-mono leading-relaxed text-rose-400/80 whitespace-pre-wrap break-words">
-                {this.state.error && this.state.error.toString()}
-                {'\n'}
-                {this.state.errorInfo && this.state.errorInfo.componentStack}
-              </pre>
-            </div>
-            
-            <div className="flex justify-end">
-              <button
-                onClick={() => window.location.reload()}
-                className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-2.5 rounded-lg text-xs font-bold transition-colors"
-              >
-                <RefreshCw size={14} />
-                Reboot Application Core
-              </button>
-            </div>
+        <div className="flex flex-col items-center justify-center w-full h-full min-h-[400px] p-6 text-center border-2 border-dashed border-red-900/30 bg-red-950/10 rounded-xl my-8">
+          <div className="w-16 h-16 bg-red-900/20 rounded-full flex items-center justify-center mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-500" />
           </div>
+          <h2 className="text-xl font-bold text-slate-200 mb-2">Application Render Error</h2>
+          <p className="text-slate-400 max-w-md mb-6">{this.state.error?.message || 'An unexpected error occurred while rendering the data UI.'}</p>
+          <button 
+            onClick={this.handleReset}
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors border border-zinc-700 font-medium"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Reload Component
+          </button>
         </div>
       );
     }
