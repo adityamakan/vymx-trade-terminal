@@ -128,7 +128,7 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
       const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
       const newMsg: ChatMessage = {
-        id: `m-${Date.now()}`,
+        id: `m-${Date.now()}-${Math.random().toString(36).substring(2)}`,
         username: trader.username,
         avatar: trader.avatar,
         badge: trader.badge,
@@ -157,7 +157,7 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
 
     // Append User Message
     const userMsg: ChatMessage = {
-      id: `u-${Date.now()}`,
+      id: `u-${Date.now()}-${Math.random().toString(36).substring(2)}`,
       username: 'Aditya (You)',
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&fit=crop&q=60',
       badge: 'STATION LEADER',
@@ -183,7 +183,7 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
       const data = await response.json();
       
       const aiMsg: ChatMessage = {
-        id: `ai-${Date.now()}`,
+        id: `ai-${Date.now()}-${Math.random().toString(36).substring(2)}`,
         username: 'Vymx AI Guru',
         avatar: '/logo-ai.png',
         badge: 'CERTIFIED STRATEGIST',
@@ -197,7 +197,7 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {
       console.error('Failed to get chat response:', err);
-      const errorMsg: ChatMessage = { id: Date.now().toString(), message: "I apologize, but I am currently experiencing connection issues. Please check your network or try again later.", username: 'Vymx AI', avatar: 'https://ui-avatars.com/api/?name=AI&background=6366f1&color=fff', timestamp: new Date().toISOString(), channel: 'general', isAi: true, badge: 'System' };
+      const errorMsg: ChatMessage = { id: `e-${Date.now()}-${Math.random().toString(36).substring(2)}`, message: "I apologize, but I am currently experiencing connection issues. Please check your network or try again later.", username: 'Vymx AI', avatar: 'https://ui-avatars.com/api/?name=AI&background=6366f1&color=fff', timestamp: new Date().toISOString(), channel: 'general', isAi: true, badge: 'System' };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setIsSending(false);
