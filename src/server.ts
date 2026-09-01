@@ -15,10 +15,19 @@ dotenv.config();
 const app = express();
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false,
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        connectSrc: ["'self'", "https:"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 app.use(compression());
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
