@@ -50,8 +50,8 @@ export default function DashboardNewsWidget() {
              <span className="text-[10px] font-mono uppercase tracking-widest">Intercepting News Vectors...</span>
           </div>
         ) : (
-          news.map((article) => (
-            <div key={article.id} className="group p-3.5 rounded-xl border border-zinc-900 bg-zinc-950/50 hover:bg-zinc-900 transition-all duration-300 cursor-pointer hover:border-indigo-500/30 hover:shadow-lg">
+          news.map((article, idx) => (
+            <div key={`${article.id}-${idx}`} className="group p-3.5 rounded-xl border border-zinc-900 bg-zinc-950/50 hover:bg-zinc-900 transition-all duration-300 cursor-pointer hover:border-indigo-500/30 hover:shadow-lg">
                <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2">
                      <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{article.source}</span>

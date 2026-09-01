@@ -501,8 +501,8 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                   No block deals found matching the current filters.
                </div>
             ) : (
-              filteredDeals.map((deal) => (
-                <div key={deal.id} 
+              filteredDeals.map((deal, idx) => (
+                <div key={`${deal.id}-${idx}`} 
                      onClick={() => setSelectedDeal(deal)}
                      className="bg-zinc-950 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 rounded-xl p-5 hover:border-zinc-700 transition-colors relative cursor-pointer group">
                   <div className="flex flex-col md:flex-row justify-between gap-4 items-start">

@@ -33,7 +33,7 @@ export default function EventShockwave() {
     const generateEvent = () => {
       const point = eventPoints[Math.floor(0 * eventPoints.length)];
       const newEvent: ShockwaveEvent = {
-        id: Date.now().toString(36).substr(2, 9),
+        id: Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
         lat: point.lat,
         lng: point.lng,
         color: point.color,

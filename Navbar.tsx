@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, TrendingUp, X, BarChart3, Wallet, GraduationCap, Layers, Globe, Flame, Newspaper, Sun, Moon, Sparkles, LogOut, Trophy, Network } from 'lucide-react';
+import { Search, TrendingUp, X, Bot, BarChart3, Wallet, GraduationCap, Layers, Globe, Flame, Newspaper, Sun, Moon, Sparkles, LogOut, Trophy, Network } from 'lucide-react';
 import { Asset } from '../types';
 
 interface NavbarProps {
-  currentView: 'dashboard' | 'screener' | 'portfolio' | 'details' | 'heatmap' | 'academy' | 'advisor' | 'macro' | 'institutional-flows' | 'news';
-  setView: (view: 'dashboard' | 'screener' | 'portfolio' | 'details' | 'heatmap' | 'academy' | 'advisor' | 'macro' | 'institutional-flows' | 'news') => void;
+  currentView: 'dashboard' | 'screener' | 'portfolio' | 'details' | 'heatmap' | 'academy' | 'advisor' | 'macro' | 'institutional-flows' | 'news' | 'chatbot';
+  setView: (view: 'dashboard' | 'screener' | 'portfolio' | 'details' | 'heatmap' | 'academy' | 'advisor' | 'macro' | 'institutional-flows' | 'news' | 'chatbot') => void;
   selectedAsset: Asset | null;
   setSelectedAsset: (asset: Asset | null) => void;
   virtualBalance: number;
@@ -152,7 +152,7 @@ export default function Navbar({
                 }`}
               >
                 <TrendingUp className="h-3.5 w-3.5" />
-                Economics
+                World Monitor
               </button>
 
               <button
@@ -166,6 +166,19 @@ export default function Navbar({
               >
                 <Newspaper className="h-3.5 w-3.5" />
                 News
+              </button>
+
+              <button
+                id="btn-nav-chatbot"
+                onClick={() => setView('chatbot')}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold border transition-all ${
+                  currentView === 'chatbot'
+                    ? 'bg-purple-600/10 text-purple-400 border-purple-500/20'
+                    : 'text-zinc-400 border-transparent hover:text-white hover:bg-zinc-900/50'
+                }`}
+              >
+                <Bot className="h-3.5 w-3.5" />
+                Chatbot
               </button>
 
               <button
@@ -377,7 +390,7 @@ export default function Navbar({
               }`}
             >
               <TrendingUp className="h-4 w-4" />
-              Economics
+              World Monitor
             </button>
             <button
               id="btn-mobile-nav-news"
@@ -389,6 +402,18 @@ export default function Navbar({
               <Newspaper className="h-4 w-4" />
               News
             </button>
+
+            <button
+              id="btn-mobile-nav-chatbot"
+              onClick={() => { setView('chatbot'); setIsMobileMenuOpen(false); }}
+              className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-semibold ${
+                currentView === 'chatbot' ? 'bg-purple-600/10 text-purple-400 border border-purple-500/10' : 'text-zinc-400'
+              }`}
+            >
+              <Bot className="h-4 w-4" />
+              Financial Chatbot
+            </button>
+
             <button
               id="btn-mobile-nav-institutional-flows"
               onClick={() => { setView('institutional-flows'); setIsMobileMenuOpen(false); }}

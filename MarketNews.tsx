@@ -167,7 +167,7 @@ export default function MarketNews() {
           <div className="space-y-3">
             {news.map((item, idx) => (
               <div 
-                key={item.id} 
+                key={`${item.id}-${idx}`} 
                 className="group relative bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 rounded-xl p-5 hover:border-zinc-700/80 transition-all hover:bg-zinc-900/40"
               >
                 {/* Visual Indicator Line */}

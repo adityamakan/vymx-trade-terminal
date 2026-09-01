@@ -514,677 +514,284 @@ export default function VymxIntelligencePanel({ mode }: Props) {
 
   if (mode === "capitalFlows") {
     return (
-      <div className="bg-zinc-900/90 backdrop-blur-xl border border-blue-500/30 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/5 opacity-50"></div>
+      <div className="bg-zinc-950/95 backdrop-blur-xl border border-blue-500/50 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-cyan-500/10 opacity-50"></div>
         <div className="flex items-center gap-2 mb-5 relative z-10">
           <Network className="w-5 h-5 text-blue-400" />
-          <span className="text-sm font-bold text-white uppercase tracking-widest">
-            Capital Flows
+          <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 tracking-widest uppercase">
+            Live Capital Flows
           </span>
         </div>
-
         <div className="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
           <div className="grid grid-cols-2 gap-3">
-             <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 cursor-pointer hover:border-indigo-500/50 transition-colors" onClick={() => setDeepDiveTile('Detail View')}>
-                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider">US Inflows</span>
-                <span className="text-lg font-bold text-emerald-400 font-mono">+${realtimeData.capitalInflows.us.toFixed(1)}B</span>
-                <span className="text-[9px] text-emerald-500 mt-1 block">Accelerating +4.2%</span>
+             <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
+                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">US Inflows (SPX)</span>
+                <span className="text-lg font-bold text-emerald-400 font-mono">+${(realtimeData?.capitalInflows?.us || 0).toFixed(1)}B</span>
              </div>
-             <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 cursor-pointer hover:border-indigo-500/50 transition-colors" onClick={() => setDeepDiveTile('Detail View')}>
-                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider">EU Outflows</span>
-                <span className="text-lg font-bold text-rose-400 font-mono">-${realtimeData.capitalOutflows.eu.toFixed(1)}B</span>
-                <span className="text-[9px] text-rose-500 mt-1 block">Decelerating -1.1%</span>
+             <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
+                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">EU Outflows (EUR)</span>
+                <span className="text-lg font-bold text-rose-400 font-mono">-${Math.abs(realtimeData?.capitalOutflows?.eu || 0).toFixed(1)}B</span>
              </div>
-             <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 cursor-pointer hover:border-indigo-500/50 transition-colors" onClick={() => setDeepDiveTile('Detail View')}>
-                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider">Asia Emerging</span>
-                <span className="text-lg font-bold text-emerald-400 font-mono">+${realtimeData.capitalInflows.in.toFixed(1)}B</span>
-                <span className="text-[9px] text-emerald-500 mt-1 block">Surging +12.4%</span>
+             <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
+                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">Asia Inflows (NIFTY)</span>
+                <span className="text-lg font-bold text-emerald-400 font-mono">+${(realtimeData?.capitalInflows?.in || 0).toFixed(1)}B</span>
              </div>
-             <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 cursor-pointer hover:border-indigo-500/50 transition-colors" onClick={() => setDeepDiveTile('Detail View')}>
-                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider">Dark Pool Liq</span>
-                <span className="text-lg font-bold text-purple-400 font-mono">$4.2T</span>
-                <span className="text-[9px] text-purple-500 mt-1 block">Steady State</span>
+             <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
+                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">Dark Pool Liq</span>
+                <span className="text-lg font-bold text-purple-400 font-mono">${(realtimeData?.darkPool || 0).toFixed(0)}B</span>
              </div>
-          </div>
-          
-          <div className="bg-zinc-950/50 p-4 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 space-y-3">
-            <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider block border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2">
-              Cross-Border Liquidity Heatmap
-            </span>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-[10px]">
-                <span className="text-zinc-400">US Treasuries ↔ JPY Yields</span>
-                <div className="flex gap-1"><span className="w-12 h-1.5 bg-emerald-500 rounded-full"></span><span className="w-4 h-1.5 bg-emerald-700 rounded-full"></span></div>
-              </div>
-              <div className="flex justify-between items-center text-[10px]">
-                <span className="text-zinc-400">Eurodollars ↔ CHF</span>
-                <div className="flex gap-1"><span className="w-8 h-1.5 bg-rose-500 rounded-full"></span><span className="w-8 h-1.5 bg-rose-700 rounded-full"></span></div>
-              </div>
-              <div className="flex justify-between items-center text-[10px]">
-                <span className="text-zinc-400">Emerging Markets ↔ USD</span>
-                <div className="flex gap-1"><span className="w-10 h-1.5 bg-amber-500 rounded-full"></span><span className="w-6 h-1.5 bg-amber-700 rounded-full"></span></div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex justify-between items-center">
-            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">M2 Money Velocity</span>
-            <span className="text-sm font-mono font-black text-blue-400">1.442x</span>
-          </div>
-
-          <div className="bg-zinc-950/50 p-4 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 space-y-3">
-             <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider block border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2">
-               Sovereign Wealth Funds (Real-time)
-             </span>
-             <div className="space-y-2">
-               <div className="flex justify-between items-center">
-                 <span className="text-[10px] text-zinc-300">Norway GPFG</span>
-                 <span className="text-[10px] font-mono text-emerald-400 font-bold">+$1.2B (Tech)</span>
-               </div>
-               <div className="flex justify-between items-center">
-                 <span className="text-[10px] text-zinc-300">Saudi PIF</span>
-                 <span className="text-[10px] font-mono text-rose-400 font-bold">-$800M (Energy)</span>
-               </div>
-               <div className="flex justify-between items-center">
-                 <span className="text-[10px] text-zinc-300">Singapore GIC</span>
-                 <span className="text-[10px] font-mono text-emerald-400 font-bold">+$400M (REITs)</span>
-               </div>
-             </div>
-          </div>
-
-          <div className="bg-black/60 p-4 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
-            <span className="text-[9px] uppercase text-zinc-500 font-mono tracking-widest block mb-2">Central Bank Balance Sheets</span>
-            <div className="grid grid-cols-2 gap-2 text-center">
-               <div className="p-2 bg-zinc-900 rounded border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
-                  <span className="text-[8px] text-zinc-500 uppercase block mb-1">Fed Reserve</span>
-                  <span className="text-xs font-mono font-bold text-rose-400">-$42.1B (QT)</span>
-               </div>
-               <div className="p-2 bg-zinc-900 rounded border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
-                  <span className="text-[8px] text-zinc-500 uppercase block mb-1">PBOC (China)</span>
-                  <span className="text-xs font-mono font-bold text-emerald-400">+$124.5B (QE)</span>
-               </div>
-               <div className="p-2 bg-zinc-900 rounded border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
-                  <span className="text-[8px] text-zinc-500 uppercase block mb-1">ECB (Europe)</span>
-                  <span className="text-xs font-mono font-bold text-zinc-400">Neutral</span>
-               </div>
-               <div className="p-2 bg-zinc-900 rounded border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
-                  <span className="text-[8px] text-zinc-500 uppercase block mb-1">BOJ (Japan)</span>
-                  <span className="text-xs font-mono font-bold text-rose-400">-$15.2B</span>
-               </div>
-            </div>
           </div>
         </div>
-        {renderAdvancedInsights()}
-        {advancedBtn}
       </div>
     );
   }
 
   if (mode === "sectorRotation") {
+    const s = realtimeData?.sectors || {};
     return (
-      <div className="bg-zinc-900/90 backdrop-blur-xl border border-purple-500/30 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/5 opacity-50"></div>
+      <div className="bg-zinc-950/95 backdrop-blur-xl border border-purple-500/50 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-fuchsia-500/10 opacity-50"></div>
         <div className="flex items-center gap-2 mb-5 relative z-10">
-          <Activity className="w-5 h-5 text-purple-400" />
-          <span className="text-sm font-bold text-white uppercase tracking-widest">
-            Sector Rotation
+          <Layers className="w-5 h-5 text-purple-400" />
+          <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-fuchsia-400 tracking-widest uppercase">
+            Live Sector Rotation
           </span>
         </div>
-
-        <div className="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
-          <div className="grid grid-cols-2 gap-3">
-             <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex flex-col justify-between">
-                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider">Macro Phase</span>
-                <span className="text-sm font-bold text-purple-400">Late Bull Market</span>
-             </div>
-             <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex flex-col justify-between">
-                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider">Risk Appetite</span>
-                <span className="text-sm font-bold text-emerald-400">Risk-On (High)</span>
-             </div>
-          </div>
-
-          <div className="space-y-3 bg-zinc-950/50 p-4 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
-            <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider block border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2 mb-3">
-              Sector Momentum & Alpha
-            </span>
-            {[
-              { name: "Technology", momentum: `+${realtimeData.sectorMomentum.tech.toFixed(0)}%`, color: "bg-emerald-500", alpha: "+1.2" },
-              { name: "Financials", momentum: `+${realtimeData.sectorMomentum.fin.toFixed(0)}%`, color: "bg-emerald-400", alpha: "+0.8" },
-              { name: "Utilities", momentum: `${realtimeData.sectorMomentum.util.toFixed(0)}%`, color: "bg-rose-400", alpha: "-0.5" },
-              { name: "Real Estate", momentum: `${realtimeData.sectorMomentum.real.toFixed(0)}%`, color: "bg-rose-500", alpha: "-1.1" },
-            ].map((sec) => (
-              <div key={sec.name} className="flex flex-col gap-1.5">
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-zinc-300 font-medium">{sec.name}</span>
-                  <div className="flex gap-3">
-                    <span className="text-zinc-500 font-mono">α: {sec.alpha}</span>
-                    <span className="text-zinc-400 font-mono font-bold w-10 text-right">{sec.momentum}</span>
-                  </div>
-                </div>
-                <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${sec.color} transition-all duration-300`}
-                    style={{ width: Math.max(0, parseInt(sec.momentum)) + "%" }}
-                  ></div>
-                </div>
+        <div className="space-y-2 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
+          {Object.entries({
+            'Technology (XLK)': s.tech,
+            'Financials (XLF)': s.financial,
+            'Healthcare (XLV)': s.healthcare,
+            'Energy (XLE)': s.energy,
+            'Cons Discretionary (XLY)': s.consumerDiscretionary
+          }).map(([name, data]) => (
+            <div key={name} className="flex justify-between items-center bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
+              <span className="text-xs font-bold text-zinc-300">{name}</span>
+              <div className="flex gap-3">
+                <span className="text-xs font-mono font-bold text-white">${((data as any)?.price || 0).toFixed(2)}</span>
+                <span className={`text-xs font-mono font-bold ${((data as any)?.change || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {((data as any)?.change || 0) >= 0 ? '+' : ''}{((data as any)?.change || 0).toFixed(2)}%
+                </span>
               </div>
-            ))}
-          </div>
-          
-          <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 space-y-2">
-            <span className="text-[9px] text-zinc-500 block uppercase tracking-wider">Institutional vs Retail Positioning</span>
-            <div className="flex items-center gap-2 text-[10px] font-mono">
-               <span className="w-12 text-zinc-400">Inst.</span>
-               <div className="flex-1 h-2 bg-emerald-500/20 rounded"><div className="h-full bg-emerald-500 rounded" style={{width: '78%'}}></div></div>
-               <span className="text-emerald-400">78%</span>
             </div>
-            <div className="flex items-center gap-2 text-[10px] font-mono">
-               <span className="w-12 text-zinc-400">Retail</span>
-               <div className="flex-1 h-2 bg-purple-500/20 rounded"><div className="h-full bg-purple-500 rounded" style={{width: '42%'}}></div></div>
-               <span className="text-purple-400">42%</span>
-            </div>
-          </div>
-
-          {/* Additional 100x Density Sector Breakdown */}
-          <div className="bg-black/40 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-3 rounded-lg">
-             <span className="text-[9px] uppercase text-zinc-500 font-bold tracking-widest block mb-3">Sub-Sector Velocity</span>
-             <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-               <div>
-                 <div className="flex justify-between items-center text-[10px] mb-1">
-                   <span className="text-zinc-300">Semiconductors</span>
-                   <span className="font-mono text-emerald-400">+14.2%</span>
-                 </div>
-                 <div className="w-full h-1 bg-zinc-800 rounded-full"><div className="w-11/12 h-full bg-emerald-500 rounded-full"></div></div>
-               </div>
-               <div>
-                 <div className="flex justify-between items-center text-[10px] mb-1">
-                   <span className="text-zinc-300">Cloud Infra</span>
-                   <span className="font-mono text-emerald-400">+8.4%</span>
-                 </div>
-                 <div className="w-full h-1 bg-zinc-800 rounded-full"><div className="w-3/4 h-full bg-emerald-500 rounded-full"></div></div>
-               </div>
-               <div>
-                 <div className="flex justify-between items-center text-[10px] mb-1">
-                   <span className="text-zinc-300">Regional Banks</span>
-                   <span className="font-mono text-rose-400">-5.2%</span>
-                 </div>
-                 <div className="w-full h-1 bg-zinc-800 rounded-full"><div className="w-1/4 h-full bg-rose-500 rounded-full"></div></div>
-               </div>
-               <div>
-                 <div className="flex justify-between items-center text-[10px] mb-1">
-                   <span className="text-zinc-300">Defense Aero</span>
-                   <span className="font-mono text-amber-400">+1.2%</span>
-                 </div>
-                 <div className="w-full h-1 bg-zinc-800 rounded-full"><div className="w-1/2 h-full bg-amber-500 rounded-full"></div></div>
-               </div>
-             </div>
-          </div>
-          
-          <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 text-xs text-zinc-400 leading-relaxed">
-            <span className="text-[9px] uppercase font-bold text-zinc-500 tracking-widest block mb-1">Vymx Sector AI</span>
-            Current factor rotation heavily favors large-cap quality growth. Deep value and small-cap segments are experiencing sustained outflows due to liquidity constraints and high debt refinance rates.
-          </div>
+          ))}
         </div>
-        {renderAdvancedInsights()}
-        {advancedBtn}
       </div>
     );
   }
 
   if (mode === "geoRisk") {
     return (
-      <div className="bg-zinc-900/90 backdrop-blur-xl border border-amber-500/40 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-orange-500/5 opacity-50"></div>
+      <div className="bg-zinc-950/95 backdrop-blur-xl border border-rose-500/50 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-br from-rose-500/20 to-red-500/10 opacity-50"></div>
         <div className="flex items-center gap-2 mb-5 relative z-10">
-          <ShieldAlert className="w-5 h-5 text-amber-400 animate-pulse" />
-          <span className="text-sm font-bold text-white uppercase tracking-widest">
-            Geo Risk Dashboard
+          <ShieldAlert className="w-5 h-5 text-rose-400" />
+          <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-red-400 tracking-widest uppercase">
+            Live Geo Risk
           </span>
         </div>
-
         <div className="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col justify-center bg-zinc-950/50 p-4 rounded-lg border border-rose-500/30">
-              <span className="text-[9px] text-zinc-400 uppercase tracking-widest mb-1">Global Risk Index</span>
-              <span className="text-3xl font-black text-amber-400 leading-none">ELEV</span>
-              <span className="text-[9px] text-rose-400 mt-1 uppercase">94th Percentile</span>
-            </div>
-            <div className="flex flex-col justify-center bg-zinc-950/50 p-4 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 text-right">
-              <span className="text-[9px] text-zinc-400 uppercase tracking-widest mb-1">VIX Eqv / Skew</span>
-              <span className="text-2xl font-bold font-mono text-zinc-200 leading-none">22.4</span>
-              <span className="text-[9px] text-emerald-400 mt-1 uppercase font-mono">C/P: 0.82</span>
-            </div>
+          <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
+             <span className="text-[10px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">VIX Volatility Index</span>
+             <div className="flex justify-between items-end">
+               <span className="text-2xl font-bold text-rose-400 font-mono">{(realtimeData?.vixPrice || 0).toFixed(2)}</span>
+               <span className={`text-sm font-mono font-bold ${(realtimeData?.vixChange || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {(realtimeData?.vixChange || 0) >= 0 ? '+' : ''}{(realtimeData?.vixChange || 0).toFixed(2)}%
+                </span>
+             </div>
           </div>
-
-          <div className="bg-zinc-950/60 rounded-lg p-4 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 space-y-3">
-            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2 mb-2">
-              Active Flashpoints & Contagion Risk
-            </span>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-200 font-medium">Middle East Tensions</span>
-                <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 text-[9px] font-bold border border-rose-500/30 tracking-widest">SEVERE (92%)</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-200 font-medium">Taiwan Strait</span>
-                <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[9px] font-bold border border-amber-500/30 tracking-widest">MODERATE (45%)</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-200 font-medium">Eastern Europe</span>
-                <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 text-[9px] font-bold border border-rose-500/30 tracking-widest">HIGH (78%)</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-zinc-950/60 rounded-lg p-3 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
-            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-2">Resource Constraint Monitors</span>
-            <div className="flex flex-wrap gap-2">
-               <span className="bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[9px] px-2 py-1 rounded font-mono">Oil +4.2% Risk</span>
-               <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[9px] px-2 py-1 rounded font-mono">Semis -2.1% Risk</span>
-               <span className="bg-zinc-800 text-zinc-400 border border-zinc-700 text-[9px] px-2 py-1 rounded font-mono">Rare Earths Neutral</span>
-            </div>
+          <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
+             <span className="text-[10px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">Crude Oil Shock Risk</span>
+             <div className="flex justify-between items-end">
+               <span className="text-lg font-bold text-amber-400 font-mono">${(realtimeData?.commodities?.crudeOil?.price || 0).toFixed(2)}</span>
+             </div>
           </div>
         </div>
-        {renderAdvancedInsights()}
-        {advancedBtn}
       </div>
     );
   }
 
   if (mode === "supplyChain") {
     return (
-      <div className="bg-zinc-900/90 backdrop-blur-xl border border-teal-500/40 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-teal-500/10 to-emerald-500/5 opacity-50"></div>
+      <div className="bg-zinc-950/95 backdrop-blur-xl border border-teal-500/50 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-br from-teal-500/20 to-emerald-500/10 opacity-50"></div>
         <div className="flex items-center gap-2 mb-5 relative z-10">
           <Ship className="w-5 h-5 text-teal-400" />
-          <span className="text-sm font-bold text-white uppercase tracking-widest">
-            Supply Chain
+          <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400 tracking-widest uppercase">
+            Live Supply Chain
           </span>
         </div>
-
         <div className="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
-          <div className="flex justify-between items-end bg-zinc-950/50 p-4 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
-            <div className="flex flex-col">
-              <span className="text-[9px] text-zinc-400 uppercase tracking-widest mb-1">Global Freight Index</span>
-              <span className="text-3xl font-black text-teal-400 leading-none">2,450</span>
-              <span className="text-[9px] text-teal-500 mt-1 uppercase">Baltic Dry / TEU Avg</span>
-            </div>
-            <div className="text-right">
-              <span className="text-sm font-bold font-mono text-rose-400 block">+12% (MoM)</span>
-              <span className="text-[10px] text-zinc-500 font-mono mt-1 block">Costs Escalating</span>
-            </div>
+          <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
+             <span className="text-[10px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">Industrial Materials (XLB)</span>
+             <div className="flex justify-between items-end">
+               <span className="text-xl font-bold text-emerald-400 font-mono">${(realtimeData?.sectors?.materials?.price || 0).toFixed(2)}</span>
+             </div>
           </div>
-
-          <div className="space-y-3 bg-zinc-950/50 p-4 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
-            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2 mb-2">
-              Chokepoint Congestion & Delay Matrix
-            </span>
-            {[
-              { name: "Panama Canal", load: 85, status: "Restricted", delay: "14 days", trend: "+2d" },
-              { name: "Suez Canal", load: 92, status: "Critical", delay: "21 days", trend: "+5d" },
-              { name: "Strait of Malacca", load: 45, status: "Normal", delay: "2 days", trend: "Flat" },
-            ].map((point) => (
-              <div key={point.name} className="flex flex-col gap-1.5 border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2 last:border-0">
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-zinc-200 font-medium">{point.name}</span>
-                  <div className="flex gap-3">
-                    <span className="text-zinc-500 font-mono">Wait: {point.delay} ({point.trend})</span>
-                    <span className={`font-bold w-16 text-right ${point.load > 90 ? "text-rose-400" : point.load > 80 ? "text-amber-400" : "text-teal-400"}`}>
-                      {point.status}
-                    </span>
-                  </div>
-                </div>
-                <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${point.load > 90 ? "bg-rose-500" : point.load > 80 ? "bg-amber-500" : "bg-teal-500"}`}
-                    style={{ width: `${point.load}%` }}
-                  ></div>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex justify-between items-center">
-              <span className="text-[9px] text-zinc-500 uppercase tracking-widest block">Inv-to-Sales</span>
-              <span className="text-sm font-mono font-black text-rose-400">1.12 (Low)</span>
-            </div>
-            <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex justify-between items-center">
-              <span className="text-[9px] text-zinc-500 uppercase tracking-widest block">Port Backlog</span>
-              <span className="text-sm font-mono font-black text-amber-400">Moderate</span>
-            </div>
+          <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
+             <span className="text-[10px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">Logistics & Industrials (XLI)</span>
+             <div className="flex justify-between items-end">
+               <span className="text-xl font-bold text-emerald-400 font-mono">${(realtimeData?.sectors?.industrials?.price || 0).toFixed(2)}</span>
+             </div>
           </div>
         </div>
-        {renderAdvancedInsights()}
-        {advancedBtn}
       </div>
     );
   }
 
   if (mode === "earningsSeason") {
     return (
-      <div className="bg-zinc-900/90 backdrop-blur-xl border border-indigo-500/40 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-blue-500/5 opacity-50"></div>
+      <div className="bg-zinc-950/95 backdrop-blur-xl border border-indigo-500/50 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-blue-500/10 opacity-50"></div>
         <div className="flex items-center gap-2 mb-5 relative z-10">
           <BarChart3 className="w-5 h-5 text-indigo-400" />
-          <span className="text-sm font-bold text-white uppercase tracking-widest">
-            Earnings Season
+          <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-blue-400 tracking-widest uppercase">
+            Live Earnings / Volatility
           </span>
         </div>
-
         <div className="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex flex-col justify-center">
-              <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-widest">Beat Rate</span>
-              <span className="text-xl font-black text-emerald-400 leading-none">76%</span>
-              <span className="text-[9px] text-zinc-400 mt-1 uppercase">Hist Avg: 68%</span>
-            </div>
-            <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex flex-col justify-center">
-              <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-widest">Surprise %</span>
-              <span className="text-xl font-black text-indigo-400 leading-none">+4.2%</span>
-              <span className="text-[9px] text-zinc-400 mt-1 uppercase">Above Est</span>
-            </div>
-            <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex flex-col justify-center">
-              <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-widest">Guidance</span>
-              <span className="text-xl font-black text-amber-400 leading-none">Mixed</span>
-              <span className="text-[9px] text-zinc-400 mt-1 uppercase">Weak Q4</span>
-            </div>
+          <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
+             <span className="text-[10px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">Implied Market Volatility (VIX)</span>
+             <div className="flex justify-between items-end">
+               <span className="text-xl font-bold text-indigo-400 font-mono">{(realtimeData?.vixPrice || 0).toFixed(2)}</span>
+             </div>
           </div>
-
-          <div className="space-y-3 bg-zinc-950/50 p-4 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
-            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2 mb-2">
-              Upcoming High-Impact & Implied Vol
-            </span>
-            {[
-              { ticker: "NVDA", date: "Tomorrow", time: "AMC", impact: "High", impVol: "±8.4%", sentiment: "Bullish" },
-              { ticker: "WMT", date: "Thu", time: "BMO", impact: "High", impVol: "±3.2%", sentiment: "Neutral" },
-              { ticker: "CRWD", date: "Fri", time: "AMC", impact: "Medium", impVol: "±6.1%", sentiment: "Bullish" },
-            ].map((e) => (
-              <div key={e.ticker} className="flex justify-between items-center text-[10px] border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2 last:border-0 last:pb-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-zinc-200 w-8">{e.ticker}</span>
-                  <span className="text-zinc-500">{e.date} <span className="text-zinc-600">{e.time}</span></span>
-                </div>
-                <div className="flex gap-3 text-right">
-                   <span className="text-zinc-400 font-mono">IV: {e.impVol}</span>
-                   <span className={`font-bold w-12 ${e.impact === "High" ? "text-rose-400" : "text-amber-400"}`}>{e.impact}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 cursor-pointer hover:border-indigo-500/50 transition-colors" onClick={() => setDeepDiveTile('Detail View')}>
-             <span className="text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">AI Sentiment Analysis (Earnings Calls)</span>
-             <div className="flex gap-2">
-                <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] px-2 py-1 rounded font-mono">"AI Capex" mentions +42%</span>
-                <span className="bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[9px] px-2 py-1 rounded font-mono">"Margin Pressure" +18%</span>
+          <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
+             <span className="text-[10px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">Tech Sector Value (XLK)</span>
+             <div className="flex justify-between items-end">
+               <span className="text-xl font-bold text-emerald-400 font-mono">${(realtimeData?.sectors?.tech?.price || 0).toFixed(2)}</span>
              </div>
           </div>
         </div>
-        {renderAdvancedInsights()}
-        {advancedBtn}
       </div>
     );
   }
 
   if (mode === "commodities") {
+    const c = realtimeData?.commodities || {};
     return (
-      <div className="bg-zinc-900/90 backdrop-blur-xl border border-orange-500/40 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-amber-500/5 opacity-50"></div>
+      <div className="bg-zinc-950/95 backdrop-blur-xl border border-amber-500/50 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-orange-500/10 opacity-50"></div>
         <div className="flex items-center gap-2 mb-5 relative z-10">
-          <Layers className="w-5 h-5 text-orange-400" />
-          <span className="text-sm font-bold text-white uppercase tracking-widest">
-            Commodities
+          <Database className="w-5 h-5 text-amber-400" />
+          <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400 tracking-widest uppercase">
+            Live Commodities
           </span>
         </div>
-
-        <div className="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
-          <div className="grid grid-cols-2 gap-3">
-             <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex justify-between items-center">
-                <span className="text-[9px] text-zinc-500 block uppercase tracking-wider">Supercycle Status</span>
-                <span className="text-sm font-bold text-orange-400">Active</span>
-             </div>
-             <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex justify-between items-center">
-                <span className="text-[9px] text-zinc-500 block uppercase tracking-wider">Broad Index (BCOM)</span>
-                <span className="text-sm font-bold text-zinc-200 font-mono">104.2</span>
-             </div>
-          </div>
-
-          <div className="space-y-2">
-            {[
-              { name: "Crude Oil (WTI)", price: "$82.45", trend: "+1.2%", up: true, structure: "Backwardation", oi: "2.4M" },
-              { name: "Gold (COMEX)", price: "$2,350.10", trend: "+0.8%", up: true, structure: "Contango", oi: "520K" },
-              { name: "Copper", price: "$4.12", trend: "-0.5%", up: false, structure: "Backwardation", oi: "185K" },
-              { name: "Uranium", price: "$92.50", trend: "+2.4%", up: true, structure: "Flat", oi: "42K" },
-            ].map((c) => (
-              <div key={c.name} className="flex flex-col bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-medium text-zinc-300">{c.name}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-mono font-bold text-zinc-200">{c.price}</span>
-                    <span className={`text-[10px] font-mono font-bold w-10 text-right ${c.up ? "text-emerald-400" : "text-rose-400"}`}>{c.trend}</span>
-                  </div>
-                </div>
-                <div className="flex justify-between text-[9px] font-mono border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pt-2">
-                   <span className="text-zinc-500">Curve: <span className={c.structure === 'Backwardation' ? 'text-emerald-400/70' : 'text-zinc-400'}>{c.structure}</span></span>
-                   <span className="text-zinc-500">Open Int: <span className="text-orange-400/80">{c.oi}</span></span>
-                </div>
+        <div className="space-y-2 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
+          {Object.entries({
+            'Gold (GC=F)': c.gold,
+            'WTI Crude (CL=F)': c.crudeOil,
+            'Brent (BZ=F)': c.brentOil,
+            'Silver (SI=F)': c.silver,
+            'Copper (HG=F)': c.copper,
+            'Nat Gas (NG=F)': c.naturalGas
+          }).map(([name, data]) => (
+            <div key={name} className="flex justify-between items-center bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
+              <span className="text-xs font-bold text-zinc-300">{name}</span>
+              <div className="flex gap-3">
+                <span className="text-xs font-mono font-bold text-white">${((data as any)?.price || 0).toFixed(2)}</span>
+                <span className={`text-xs font-mono font-bold ${((data as any)?.change || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {((data as any)?.change || 0) >= 0 ? '+' : ''}{((data as any)?.change || 0).toFixed(2)}%
+                </span>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-        {renderAdvancedInsights()}
-        {advancedBtn}
       </div>
     );
   }
 
   if (mode === "currencySwap") {
+    const c = realtimeData?.currencies || {};
     return (
-      <div className="bg-zinc-900/90 backdrop-blur-xl border border-cyan-500/40 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-blue-500/5 opacity-50"></div>
+      <div className="bg-zinc-950/95 backdrop-blur-xl border border-emerald-500/50 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 opacity-50"></div>
         <div className="flex items-center gap-2 mb-5 relative z-10">
-          <Coins className="w-5 h-5 text-cyan-400" />
-          <span className="text-sm font-bold text-white uppercase tracking-widest">
-            Currency Swaps
+          <Coins className="w-5 h-5 text-emerald-400" />
+          <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400 tracking-widest uppercase">
+            Live Forex Crosses
           </span>
         </div>
-
-        <div className="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
-          <div className="grid grid-cols-2 gap-3">
-             <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex flex-col justify-center">
-                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider">Global USD Liq</span>
-                <span className="text-xl font-bold text-cyan-400 font-mono">Constrained</span>
-             </div>
-             <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex flex-col justify-center">
-                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider">SOFR-OIS Spread</span>
-                <span className="text-xl font-bold text-zinc-200 font-mono">12 bps</span>
-             </div>
-          </div>
-
-          <div className="bg-zinc-950/50 p-4 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 space-y-3">
-            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2">
-              Central Bank Swap Lines & Balances
-            </span>
-            <div className="space-y-2">
-               <div className="flex justify-between items-center text-[10px]">
-                 <span className="text-zinc-300">USD/EUR (ECB)</span>
-                 <div className="flex gap-3 font-mono">
-                    <span className="text-zinc-500">Rate: 5.45%</span>
-                    <span className="text-cyan-400 font-bold w-12 text-right">$12.4B</span>
-                 </div>
-               </div>
-               <div className="flex justify-between items-center text-[10px]">
-                 <span className="text-zinc-300">USD/JPY (BOJ)</span>
-                 <div className="flex gap-3 font-mono">
-                    <span className="text-zinc-500">Rate: 5.42%</span>
-                    <span className="text-cyan-400 font-bold w-12 text-right">$8.1B</span>
-                 </div>
-               </div>
-               <div className="flex justify-between items-center text-[10px]">
-                 <span className="text-zinc-300">USD/GBP (BOE)</span>
-                 <div className="flex gap-3 font-mono">
-                    <span className="text-zinc-500">Rate: 5.48%</span>
-                    <span className="text-cyan-400 font-bold w-12 text-right">$2.1B</span>
-                 </div>
-               </div>
+        <div className="space-y-2 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
+          {Object.entries({
+            'EUR/USD': c.eurUsd,
+            'USD/JPY': c.usdJpy,
+            'GBP/USD': c.gbpUsd,
+            'USD/INR': c.usdInr,
+            'AUD/USD': c.audUsd,
+            'USD/CAD': c.usdCad
+          }).map(([name, data]) => (
+            <div key={name} className="flex justify-between items-center bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
+              <span className="text-xs font-bold text-zinc-300">{name}</span>
+              <div className="flex gap-3">
+                <span className="text-xs font-mono font-bold text-white">{((data as any)?.price || 0).toFixed(4)}</span>
+                <span className={`text-xs font-mono font-bold ${((data as any)?.change || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {((data as any)?.change || 0) >= 0 ? '+' : ''}{((data as any)?.change || 0).toFixed(2)}%
+                </span>
+              </div>
             </div>
-          </div>
-
-          <div className="space-y-3 bg-zinc-950/50 p-4 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
-            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block mb-2 border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2">
-              FX Volatility Smile / Skew
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                 { pair: "USD/JPY", vol: "High", skew: "Calls Premium" },
-                 { pair: "EUR/USD", vol: "Low", skew: "Puts Premium" },
-                 { pair: "GBP/USD", vol: "Med", skew: "Neutral" },
-                 { pair: "USD/CHF", vol: "High", skew: "Calls Premium" }
-              ].map((p) => (
-                <div key={p.pair} className="bg-zinc-900/50 p-2 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
-                  <span className="text-[9px] font-mono text-zinc-300 block mb-1">{p.pair}</span>
-                  <div className="flex justify-between text-[8px] uppercase">
-                     <span className={p.vol === 'High' ? 'text-rose-400' : p.vol === 'Med' ? 'text-amber-400' : 'text-emerald-400'}>Vol: {p.vol}</span>
-                     <span className="text-zinc-500">{p.skew}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
-        {renderAdvancedInsights()}
-        {advancedBtn}
       </div>
     );
   }
 
   if (mode === "holdings") {
     return (
-      <div className="bg-zinc-900/90 backdrop-blur-xl border border-emerald-500/40 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-green-500/5 opacity-50"></div>
+      <div className="bg-zinc-950/95 backdrop-blur-xl border border-cyan-500/50 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-blue-500/10 opacity-50"></div>
         <div className="flex items-center gap-2 mb-5 relative z-10">
-          <Target className="w-5 h-5 text-emerald-400" />
-          <span className="text-sm font-bold text-white uppercase tracking-widest">
-            My Holdings Map
+          <Target className="w-5 h-5 text-cyan-400" />
+          <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-widest uppercase">
+            US Treasuries & Yields
           </span>
         </div>
-
-        <div className="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
-          <div className="grid grid-cols-2 gap-3">
-             <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex flex-col justify-center">
-                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider">Portfolio VaR (95%)</span>
-                <span className="text-xl font-bold text-rose-400 font-mono">$42.5K</span>
-             </div>
-             <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex flex-col justify-center">
-                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider">Sharpe Ratio</span>
-                <span className="text-xl font-bold text-emerald-400 font-mono">1.84</span>
-             </div>
-          </div>
-
-          <div className="space-y-3 bg-zinc-950/50 p-4 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
-             <div className="flex justify-between items-center mb-1">
-               <span className="text-[10px] text-zinc-400 uppercase tracking-widest">Geographic Exposure</span>
-             </div>
-            {[
-              { region: "North America", exposure: 65, color: "bg-emerald-500", beta: "1.1" },
-              { region: "Europe", exposure: 20, color: "bg-blue-500", beta: "0.8" },
-              { region: "Asia Pacific", exposure: 15, color: "bg-indigo-500", beta: "1.4" },
-            ].map((reg) => (
-              <div key={reg.region} className="flex flex-col gap-1.5 border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2 last:border-0 last:pb-0">
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-zinc-200 font-medium">{reg.region}</span>
-                  <div className="flex gap-3">
-                     <span className="text-zinc-500 font-mono">β: {reg.beta}</span>
-                     <span className="font-bold text-zinc-300 font-mono w-8 text-right">{reg.exposure}%</span>
-                  </div>
-                </div>
-                <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${reg.color}`}
-                    style={{ width: `${reg.exposure}%` }}
-                  ></div>
-                </div>
+        <div className="space-y-2 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
+          {Object.entries({
+            'US 10Y Yield': realtimeData?.bonds?.us10y,
+            'US 2Y Yield': realtimeData?.bonds?.us2y,
+            'US 30Y Yield': realtimeData?.bonds?.us30y,
+          }).map(([name, data]) => (
+            <div key={name} className="flex justify-between items-center bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
+              <span className="text-xs font-bold text-zinc-300">{name}</span>
+              <div className="flex gap-3">
+                <span className="text-xs font-mono font-bold text-white">{((data as any)?.price || 0).toFixed(3)}%</span>
+                <span className={`text-xs font-mono font-bold ${((data as any)?.change || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {((data as any)?.change || 0) >= 0 ? '+' : ''}{((data as any)?.change || 0).toFixed(2)}%
+                </span>
               </div>
-            ))}
-          </div>
-          
-          <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 space-y-2">
-             <span className="text-[9px] text-zinc-500 uppercase tracking-widest block border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2">Stress Test Scenarios</span>
-             <div className="flex justify-between items-center text-[10px]">
-                <span className="text-zinc-300">SPX -10% Shock</span>
-                <span className="text-rose-400 font-mono">-14.2% (Underperform)</span>
-             </div>
-             <div className="flex justify-between items-center text-[10px]">
-                <span className="text-zinc-300">Rates +50bps Shock</span>
-                <span className="text-emerald-400 font-mono">+2.1% (Outperform)</span>
-             </div>
-          </div>
+            </div>
+          ))}
         </div>
-        {renderAdvancedInsights()}
-        {advancedBtn}
       </div>
     );
   }
 
   if (mode === "correlationWeb") {
     return (
-      <div className="bg-zinc-900/90 backdrop-blur-xl border border-pink-500/40 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 to-rose-500/5 opacity-50"></div>
+      <div className="bg-zinc-950/95 backdrop-blur-xl border border-rose-500/50 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-br from-rose-500/20 to-red-500/10 opacity-50"></div>
         <div className="flex items-center gap-2 mb-5 relative z-10">
-          <Zap className="w-5 h-5 text-pink-400" />
-          <span className="text-sm font-bold text-white uppercase tracking-widest">
-            Correlations
+          <Network className="w-5 h-5 text-rose-400" />
+          <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-red-400 tracking-widest uppercase">
+            Live Market Dynamics
           </span>
         </div>
-
         <div className="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
           <div className="grid grid-cols-2 gap-3">
-             <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex flex-col justify-center">
-                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider">Contagion Risk</span>
-                <span className="text-xl font-bold text-amber-400 font-mono">Elevated</span>
+             <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner text-center">
+                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">SPX / VIX Divergence</span>
+                <span className="text-lg font-bold text-rose-400 font-mono">-0.78</span>
              </div>
-             <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex flex-col justify-center">
-                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider">Regime Shifts</span>
-                <span className="text-xl font-bold text-emerald-400 font-mono">Stable</span>
-             </div>
-          </div>
-
-          <div className="bg-zinc-950/50 p-4 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 cursor-pointer hover:border-indigo-500/50 transition-colors" onClick={() => setDeepDiveTile('Advanced Detail')}>
-            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2 mb-2">
-              Cross-Asset Rolling Correlation Matrix
-            </span>
-            <div className="space-y-2">
-              {[
-                { pair: "Equities ↔ USD", val: -0.82, prev: -0.75, type: "Inverse" },
-                { pair: "Gold ↔ Real Yields", val: -0.91, prev: -0.88, type: "Inverse" },
-                { pair: "Bitcoin ↔ NDX", val: +0.76, prev: +0.82, type: "Positive" },
-                { pair: "Oil ↔ Defensives", val: -0.45, prev: -0.21, type: "Diverging" }
-              ].map((c) => (
-                <div key={c.pair} className="flex justify-between items-center text-[10px] border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2 last:border-0 last:pb-0">
-                  <span className="text-zinc-300 font-medium">{c.pair}</span>
-                  <div className="flex items-center gap-3">
-                     <span className="text-zinc-500 font-mono text-[9px]">{c.type}</span>
-                     <span className={`font-mono font-bold w-10 text-right ${c.val > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                       {c.val > 0 ? '+' : ''}{c.val}
-                     </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 cursor-pointer hover:border-indigo-500/50 transition-colors" onClick={() => setDeepDiveTile('Detail View')}>
-             <span className="text-[9px] text-zinc-500 uppercase tracking-widest block mb-2 border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2">Principal Component Analysis (PCA)</span>
-             <div className="space-y-1">
-                <div className="flex justify-between text-[9px] font-mono"><span className="text-zinc-400">PC1: Global Growth Factor</span><span className="text-zinc-300">42.5% variance</span></div>
-                <div className="flex justify-between text-[9px] font-mono"><span className="text-zinc-400">PC2: Inflation Surprise</span><span className="text-zinc-300">28.1% variance</span></div>
-                <div className="flex justify-between text-[9px] font-mono"><span className="text-zinc-400">PC3: Liquidity Premium</span><span className="text-zinc-300">14.2% variance</span></div>
+             <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner text-center">
+                <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">S&P 500 Daily</span>
+                <span className={`text-lg font-bold ${(realtimeData?.spxChange || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'} font-mono`}>
+                  {(realtimeData?.spxChange || 0) >= 0 ? '+' : ''}{(realtimeData?.spxChange || 0).toFixed(2)}%
+                </span>
              </div>
           </div>
         </div>
-        {renderAdvancedInsights()}
-        {advancedBtn}
       </div>
     );
   }

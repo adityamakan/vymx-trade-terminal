@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Bot, User, Sparkles, AlertCircle, Settings2, Trash2 } from 'lucide-react';
+import { Send, Bot, User, Sparkles, AlertCircle, Settings2, Trash2, Mic, MicOff } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Asset, PortfolioItem } from '../types';
 
@@ -54,8 +54,61 @@ export default function FinancialChatbot({ activeAsset, portfolio }: FinancialCh
   const [isLoading, setIsLoading] = useState(false);
   const [persona, setPersona] = useState('Technical Analyst');
   const [showSettings, setShowSettings] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [speechError, setSpeechError] = useState<string | null>(null);
   
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+        
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setInput(prev => prev + (prev ? ' ' : '') + transcript);
+          setSpeechError(null);
+        };
+        
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
+        
+        recognitionRef.current.onerror = (event: any) => {
+          console.error('Speech recognition error', event.error);
+          setIsListening(false);
+          setSpeechError(event.error === 'not-allowed' ? 'Microphone access denied' : 'Speech recognition error');
+          setTimeout(() => setSpeechError(null), 3000);
+        };
+      }
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      setSpeechError('Speech recognition not supported in this browser');
+      setTimeout(() => setSpeechError(null), 3000);
+      return;
+    }
+    
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+        setSpeechError(null);
+      } catch (e) {
+        console.error(e);
+        setIsListening(false);
+      }
+    }
+  };
 
   useEffect(() => {
     localStorage.setItem('vymx_chatbot_history', JSON.stringify(messages));
@@ -75,6 +128,11 @@ export default function FinancialChatbot({ activeAsset, portfolio }: FinancialCh
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
+
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
 
     const userMessage = input.trim();
     setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
@@ -176,7 +234,12 @@ export default function FinancialChatbot({ activeAsset, portfolio }: FinancialCh
         </AnimatePresence>
       </div>
 
-      <div className="flex-1 rounded-2xl border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-md overflow-hidden flex flex-col min-h-0">
+      <div className="flex-1 rounded-2xl border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-md overflow-hidden flex flex-col min-h-0 relative">
+        {speechError && (
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-rose-500/90 text-white text-xs px-3 py-1.5 rounded-full z-10 animate-fade-in shadow-lg">
+            {speechError}
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((msg, i) => (
             <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -221,21 +284,33 @@ export default function FinancialChatbot({ activeAsset, portfolio }: FinancialCh
 
         <div className="p-4 bg-zinc-950 border-t border-zinc-800/60">
           <form onSubmit={handleSend} className="relative flex items-center">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask anything about finance, markets, or trading..."
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl py-3 pl-4 pr-12 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors"
-              disabled={isLoading}
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              className="absolute right-2 p-1.5 rounded-lg bg-indigo-600 text-white disabled:bg-zinc-800 disabled:text-zinc-600 transition-colors"
-            >
-              <Send className="h-4 w-4" />
-            </button>
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={isListening ? "Listening..." : "Ask anything about finance, markets, or trading..."}
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl py-3 pl-4 pr-24 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                disabled={isLoading}
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  className={`p-1.5 rounded-lg transition-colors ${isListening ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+                  title={isListening ? 'Stop listening' : 'Start voice input'}
+                >
+                  {isListening ? <Mic className="h-4 w-4 animate-pulse" /> : <MicOff className="h-4 w-4" />}
+                </button>
+                <button
+                  type="submit"
+                  disabled={!input.trim() || isLoading}
+                  className="p-1.5 rounded-lg bg-indigo-600 text-white disabled:bg-zinc-800 disabled:text-zinc-600 transition-colors"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </form>
           <div className="text-center mt-2">
             <p className="text-[10px] text-zinc-500 flex items-center justify-center gap-1">

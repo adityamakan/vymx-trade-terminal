@@ -1315,9 +1315,9 @@ export default function Dashboard({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {news.map((n) => (
+          {news.map((n, idx) => (
             <div
-              key={n.id}
+              key={`${n.id}-${idx}`}
               className="group relative flex flex-col justify-between rounded-xl border border-zinc-900 bg-zinc-900/10 p-5 hover:border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 hover:bg-zinc-900/30 transition-all duration-300"
             >
               <div className="space-y-3">
