@@ -1014,8 +1014,7 @@ app.get('/api/yahoo/financials/:symbol', async (req, res) => {
         }
       }
     } catch (e: any) {
-       console.warn(`Failed to fetch fundamentalsTimeSeries fallback for ${lookupSymbol}: `, e.message);
-    }
+    }console.log('%s', String(req.body?.input || req.query?.data || ''));
 
     const responseData = { success: true, data: result };
     setToCache(cacheKey, responseData);
@@ -1106,25 +1105,27 @@ app.post('/api/alpaca/order', async (req, res) => {
 
 // Financial Modeling Prep (FMP) - Fundamental Analysis
 app.get('/api/fmp/profile/:symbol', async (req, res) => {
-   const { symbol } = req.params;
-   const apiKey = process.env.FMP_API_KEY;
-   if (!apiKey) return res.status(403).json({ error: 'FMP credential missing. Add FMP_API_KEY in environment.' });
+  const apiKey = process.env.FMP_API_KEY;
+  if (!apiKey) {
+    return res.status(403).json({ error: 'FMP credential missing.' });
+  }
 
-   try {
-      const resp = await fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKey}`);
-      const data = await resp.json();
-      res.json({ success: true, data: data[0] || {} });
-   } catch (error: any) {
-      res.status(500).json({ error: 'Failed to fetch FMP profile', details: error.message });
-   }
+  const rawSymbol = String(req.params.symbol || req.query.symbol || '').trim();
+  if (!/^[A-Za-z0-9.-]+$/.test(rawSymbol)) {
+    return res.status(400).json({ error: 'Invalid symbol identifier' });
+  }
+
+  const safeSymbol = encodeURIComponent(rawSymbol);
+  const endpoint = `https://financialmodelingprep.com/api/v3/profile/${safeSymbol}?apikey=${apiKey}`;
+
+  try {
+    const resp = await fetch(endpoint);
+    const data = await resp.json();
+    res.json({ success: true, data: data[0] || {} });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch FMP profile', details: error.message });
+  }
 });
-
-// Finnhub - Global Markets News
-app.get('/api/finnhub/news', async (req, res) => {
-   const category = req.query.category || 'general';
-   const apiKey = process.env.FINNHUB_API_KEY;
-   if (!apiKey) return res.status(403).json({ error: 'Finnhub credential missing. Add FINNHUB_API_KEY in environment.' });
-
    try {
       const resp = await fetch(`https://finnhub.io/api/v1/news?category=${category}&token=${apiKey}`);
       const data = await resp.json();
