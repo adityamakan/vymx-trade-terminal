@@ -98,4 +98,3 @@ Instead of utilizing standard text prompt fields, Vymx uses a programmatic serve
 4. **Launch the platform locally**:
    * Terminal A (Launch backend engine): `npm run server` (or `node server.js`)
    * Terminal B (Launch local developer frontend site): `npm run dev`
-📥 What to Do on Your Screen Right NowGo back to your open GitHub browser page.Toggle the Add README switch to On (it will turn blue).Scroll right to the bottom and click the green Create repository button.On the next screen, you will see your repository homepage. Click on the file named README.md and click the ✏️ Edit/Pencil icon to paste this massive detailed guide directly ins
