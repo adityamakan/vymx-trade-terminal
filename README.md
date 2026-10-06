@@ -148,13 +148,3 @@ npm run dev
 - **GitHub:** [@adityamakan](https://github.com/adityamakan)
 - **Live Terminal:** [vymx-trade-terminal-2.onrender.com](https://vymx-trade-terminal-2.onrender.com)
 ```
-
----
-
-### Key Upgrades Introduced:
-1. **Badges:** Dynamic shields for build status, Python, React, TypeScript, MIT license, and Render deployment.
-2. **ASCII Architecture Diagram:** Visually presents your multi-tier React -> Express -> Python IPC & Gemini AI setup.
-3. **Formal Mathematical LaTeX Equations:** Renders $LaTeX$ equations for the Markowitz Sharpe Ratio optimization and GARCH(1,1) volatility equations directly on GitHub.
-4. **Interactive API Documentation:** Detailed JSON schemas and endpoint parameters for `/api/quant/optimize` and `/api/quant/volatility`.
-
-```
