@@ -279,7 +279,7 @@ export default function MacroeconomicAnalyzer() {
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
             <Globe className="w-7 h-7 text-indigo-400" />
-            Vamaxtrader Macroeconomic Analyzer
+            VYMXTRADER Macroeconomic Analyzer
           </h1>
           <p className="text-sm text-zinc-400">
             Institutional-grade macroeconomic regime viewer, central bank policy radar, and proven econometric backtesting.
@@ -890,7 +890,7 @@ export default function MacroeconomicAnalyzer() {
             <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6">
               <div className="flex items-center gap-2 text-xs font-mono text-indigo-400 mb-3 uppercase tracking-wider">
                 <Bot className="w-4 h-4" />
-                Vamaxtrader Macro Intelligence Assessment
+                VYMXTRADER Macro Intelligence Assessment
               </div>
               <div className="prose prose-invert max-w-none text-sm leading-relaxed whitespace-pre-line text-zinc-200">
                 {aiResponse}

@@ -189,7 +189,7 @@ export async function streamMacroeconomicSummary(
 ): Promise<string> {
   const client = createGenAIClient();
 
-  const prompt = `You are Vamaxtrader's Senior Global Macroeconomist and Quantitative Portfolio Strategist.
+  const prompt = `You are VYMXTRADER's Senior Global Macroeconomist and Quantitative Portfolio Strategist.
 Generate a concise, institutional-grade macroeconomic summary based on the following real-time indicator readings:
 
 YIELD CURVE & RATES:
@@ -222,7 +222,7 @@ Structure your macroeconomic summary with these concise headings:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: prompt,
-          systemInstruction: "You are the chief macroeconomic strategist of Vamaxtrader. Provide quantitative, data-backed macroeconomic summaries."
+          systemInstruction: "You are the chief macroeconomic strategist of VYMXTRADER. Provide quantitative, data-backed macroeconomic summaries."
         })
       });
       if (res.ok) {

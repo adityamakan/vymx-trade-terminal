@@ -52,7 +52,7 @@ export default function Navbar({
   };
 
   return (
-    <nav id="vamaxtrader-navbar" className="sticky top-0 z-50 w-full border-b border-white/5 bg-zinc-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-zinc-950/40">
+    <nav id="VYMXTRADER-navbar" className="sticky top-0 z-50 w-full border-b border-white/5 bg-zinc-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-zinc-950/40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
           
@@ -63,7 +63,7 @@ export default function Navbar({
             </div>
             <div className="flex flex-col">
               <span className="text-base font-black tracking-tight text-white flex items-center gap-1.5">
-                VAMAXTRADER <span className="px-1.5 py-0.5 rounded text-[8px] uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">Python AI</span>
+                VYMXTRADER <span className="px-1.5 py-0.5 rounded text-[8px] uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">Python AI</span>
               </span>
             </div>
             <div className="hidden sm:block">
