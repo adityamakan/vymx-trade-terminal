@@ -144,7 +144,7 @@ npm run dev
 **Aditya Makan**  
 *BSc Finance • FinTech & Quantitative Analytics*
 
-- **LinkedIn:** [linkedin.com/in/aditya-makan-9640402a6](https://www.linkedin.com/in/aditya-makan-9640402a6/)
+- **LinkedIn:** [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/aditya-makan-9640402a6/)
 - **GitHub:** [@adityamakan](https://github.com/adityamakan)
 - **Live Terminal:** [vymx-trade-terminal-2.onrender.com](https://vymx-trade-terminal-2.onrender.com)
 ```
