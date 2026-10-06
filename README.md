@@ -141,19 +141,12 @@ npm run dev
 
 ## 👤 Author
 
-**Aditya Makan**
+**Aditya Makan**  
+*BSc Finance • FinTech & Quantitative Analytics*
 
-*Finance x FinTech x Quantitative Analytics*
-
-* **GitHub:** [@adityamakan](https://www.google.com/search?q=https://github.com/adityamakan)
-* **Live Terminal:** [vymx-trade-terminal-2.onrender.com](https://www.google.com/url?sa=E&source=gmail&q=https://vymx-trade-terminal-2.onrender.com)
-'@
-
-[System.IO.File]::WriteAllText('README.md', $readme)
-git add README.md
-git commit -m "Upgrade README.md to elite institutional finance specification"
-git push origin main
-
+- **LinkedIn:** [linkedin.com/in/aditya-makan-9640402a6](https://www.linkedin.com/in/aditya-makan-9640402a6/)
+- **GitHub:** [@adityamakan](https://github.com/adityamakan)
+- **Live Terminal:** [vymx-trade-terminal-2.onrender.com](https://vymx-trade-terminal-2.onrender.com)
 ```
 
 ---
