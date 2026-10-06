@@ -121,7 +121,7 @@ function getGeminiClient(explicitKey?: string): GoogleGenAI | null {
       ai = new GoogleGenAI({
         apiKey: envKey,
         httpOptions: {
-          headers: {
+          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", 
             'User-Agent': 'vamaxtrader-macro-analyzer/2.0',
           },
         },
@@ -1029,7 +1029,7 @@ async function fetchDirectYahooPrice(yahooSym: string): Promise<any | null> {
   try {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=1d&range=5d`;
     const resp = await fetch(url, {
-      headers: {
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", 
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Accept': 'application/json'
       }
@@ -1570,7 +1570,7 @@ app.post('/api/alpaca/order', async (req, res) => {
    try {
       const resp = await fetch('https://paper-api.alpaca.markets/v2/orders', {
          method: 'POST',
-         headers: {
+         headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", 
             'APCA-API-KEY-ID': apiKey,
             'APCA-API-SECRET-KEY': apiSecret,
             'Content-Type': 'application/json'
@@ -1768,7 +1768,7 @@ class CompleteSovereignAndCorporateEngine {
             try {
                 // Switching from fixed targetYear to mrv=1 (Most Recent Value) to eliminate true WB data gaps
                 const url = `https://api.worldbank.org/v2/country/all/indicator/${indicatorId}?format=json&mrv=1&per_page=300`;
-                const response = await fetch(url, { headers: { 'User-Agent': 'AtoZFinTechEngine/11.0' } });
+                const response = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",  'User-Agent': 'AtoZFinTechEngine/11.0' } });
                 
                 if (!response.ok) continue;
                 
