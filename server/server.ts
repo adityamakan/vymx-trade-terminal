@@ -1963,7 +1963,26 @@ app.get('/api/world-monitor', async (req, res) => {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    
+// Quantitative Engine APIs
+app.get('/api/quant/optimize', (req, res) => {
+  const tickers = req.query.tickers || 'AAPL,MSFT,NVDA,GOOGL';
+  const pyCmd = process.platform === 'win32' ? 'python' : 'python3';
+  require('child_process').exec(pyCmd + ' scripts/quant_engine.py optimize ' + tickers, (error, stdout) => {
+    if (error) return res.status(500).json({ error: 'Quant engine execution failed' });
+    try { res.json(JSON.parse(stdout)); } catch (e) { res.status(500).json({ error: 'Invalid JSON response' }); }
+  });
+});
+
+app.get('/api/quant/volatility', (req, res) => {
+  const ticker = req.query.ticker || 'AAPL';
+  const pyCmd = process.platform === 'win32' ? 'python' : 'python3';
+  require('child_process').exec(pyCmd + ' scripts/quant_engine.py volatility ' + ticker, (error, stdout) => {
+    if (error) return res.status(500).json({ error: 'Volatility engine failed' });
+    try { res.json(JSON.parse(stdout)); } catch (e) { res.status(500).json({ error: 'Invalid JSON response' }); }
+  });
+});
+app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
