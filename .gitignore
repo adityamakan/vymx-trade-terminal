@@ -5,3 +5,9 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Build output & logs
+dist/
+*.txt
+node_output.txt
+out.txt
