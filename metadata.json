@@ -1,0 +1,8 @@
+{
+  "name": "Vamaxtrader",
+  "description": "An AI-powered macroeconomic viewer and global quantitative analyzer with cross-asset econometric backtesting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
