@@ -12,7 +12,7 @@ app.use('/api', (_req, res, next) => {
   next();
 });
 
-// Sovereign Matrix Dataset
+// Top Economies & Sovereign Matrix Dataset
 const sovereignMatrixData = [
   { rank: 1, country: 'United States', code: 'US', flag: '🇺🇸', gdp: '$28.78 T', gdpNominal: '$28.78 T', gdp_nominal: '$28.78 T', gdpPerCapita: '$81,632', gdp_per_capita: '$81,632', interestRate: '4.50%', interest_rate: '4.50%', debtToGdp: '122.3%', debt_to_gdp: '122.3%', moneySupplyGr: '4.2%', money_supply_gr: '4.2%', moneySupply: '4.2%', currentAcctBal: '-$251.2 B', current_acct_bal: '-$251.2 B', currentAccount: '-$251.2 B', taxRevToGdp: '26.5%', tax_rev_to_gdp: '26.5%', taxRevenue: '26.5%', fxReserves: '$248 B', fx_reserves: '$248 B', grossSavings: '17.8%', gross_savings: '17.8%', invRate: '21.2%', investmentRate: '21.2%', investment_rate: '21.2%', corpAnchor: 'AAPL / MSFT', corp_anchor: 'AAPL / MSFT', marketCap: '$3.05 T', market_cap: '$3.05 T', tPe: '29.4', peRatio: '29.4', t_pe: '29.4', action: 'ACCUMULATE' },
   { rank: 2, country: 'China', code: 'CN', flag: '🇨🇳', gdp: '$18.53 T', gdpNominal: '$18.53 T', gdp_nominal: '$18.53 T', gdpPerCapita: '$13,120', gdp_per_capita: '$13,120', interestRate: '3.10%', interest_rate: '3.10%', debtToGdp: '83.6%', debt_to_gdp: '83.6%', moneySupplyGr: '8.8%', money_supply_gr: '8.8%', moneySupply: '8.8%', currentAcctBal: '+$264.1 B', current_acct_bal: '+$264.1 B', currentAccount: '+$264.1 B', taxRevToGdp: '21.0%', tax_rev_to_gdp: '21.0%', taxRevenue: '21.0%', fxReserves: '$3,245 B', fx_reserves: '$3,245 B', grossSavings: '44.2%', gross_savings: '44.2%', invRate: '42.1%', investmentRate: '42.1%', investment_rate: '42.1%', corpAnchor: 'BABA / Tencent', corp_anchor: 'BABA / Tencent', marketCap: '$820 B', market_cap: '$820 B', tPe: '14.2', peRatio: '14.2', t_pe: '14.2', action: 'NEUTRAL' },
@@ -30,7 +30,7 @@ const liveMarketsArray = [
   { id: 'vix', symbol: 'VIX', name: 'Volatility Index', price: 14.25, change: -1.20, region: 'Global', status: 'ACTIVE' }
 ];
 
-// Generator for Econometric Backtest Chart Points
+// Generator for Econometric Backtest Points (36 Months)
 const generateBacktestData = () => {
   const data = [];
   let strategy = 100;
@@ -89,70 +89,82 @@ const allocationData = [
   { name: 'T-Bills / Cash', weight: 15, percentage: '15%', value: 15, allocation: 15, percent: 15, color: '#6b7280' }
 ];
 
+// Dual number & pre-formatted percentage string polyfills
 const metricsPolyfill = {
+  // CAGR fields
   cagr: 12.4,
   cagrVal: '12.4%',
   cagr_val: '12.4%',
-  cagr_annualized: 12.4,
-  spyBench: 6.8,
-  spy_bench: 6.8,
-  spyBenchmark: 6.8,
-  spy_benchmark: 6.8,
-  benchmarkCagr: 6.8,
-  benchCagr: 6.8,
-  spyCagr: 6.8,
-  spy_cagr: 6.8,
-  benchmark_cagr: 6.8,
-  spyBenchCagr: 6.8,
-  spy_bench_cagr: 6.8,
-  spyReturn: 6.8,
-  benchmarkReturn: 18.5,
+  cagr_annualized: '12.4%',
+
+  // SPY Bench fields (Fixes SPY Bench: %)
+  spyBench: '6.8%',
+  spy_bench: '6.8%',
+  spyBenchmark: '6.8%',
+  spy_benchmark: '6.8%',
+  benchmarkCagr: '6.8%',
+  benchCagr: '6.8%',
+  spyCagr: '6.8%',
+  spy_cagr: '6.8%',
+  benchmark_cagr: '6.8%',
+  spyBenchCagr: '6.8%',
+  spy_bench_cagr: '6.8%',
+  spyReturn: '6.8%',
+  benchmarkReturn: '18.5%',
+
+  // Risk Ratios
   sharpe: 1.85,
   sharpeRatio: 1.85,
   sharpe_ratio: 1.85,
   sortino: 2.42,
   sortinoRatio: 2.42,
   sortino_ratio: 2.42,
-  maxDrawdown: -8.2,
-  max_drawdown: -8.2,
-  mdd: -8.2,
-  drawdown: -8.2,
+  maxDrawdown: '-8.2%',
+  max_drawdown: '-8.2%',
+  mdd: '-8.2%',
+  drawdown: '-8.2%',
   calmar: 1.51,
   calmarRatio: 1.51,
   calmar_ratio: 1.51,
-  volatility: 11.4,
-  annualVolatility: 11.4,
-  annual_volatility: 11.4,
-  vol: 11.4,
-  strategyVol: 11.4,
-  stratVol: 11.4,
-  strat_vol: 11.4,
-  spyVol: 16.2,
-  spy_vol: 16.2,
-  benchmarkVol: 16.2,
-  benchmark_vol: 16.2,
-  spyVolatility: 16.2,
-  spy_volatility: 16.2,
-  var: -3.8,
-  monthlyVar: -3.8,
-  monthly_var: -3.8,
-  var95: -3.8,
-  var_95: -3.8,
-  var_95_percent: -3.8,
-  cvar: -5.4,
-  cvar95: -5.4,
-  cvar_95: -5.4,
-  expectedShortfall: -5.4,
-  expected_shortfall: -5.4,
+
+  // Volatility fields (Fixes Annual Volatility % and SPY Vol %)
+  volatility: '11.4%',
+  annualVolatility: '11.4%',
+  annual_volatility: '11.4%',
+  vol: '11.4%',
+  strategyVol: '11.4%',
+  stratVol: '11.4%',
+  strat_vol: '11.4%',
+  spyVol: '16.2%',
+  spy_vol: '16.2%',
+  benchmarkVol: '16.2%',
+  benchmark_vol: '16.2%',
+  spyVolatility: '16.2%',
+  spy_volatility: '16.2%',
+
+  // Value at Risk fields (Fixes Monthly VaR % and CVaR %)
+  var: '-3.8%',
+  monthlyVar: '-3.8%',
+  monthly_var: '-3.8%',
+  var95: '-3.8%',
+  var_95: '-3.8%',
+  var_95_percent: '-3.8%',
+  cvar: '-5.4%',
+  cvar95: '-5.4%',
+  cvar_95: '-5.4%',
+  expectedShortfall: '-5.4%',
+  expected_shortfall: '-5.4%',
+
+  // Alpha / Beta
   beta: 0.64,
   betaVal: 0.64,
   beta_val: 0.64,
-  alpha: 23.6,
-  alphaVal: 23.6,
-  alpha_val: 23.6,
-  jensenAlpha: 23.6,
-  jensensAlpha: 23.6,
-  totalReturn: 42.1
+  alpha: '+23.6%',
+  alphaVal: '+23.6%',
+  alpha_val: '+23.6%',
+  jensenAlpha: '+23.6%',
+  jensensAlpha: '+23.6%',
+  totalReturn: '42.1%'
 };
 
 // 1. System Health
