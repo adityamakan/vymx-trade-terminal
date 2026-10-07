@@ -32,7 +32,7 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
 
   useEffect(() => {
     fetchGeopolitics();
-    
+
     // Auto-update every 5 minutes (120000 ms) to keep the data fresh
     const intervalId = setInterval(() => {
       fetchGeopolitics(true);
@@ -61,7 +61,7 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
             <span>Auto-updating live feed • Last fetch: {lastUpdated.toLocaleTimeString()}</span>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-4 w-full md:w-auto">
           {data && (
             <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg p-3 flex-1 md:flex-none flex items-center justify-between gap-4">
@@ -74,8 +74,8 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
               </div>
             </div>
           )}
-          <button 
-            onClick={() => fetchGeopolitics(true)} 
+          <button
+            onClick={() => fetchGeopolitics(true)}
             className="p-3 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-400 hover:text-white hover:border-zinc-700 transition-all focus:outline-none focus:ring-2 focus:ring-zinc-700"
             disabled={isLoading}
             title="Force refresh data"
@@ -99,19 +99,19 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
         </div>
       ) : data ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          
+
           <div className="lg:col-span-2 flex flex-col gap-6">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <Globe className="h-5 w-5 text-indigo-400" />
               Active Tension Hotspots (Detailed)
             </h2>
-            
+
             <div className="grid grid-cols-1 gap-4">
               {data.tensions.map((tension: any, index: number) => {
                 const isExpanded = expandedTension === tension.id;
-                
+
                 return (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
@@ -119,7 +119,7 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
                     className={`bg-zinc-900/60 border ${isExpanded ? 'border-indigo-500/50' : 'border-zinc-800/80 hover:border-zinc-700'} rounded-xl transition-colors flex flex-col overflow-hidden`}
                   >
                     {/* Header Section (Always Visible) */}
-                    <div 
+                    <div
                       className="p-5 cursor-pointer select-none"
                       onClick={() => toggleExpand(tension.id)}
                     >
@@ -134,14 +134,14 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
                           {isExpanded ? <ChevronUp className="h-4 w-4 text-zinc-400" /> : <ChevronDown className="h-4 w-4 text-zinc-400" />}
                         </div>
                       </div>
-                      
+
                       <h3 className="text-lg font-bold text-white mb-2 leading-tight">{tension.title}</h3>
                       {!isExpanded && (
                         <p className="text-zinc-400 text-sm mb-4 line-clamp-2">
                           {tension.description}
                         </p>
                       )}
-                      
+
                       {!isExpanded && (
                         <div className="mt-2">
                           <div className="flex justify-between items-center mb-1">
@@ -149,8 +149,8 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
                             <span className="text-xs font-bold text-zinc-300">{tension.severity}%</span>
                           </div>
                           <div className="w-full bg-zinc-800 rounded-full h-1.5">
-                            <div 
-                              className={`h-1.5 rounded-full ${tension.severity > 80 ? 'bg-rose-500' : tension.severity > 50 ? 'bg-amber-400' : 'bg-emerald-400'}`} 
+                            <div
+                              className={`h-1.5 rounded-full ${tension.severity > 80 ? 'bg-rose-500' : tension.severity > 50 ? 'bg-amber-400' : 'bg-emerald-400'}`}
                               style={{ width: `${Math.min(tension.severity, 100)}%` }}
                             ></div>
                           </div>
@@ -168,7 +168,7 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
                           className="border-t border-zinc-800/50 bg-zinc-900/80"
                         >
                           <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            
+
                             {/* WHAT */}
                             <div className="flex gap-3">
                               <AlertTriangle className="h-5 w-5 text-rose-400 shrink-0 mt-0.5" />
@@ -224,7 +224,7 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
                             </div>
 
                           </div>
-                          
+
                           {/* Expanded Footer with Severity */}
                           <div className="px-5 pb-5 pt-2">
                             <div className="flex justify-between items-center mb-1">
@@ -232,8 +232,8 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
                               <span className="text-xs font-bold text-zinc-300">{tension.severity}%</span>
                             </div>
                             <div className="w-full bg-zinc-800 rounded-full h-1.5">
-                              <div 
-                                className={`h-1.5 rounded-full ${tension.severity > 80 ? 'bg-rose-500' : tension.severity > 50 ? 'bg-amber-400' : 'bg-emerald-400'}`} 
+                              <div
+                                className={`h-1.5 rounded-full ${tension.severity > 80 ? 'bg-rose-500' : tension.severity > 50 ? 'bg-amber-400' : 'bg-emerald-400'}`}
                                 style={{ width: `${Math.min(tension.severity, 100)}%` }}
                               ></div>
                             </div>
@@ -252,10 +252,10 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
               <Newspaper className="h-5 w-5 text-indigo-400" />
               Geopolitical News & Affairs
             </h2>
-            
+
             <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl overflow-hidden flex flex-col">
               {data.news.map((item: any, idx: number) => (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 + (idx * 0.1) }}
@@ -271,7 +271,7 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
                   </div>
                 </motion.div>
               ))}
-              
+
               {(!data.news || data.news.length === 0) && (
                 <div className="p-8 text-center text-zinc-500 text-sm">
                   No critical affairs detected at this moment.
@@ -279,9 +279,10 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
               )}
             </div>
           </div>
-          
+
         </div>
       ) : null}
     </div>
   );
 };
+

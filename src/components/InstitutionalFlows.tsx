@@ -160,7 +160,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
   const [tickerIndex, setTickerIndex] = useState(0);
   const [selectedDeal, setSelectedDeal] = useState<BlockDeal | null>(null);
   const [isLoadingLive, setIsLoadingLive] = useState(false);
-  
+
   // Filters
   const [assetClassFilter, setAssetClassFilter] = useState<'All' | 'Equity' | 'Debt' | 'Hybrid'>('All');
   const [dateRangeFilter, setDateRangeFilter] = useState<'1D' | '1W' | '1M'>('1D');
@@ -205,20 +205,20 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
     setIsExporting(true);
     try {
       const doc = new jsPDF();
-      
+
       // Header
       doc.setFontSize(20);
       doc.text('Vymx Institutional Flows Report', 14, 22);
-      
+
       doc.setFontSize(11);
       doc.setTextColor(100);
       doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
-      
+
       // Overview Table
       doc.setFontSize(14);
       doc.setTextColor(0);
       doc.text('Global Market Overview', 14, 45);
-      
+
       autoTable(doc, {
         startY: 50,
         head: [['Metric', 'Value']],
@@ -231,11 +231,11 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
         theme: 'grid',
         headStyles: { fillColor: [79, 70, 229] },
       });
-      
+
       // Sector Flows Table
       const finalY = (doc as any).lastAutoTable.finalY;
       doc.text('Net Sectoral Allocations (In Crores)', 14, finalY + 15);
-      
+
       autoTable(doc, {
         startY: finalY + 20,
         head: [['Sector', 'FII', 'DII', 'Net']],
@@ -243,27 +243,27 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
         theme: 'grid',
         headStyles: { fillColor: [79, 70, 229] },
       });
-      
+
       // Recent Deals Table
       const finalY2 = (doc as any).lastAutoTable.finalY;
       doc.addPage();
       doc.text('Recent Advanced Block Deals', 14, 22);
-      
+
       autoTable(doc, {
         startY: 30,
         head: [['Type', 'Investor', 'Asset', 'Sector', 'Amount', 'Sentiment']],
         body: liveDeals.map(d => [
-          d.type, 
-          d.investor, 
-          d.targetCompany, 
-          d.targetSector, 
-          `${d.currency} ${(d.amount/1000000).toFixed(1)}M`, 
+          d.type,
+          d.investor,
+          d.targetCompany,
+          d.targetSector,
+          `${d.currency} ${(d.amount/1000000).toFixed(1)}M`,
           d.sentiment
         ]),
         theme: 'grid',
         headStyles: { fillColor: [79, 70, 229] },
       });
-      
+
       doc.save('vymx-institutional-flows-report.pdf');
     } catch (e) {
       console.error("PDF export failed:", e);
@@ -275,14 +275,14 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
 
   const filteredDeals = liveDeals.filter(deal => {
     if (assetClassFilter !== 'All' && deal.assetClass !== assetClassFilter) return false;
-    
+
     // Simulate date range filtering based on id/index for demonstration since we only have a few hardcoded deals
     if (dateRangeFilter === '1D') return parseInt(deal.id) <= 3;
     if (dateRangeFilter === '1W') return parseInt(deal.id) <= 4;
     return true; // 1M
   });
 
-  const displayedSectors = highlightTopInflows 
+  const displayedSectors = highlightTopInflows
     ? [...sectorFlows].sort((a, b) => b.net - a.net).slice(0, 2)
     : sectorFlows;
 
@@ -298,8 +298,8 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
             Track advanced capital movement from Foreign (FII) and Domestic (DII) institutional investors globally. Monitor exact entry points, sector allocations, and strategic rationales in absolute detail.
           </p>
         </div>
-        
-        <button 
+
+        <button
           onClick={handleDownloadPDF}
           disabled={isExporting}
           className="flex items-center gap-2 bg-zinc-900 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 text-zinc-300 hover:text-white hover:bg-zinc-800 px-3 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
@@ -362,13 +362,13 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
             </button>
           ))}
         </div>
-        
+
         <div className="flex items-center gap-3">
            {activeTab === 'deals' && (
               <>
                  <div className="flex gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
                     {['All', 'Equity', 'Debt', 'Hybrid'].map(c => (
-                      <button 
+                      <button
                         key={c}
                         onClick={() => setAssetClassFilter(c as any)}
                         className={`px-3 py-1.5 text-xs font-semibold rounded-md ${assetClassFilter === c ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:text-white'}`}
@@ -379,7 +379,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                  </div>
                  <div className="flex gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
                     {['1D', '1W', '1M'].map(r => (
-                      <button 
+                      <button
                         key={r}
                         onClick={() => setDateRangeFilter(r as any)}
                         className={`px-3 py-1.5 text-xs font-semibold rounded-md ${dateRangeFilter === r ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-white'}`}
@@ -391,7 +391,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
               </>
            )}
            {activeTab === 'sectors' && (
-              <button 
+              <button
                 onClick={() => setHighlightTopInflows(!highlightTopInflows)}
                 className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${highlightTopInflows ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-zinc-900 border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 text-zinc-400'}`}
               >
@@ -477,7 +477,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                     <BarChart data={monthlyTrends} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                       <XAxis dataKey="date" stroke="#52525b" fontSize={11} tickMargin={10} />
                       <YAxis stroke="#52525b" fontSize={11} tickFormatter={(val) => `${val > 0 ? '+' : ''}${val}`} />
-                      <Tooltip 
+                      <Tooltip
                          cursor={{ fill: '#27272a', opacity: 0.4 }}
                          contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', color: '#fff', borderRadius: '8px' }}
                          itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
@@ -502,7 +502,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                </div>
             ) : (
               filteredDeals.map((deal, idx) => (
-                <div key={`${deal.id}-${idx}`} 
+                <div key={`${deal.id}-${idx}`}
                      onClick={() => setSelectedDeal(deal)}
                      className="bg-zinc-950 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 rounded-xl p-5 hover:border-zinc-700 transition-colors relative cursor-pointer group">
                   <div className="flex flex-col md:flex-row justify-between gap-4 items-start">
@@ -518,7 +518,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                         </span>
                         <h3 className="text-lg font-bold text-white">{deal.investor}</h3>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 md:grid-cols-6 gap-4 bg-zinc-900/50 p-4 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
                         <div>
                           <div className="text-[10px] uppercase text-zinc-500 font-bold mb-1">Target Asset</div>
@@ -553,7 +553,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                           </div>
                         </div>
                       </div>
-  
+
                       <div className="pt-2">
                         <div className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5" /> Institutional Rationale
@@ -584,13 +584,13 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                   </div>
                   <div className="h-4 w-full bg-zinc-900 rounded-full overflow-hidden flex">
                     {/* DII Portion */}
-                    <div 
+                    <div
                       className={`h-full ${sector.dii > 0 ? 'bg-emerald-500' : 'bg-rose-500'} opacity-80 border-r border-zinc-950`}
                       style={{ width: `${Math.abs(sector.dii) / (Math.abs(sector.fii) + Math.abs(sector.dii)) * 100}%` }}
                       title={`DII: ${sector.dii}`}
                     />
                     {/* FII Portion */}
-                    <div 
+                    <div
                       className={`h-full ${sector.fii > 0 ? 'bg-indigo-500' : 'bg-rose-500'} opacity-80`}
                       style={{ width: `${Math.abs(sector.fii) / (Math.abs(sector.fii) + Math.abs(sector.dii)) * 100}%` }}
                       title={`FII: ${sector.fii}`}
@@ -603,7 +603,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                 </div>
               ))}
             </div>
-            
+
             <div className="mt-8 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-lg flex gap-3 items-start">
                <ShieldCheck className="w-5 h-5 text-indigo-400 shrink-0" />
                <div>
@@ -664,7 +664,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
               className="bg-zinc-950 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 rounded-2xl p-6 max-w-2xl w-full shadow-2xl relative overflow-hidden"
             >
                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[60px]" />
-               
+
                <div className="flex justify-between items-start mb-6 relative z-10">
                  <div className="flex items-center gap-3">
                     <span className={`px-2 py-1 rounded text-[10px] font-black tracking-widest uppercase border ${
@@ -709,7 +709,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                  <p className="text-sm text-zinc-300 leading-relaxed">
                    "{selectedDeal.rationale}"
                  </p>
-                 
+
                  {/* 100x Density AI Analysis Panel */}
                  <div className="mt-4 pt-4 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 grid grid-cols-1 md:grid-cols-2 gap-4">
                    <div>
@@ -756,4 +756,5 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
     </div>
   );
 }
+
 

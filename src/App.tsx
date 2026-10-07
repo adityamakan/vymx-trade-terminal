@@ -42,7 +42,7 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem('vymx_is_authenticated') === 'true';
   });
-  
+
   const [authUser, setAuthUser] = useState<{ uid?: string; email?: string; name?: string; authType?: string } | null>(() => {
     const savedUser = localStorage.getItem('vymx_auth_user');
     return savedUser ? JSON.parse(savedUser) : null;
@@ -60,7 +60,7 @@ export default function App() {
           authType: 'google'
         });
         localStorage.setItem('vymx_is_authenticated', 'true');
-        
+
         try {
           if (db) {
             const ledgerRef = doc(db, 'users', user.uid, 'ledger', 'data');
@@ -166,9 +166,9 @@ export default function App() {
         const newPriceData = prices[asset.symbol];
         if (!newPriceData) return asset;
         if (
-          newPriceData.price === null || 
-          newPriceData.price === undefined || 
-          isNaN(newPriceData.price) || 
+          newPriceData.price === null ||
+          newPriceData.price === undefined ||
+          isNaN(newPriceData.price) ||
           !isFinite(newPriceData.price) ||
           newPriceData.price < 0
         ) {
@@ -238,7 +238,7 @@ export default function App() {
     if (val === null || val === undefined || isNaN(val) || !isFinite(val)) {
       return '---';
     }
-    
+
     if (typeOrSymbol === 'bond' || typeOrSymbol === 'index' || typeOrSymbol === 'crypto') {
       // Just check if it's an index or something where we want to still show currency.
       // Wait, indices usually have points, but displaying currency is fine.
@@ -251,11 +251,11 @@ export default function App() {
     let targetCurrency = 'USD';
     let locale = 'en-US';
 
-    const isIndian = assetCountry === 'India' || 
+    const isIndian = assetCountry === 'India' ||
       ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'BHARTIARTL', 'SBIN', 'LT', 'ITC', 'HINDUNILVR', 'NIFTY50', 'SENSEX', 'BANKNIFTY', 'USD/INR', 'indian-stock'].includes(typeOrSymbol);
     const isUK = assetCountry === 'United Kingdom' || ['FTSE', 'UK100'].includes(typeOrSymbol);
     const isEurope = assetCountry === 'Europe' || assetCountry === 'Germany' || assetCountry === 'France' || ['DAX', 'CAC'].includes(typeOrSymbol);
-    
+
     if (isIndian) {
       targetCurrency = 'INR';
       locale = 'en-IN';
@@ -276,7 +276,7 @@ export default function App() {
   };
 
   // --- STATE PERSISTENCE & HYDRATION ---
-  
+
   // 1. Watchlist (Default indices & high-liquidity stock symbols)
   const [watchlist, setWatchlist] = useState<string[]>(() => {
     const saved = localStorage.getItem('finova_watchlist');
@@ -396,7 +396,7 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('finova_transactions', compressData(transactions));
   }, [transactions]);
-  
+
   useEffect(() => {
     const saveToCloud = async () => {
       if (typeof authUser === 'object' && authUser !== null && authUser.uid) {
@@ -449,7 +449,7 @@ export default function App() {
       console.error(`[Data Integrity Error] Trade Submit Failed: Invalid price detected for ${symbol} - Price: ${price}`);
       return { success: false, message: 'Transaction rejected: Invalid or corrupted price data.' };
     }
-    
+
     if (quantity === null || quantity === undefined || isNaN(quantity) || !isFinite(quantity) || quantity <= 0) {
       console.error(`[Data Integrity Error] Trade Submit Failed: Invalid quantity detected for ${symbol} - Quantity: ${quantity}`);
       return { success: false, message: 'Transaction rejected: Invalid or corrupted quantity data.' };
@@ -531,7 +531,7 @@ export default function App() {
     } else {
       // type: 'SELL'
       const existing = portfolio.find((item) => item.symbol === symbol);
-      
+
       const epsilon = 0.000001;
       if (!existing || (existing.quantity + epsilon < quantity)) {
         return {
@@ -542,7 +542,7 @@ export default function App() {
 
       // If it's a 100% liquidation (within epsilon), clear it exactly to avoid 0.000000001 dust leftover
       const actualSellQuantity = (Math.abs(existing.quantity - quantity) < epsilon) ? existing.quantity : quantity;
-      
+
       // Complete simulated Cash Credit
       const proceeds = actualSellQuantity * price;
       setVirtualBalance((prev) => prev + proceeds);
@@ -589,14 +589,14 @@ export default function App() {
     <div className={`min-h-screen ${theme === 'light' ? 'light text-zinc-800 bg-zinc-50' : 'text-zinc-300 bg-zinc-950'} font-sans antialiased selection:bg-emerald-500/30 selection:text-white relative`}>
       {/* Refined Backing Layer */}
       <div className={`fixed inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] ${theme === 'light' ? 'from-indigo-100 via-zinc-50 to-zinc-50' : 'from-indigo-900/15 via-zinc-950 to-zinc-950'} pointer-events-none bg-tech-grid`}></div>
-      
+
       {/* Global Background Grid Pattern */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.02]"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }}
       ></div>
-      
+
       <CommandCenter
         isOpen={isCmdKOpen}
         onClose={() => setIsCmdKOpen(false)}
@@ -839,3 +839,4 @@ export default function App() {
     </div>
   );
 }
+

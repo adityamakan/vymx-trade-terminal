@@ -210,14 +210,14 @@ export default function AssetDetails({
   }, [asset.history]);
 
   return (
-    <motion.div 
+    <motion.div
       className="py-6 space-y-6"
       key={asset.symbol}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      
+
       {/* 1. Header Segment with Core Price & Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-zinc-900 pb-5 relative"><div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
         <div className="flex flex-col md:flex-row items-start gap-4">
@@ -230,15 +230,15 @@ export default function AssetDetails({
               <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 text-zinc-400">{asset.symbol}</span>
               {trendSentiment !== 'NEUTRAL' && (
                 <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border font-mono ${
-                  trendSentiment === 'BULLISH' 
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                  trendSentiment === 'BULLISH'
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                     : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                 }`}>
                   {trendSentiment} TREND
                 </span>
               )}
             </div>
-            
+
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500 font-sans font-medium">
               <span>{asset.sector}</span>
               <span>•</span>
@@ -292,10 +292,10 @@ export default function AssetDetails({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
+
         {/* Left Side Column: interactive chart & stats */}
         <div className="lg:col-span-8 space-y-6">
-          
+
           {/* Interactive TradingView-style chart and indicators */}
           <TradingViewChart
             asset={asset}
@@ -315,7 +315,7 @@ export default function AssetDetails({
                 </div>
                 <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-widest font-sans">AI Performance Analysis</h3>
               </div>
-              
+
               <button
                 onClick={() => {
                   const btn = document.getElementById('btn-re-analyze');
@@ -354,7 +354,7 @@ export default function AssetDetails({
                 if (asset.type === 'crypto') {
                   sentimentScore = isUp ? 78 : 41;
                   recommendation = isUp ? 'ACCUMULATE' : 'HOLD';
-                  keyThemes = isUp 
+                  keyThemes = isUp
                     ? ['On-chain Wallet Accumulation', 'Meme & Layer2 Narrative Heat', 'DeFi Liquidity Pools Inflows']
                     : ['Macro Sentiment De-Risking', 'Derivatives Open-Interest Over-leveraging', 'Halving Post-Cycle Soft Floor'];
                   summary = `${asset.name} (${asset.symbol}) is showing a 24-hour displacement of ${asset.change.toFixed(2)}% to settle at ${formatCurrency(asset.price, asset.type)}. Lacking physical P/E ratios, blockchain activity indices and stablecoin buying metrics act as key drivers. Baseline support is establishing nicely near the 52-week low bounds of ${formatCurrency(asset.low52w, asset.type)}.`;
@@ -387,7 +387,7 @@ export default function AssetDetails({
                 } else {
                   sentimentScore = isUp ? 68 : 45;
                   recommendation = isUp ? 'ACCUMULATE' : 'UNDER REVIEW';
-                  keyThemes = isUp 
+                  keyThemes = isUp
                     ? ['Sovereign Arbitrage Flows', 'Hedged Alternative Inbound', 'Global Trade Spread Widening']
                     : ['Capital Outflows to High Yields', 'Safehaven Assets Rotation', 'Demand Curve Readjustments'];
                   summary = `${asset.symbol} is responding dynamically to micro-rate revisions, currently priced at ${formatCurrency(asset.price, asset.type)}. Dynamic resistance stands near ${formatCurrency(asset.high52w, asset.type)}, guiding risk managers to maintain neutral exposure matrices.`;
@@ -472,7 +472,7 @@ export default function AssetDetails({
           {/* Quick Metrics grid stats panel */}
           <div className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/60 backdrop-blur-lg p-5 shadow-lg space-y-4">
             <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-900 pb-2">Trading metrics & stats</h3>
-            
+
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-xs">
               <div className="space-y-1">
                 <p className="text-zinc-500 font-medium border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 border-dashed w-fit cursor-help" title="Market Cap: Total dollar value of a company's outstanding shares. Formula: Share Price × Total Number of Shares.">Market Capitalization</p>
@@ -499,7 +499,7 @@ export default function AssetDetails({
                 <p className="text-sm font-bold text-white">{formatCurrency(asset.openPrice, asset.type)}</p>
               </div>
             </div>
-            
+
             {/* 100x Information Density Advanced Metrics Matrix */}
             <div className="border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 mt-5 pt-5 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-x-6 gap-y-4">
                <div className="space-y-1">
@@ -584,7 +584,7 @@ export default function AssetDetails({
                 <Sparkles className="h-4 w-4 text-blue-400 animate-pulse" />
                 <h3 className="text-sm font-semibold tracking-tight text-white">Research Terminal</h3>
               </div>
-              
+
               {/* Trigger manual fresh update */}
               <button
                 onClick={() => fetchTabData(activeTab, true)}
@@ -721,7 +721,7 @@ export default function AssetDetails({
                                 <a href={fundamentalsData.assetProfile.website} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">{fundamentalsData.assetProfile.website ? new URL(fundamentalsData.assetProfile.website).hostname : 'N/A'}</a>
                              </div>
                           </div>
-                          
+
                           {fundamentalsData.assetProfile.companyOfficers && fundamentalsData.assetProfile.companyOfficers.length > 0 && (
                             <div className="mt-4 pt-4 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
                                <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold block mb-2">Key Executives</span>
@@ -806,7 +806,7 @@ export default function AssetDetails({
 
         {/* Right Side Column: Trade Terminal Executer */}
         <div className="lg:col-span-4 space-y-6">
-          
+
           <div className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/60 backdrop-blur-lg p-5 shadow-lg space-y-5">
             <div className="flex items-center gap-2 border-b border-zinc-900 pb-3">
               <ShoppingBag className="h-4 w-4 text-emerald-400" />
@@ -826,7 +826,7 @@ export default function AssetDetails({
             </div>
 
             <form onSubmit={handleExecuteTrade} className="space-y-4">
-              
+
               {/* Buy/Sell Selector tags */}
               <div className="grid grid-cols-2 gap-1 rounded-lg border border-zinc-900 bg-zinc-900/20 p-1">
                 <button
@@ -872,7 +872,7 @@ export default function AssetDetails({
                   <span>Standard Price per unit</span>
                   <span className="font-mono text-zinc-250">{formatCurrency(asset.price, asset.type)}</span>
                 </div>
-                
+
                 <div className="flex justify-between items-baseline">
                   <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Est. total value</span>
                   <span className="text-xl font-extrabold font-mono text-white">{formatCurrency(estimatedTotal)}</span>
@@ -920,9 +920,9 @@ export default function AssetDetails({
                 <h3 className="text-xs font-bold tracking-wider uppercase text-zinc-300">Hedge Suggestions</h3>
               </div>
             </div>
-            
+
             <p className="text-[11px] text-zinc-400">Generate a 3-asset paper trading hedge to offset the risk of a severe downturn in {asset.name}.</p>
-            
+
             <button
               onClick={generateHedge}
               disabled={isGeneratingHedge}
@@ -957,7 +957,7 @@ export default function AssetDetails({
 
       {/* TradingView Chat System */}
       <div className="pt-2">
-        <TradingChat 
+        <TradingChat
           activeAsset={asset}
           currencyMode={currencyMode}
           formatCurrency={formatCurrencyProp}
@@ -967,3 +967,4 @@ export default function AssetDetails({
     </motion.div>
   );
 }
+

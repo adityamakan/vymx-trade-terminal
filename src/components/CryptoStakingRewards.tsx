@@ -55,7 +55,7 @@ export default function CryptoStakingRewards({ portfolio, assets }: CryptoStakin
   return (
     <div className="bg-zinc-950 border border-zinc-800/60 rounded-2xl p-6 relative overflow-hidden group hover:border-zinc-700/80 transition-colors shadow-2xl">
       <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -z-10 group-hover:bg-indigo-500/10 transition-colors" />
-      
+
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
           <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
@@ -93,7 +93,7 @@ export default function CryptoStakingRewards({ portfolio, assets }: CryptoStakin
                       <span className="text-sm font-medium text-white">{item.symbol}</span>
                       <p className="text-xs text-zinc-500">{item.quantity.toFixed(4)} Available</p>
                     </div>
-                    <button 
+                    <button
                       onClick={() => handleStake(item.symbol, item.quantity)}
                       className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-md transition-colors shadow-[0_0_15px_rgba(79,70,229,0.3)]"
                     >
@@ -126,11 +126,11 @@ export default function CryptoStakingRewards({ portfolio, assets }: CryptoStakin
                       <div>
                         <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Simulated Yield</p>
                         <p className="text-sm font-mono text-white flex items-center">
-                          +{stake.reward.toFixed(6)} 
+                          +{stake.reward.toFixed(6)}
                           <RefreshCw className="w-3 h-3 ml-1 text-zinc-500 animate-spin" />
                         </p>
                       </div>
-                      <button 
+                      <button
                         onClick={() => handleUnstake(stake.symbol)}
                         className="text-[10px] uppercase font-bold text-zinc-400 hover:text-white px-2 py-1 bg-zinc-800 rounded transition-colors"
                       >
@@ -147,3 +147,4 @@ export default function CryptoStakingRewards({ portfolio, assets }: CryptoStakin
     </div>
   );
 }
+

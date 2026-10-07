@@ -28,3 +28,4 @@ export const decompressData = <T>(compressed: string | null, fallback: T): T => 
     return fallback;
   }
 };
+

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Key, 
-  Lock, 
-  ArrowRight, 
-  CheckCircle2, 
-  RefreshCw, 
-  User, 
-  Server, 
+import {
+  Key,
+  Lock,
+  ArrowRight,
+  CheckCircle2,
+  RefreshCw,
+  User,
+  Server,
   X,
   ShieldCheck,
   Cpu,
@@ -32,15 +32,15 @@ interface GoogleIdSimulatorProps {
 export default function GoogleIdSimulator({ isOpen, onClose, onSuccess }: GoogleIdSimulatorProps) {
   const [step, setStep] = useState<'choose' | 'custom' | 'handshake'>('choose');
   const [selectedType, setSelectedType] = useState<'personal' | 'workspace'>('personal');
-  
+
   // Custom account fields
   const [customEmail, setCustomEmail] = useState('');
   const [customName, setCustomName] = useState('');
-  
+
   // Handshake parameters (read-only logs)
   const [handshakeLogs, setHandshakeLogs] = useState<string[]>([]);
   const [tokenProgress, setTokenProgress] = useState(0);
-  
+
   // High fidelity default account profiles
   const accounts = [
     {
@@ -87,14 +87,14 @@ export default function GoogleIdSimulator({ isOpen, onClose, onSuccess }: Google
         } else {
           setTokenProgress(100);
           clearInterval(interval);
-          
+
           // Complete login
           const email = getLoginEmail();
           const name = getLoginName();
           const avatar = getLoginAvatar();
           const cleanEmail = email.trim().toLowerCase();
           const rawIdToken = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjFhO' + simulateSHA256(cleanEmail).substring(0, 24) + '.' + btoa(JSON.stringify({email, name})) + '.vymx-signature-token';
-          
+
           setTimeout(() => {
             onSuccess({
               uid: 'vymx-g-' + simulateSHA256(cleanEmail).substring(0, 12),
@@ -144,7 +144,7 @@ export default function GoogleIdSimulator({ isOpen, onClose, onSuccess }: Google
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 font-sans select-none">
       <div className="w-full max-w-md bg-zinc-950 border border-zinc-900 rounded-3xl p-6 shadow-2xl relative overflow-hidden" id="google-container-lightbox">
-        
+
         {/* Authentic Google Authentication Header */}
         <div className="flex items-center justify-between border-b border-zinc-900/60 pb-4 mb-4">
           <div className="flex items-center gap-3">
@@ -159,7 +159,7 @@ export default function GoogleIdSimulator({ isOpen, onClose, onSuccess }: Google
               <p className="text-[9px] text-zinc-500 tracking-widest font-mono uppercase">Certified OIDC Gateway</p>
             </div>
           </div>
-          
+
           <button onClick={onClose} className="text-zinc-500 hover:text-zinc-200 p-1.5 rounded-xl bg-zinc-900/60 hover:bg-zinc-900 transition cursor-pointer">
             <X className="h-4 w-4" />
           </button>
@@ -191,9 +191,9 @@ export default function GoogleIdSimulator({ isOpen, onClose, onSuccess }: Google
                     }}
                     className="w-full p-3.5 rounded-2xl border border-zinc-900 bg-zinc-900/40 hover:border-blue-600 hover:bg-blue-600/5 transition duration-300 flex items-center gap-3.5 cursor-pointer text-left group"
                   >
-                    <img 
-                      src={acc.avatarUrl} 
-                      alt={acc.name} 
+                    <img
+                      src={acc.avatarUrl}
+                      alt={acc.name}
                       className="h-10 w-10 rounded-full object-cover border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 shrink-0"
                       referrerPolicy="no-referrer"
                     />
@@ -327,7 +327,7 @@ export default function GoogleIdSimulator({ isOpen, onClose, onSuccess }: Google
                   <span className="font-bold text-blue-400">{tokenProgress}%</span>
                 </div>
                 <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-400 transition-all duration-300"
                     style={{ width: `${tokenProgress}%` }}
                   />
@@ -347,3 +347,4 @@ export default function GoogleIdSimulator({ isOpen, onClose, onSuccess }: Google
     </div>
   );
 }
+

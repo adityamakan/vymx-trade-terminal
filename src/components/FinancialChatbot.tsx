@@ -12,13 +12,13 @@ interface FinancialChatbotProps {
 
 const TypingMessage = ({ content, isNew }: { content: string, isNew?: boolean }) => {
   const [displayed, setDisplayed] = useState(isNew ? '' : content);
-  
+
   useEffect(() => {
     if (!isNew) {
       setDisplayed(content);
       return;
     }
-    
+
     let index = 0;
     const interval = setInterval(() => {
       index += 5; // Speed of typing
@@ -50,14 +50,14 @@ export default function FinancialChatbot({ activeAsset, portfolio }: FinancialCh
       { role: 'assistant', text: 'Hello! I am your advanced AI Financial Chatbot. You can ask me any question regarding finance, markets, trading strategies, or your current portfolio.', isNew: false }
     ];
   });
-  
+
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [persona, setPersona] = useState('Technical Analyst');
   const [showSettings, setShowSettings] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [speechError, setSpeechError] = useState<string | null>(null);
-  
+
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -68,17 +68,17 @@ export default function FinancialChatbot({ activeAsset, portfolio }: FinancialCh
         recognitionRef.current = new SpeechRecognition();
         recognitionRef.current.continuous = false;
         recognitionRef.current.interimResults = false;
-        
+
         recognitionRef.current.onresult = (event: any) => {
           const transcript = event.results[0][0].transcript;
           setInput(prev => prev + (prev ? ' ' : '') + transcript);
           setSpeechError(null);
         };
-        
+
         recognitionRef.current.onend = () => {
           setIsListening(false);
         };
-        
+
         recognitionRef.current.onerror = (event: any) => {
           if (event.error !== 'not-allowed' && event.error !== 'no-speech') {
             console.warn('Speech recognition warning:', event.error);
@@ -97,7 +97,7 @@ export default function FinancialChatbot({ activeAsset, portfolio }: FinancialCh
       setTimeout(() => setSpeechError(null), 3000);
       return;
     }
-    
+
     if (isListening) {
       recognitionRef.current.stop();
       setIsListening(false);
@@ -203,7 +203,7 @@ export default function FinancialChatbot({ activeAsset, portfolio }: FinancialCh
               </div>
             </div>
           </div>
-          <button 
+          <button
             onClick={() => setShowSettings(!showSettings)}
             className="p-2 rounded-lg bg-zinc-800/50 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
           >
@@ -213,7 +213,7 @@ export default function FinancialChatbot({ activeAsset, portfolio }: FinancialCh
 
         <AnimatePresence>
           {showSettings && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -228,7 +228,7 @@ export default function FinancialChatbot({ activeAsset, portfolio }: FinancialCh
                         key={p}
                         onClick={() => { setPersona(p); setShowSettings(false); }}
                         className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
-                          persona === p 
+                          persona === p
                             ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300'
                             : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
                         }`}
@@ -238,7 +238,7 @@ export default function FinancialChatbot({ activeAsset, portfolio }: FinancialCh
                     ))}
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={handleClear}
                   className="flex items-center gap-2 text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-3 py-1.5 rounded-lg transition-colors"
                 >
@@ -340,3 +340,4 @@ export default function FinancialChatbot({ activeAsset, portfolio }: FinancialCh
     </div>
   );
 }
+

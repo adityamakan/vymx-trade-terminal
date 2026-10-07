@@ -26,21 +26,21 @@ const mapSymbolToTV = (asset: Asset): string => {
     if (asset.symbol === 'BANKNIFTY') return 'NSE:BANKNIFTY';
     return `NSE:${asset.symbol}`;
   }
-  
+
   // US and Global Indices
   if (asset.symbol === '.SPX') return 'SP:SPX';
   if (asset.symbol === '.IXIC') return 'NASDAQ:IXIC';
   if (asset.symbol === '.DJI') return 'DJ:DJI';
   if (asset.symbol === '.FTSE') return 'TVC:UKX';
   if (asset.symbol === '.N225') return 'TVC:NI225';
-  
+
   // Bonds
   if (asset.symbol === 'US10Y') return 'TVC:US10Y';
   if (asset.symbol === 'US2Y') return 'TVC:US02Y';
   if (asset.symbol === 'UK10Y') return 'TVC:GB10Y';
   if (asset.symbol === 'DE10Y') return 'TVC:DE10Y';
   if (asset.symbol === 'JP10Y') return 'TVC:JP10Y';
-  
+
   // Commodities
   if (asset.type === 'commodity') {
      if (asset.symbol === 'GC=F') return 'COMEX:GC1!';
@@ -49,7 +49,7 @@ const mapSymbolToTV = (asset: Asset): string => {
      if (asset.symbol === 'NG=F') return 'NYMEX:NG1!';
      if (asset.symbol === 'COPPER') return 'COMEX:HG1!';
   }
-  
+
   // International Stocks
   if (asset.symbol === 'MC.PA') return 'EURONEXT:MC';
   if (asset.symbol === '7203.T') return 'TSE:7203';
@@ -75,7 +75,7 @@ const TVWidget = ({ asset, timeframe, tvSymbol, activeStudies }: { asset: Asset,
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.innerHTML = '';
-      
+
       const initWidget = () => {
         if (typeof window !== 'undefined' && (window as any).TradingView) {
           new (window as any).TradingView.widget({
@@ -122,14 +122,14 @@ export default function TradingViewChart({
   timeframe,
   setTimeframe,
 }: TradingViewChartProps) {
-  
+
   const tvSymbol = mapSymbolToTV(asset);
   const [viewMode, setViewMode] = useState<'tv' | 'benchmark' | 'prediction'>('tv');
   const [activeStudies, setActiveStudies] = useState<string[]>(["MASimple@tv-basicstudies"]);
   const [showStudiesMenu, setShowStudiesMenu] = useState(false);
 
   const toggleStudy = (studyId: string) => {
-    setActiveStudies(prev => 
+    setActiveStudies(prev =>
       prev.includes(studyId) ? prev.filter(id => id !== studyId) : [...prev, studyId]
     );
   };
@@ -140,7 +140,7 @@ export default function TradingViewChart({
     <div className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-950 p-1 shadow-lg w-full relative" id="tradingview-chart-arena" ref={chartContainerRef}>
       <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-900 bg-zinc-950 rounded-t-xl mb-1">
          <div className="flex flex-wrap items-center gap-4 font-sans text-xs w-full">
-           
+
            <button
              onClick={() => setViewMode(viewMode === 'benchmark' ? 'tv' : 'benchmark')}
              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-300 font-bold text-[10px] uppercase tracking-widest font-mono ${
@@ -152,7 +152,7 @@ export default function TradingViewChart({
              <Layers className={`w-3.5 h-3.5 ${viewMode === 'benchmark' ? 'text-indigo-400' : 'text-zinc-500'}`} />
              {viewMode === 'benchmark' ? 'Hide Benchmark' : 'Compare Benchmark'}
            </button>
-           <button 
+           <button
              onClick={() => setViewMode(viewMode === 'prediction' ? 'tv' : 'prediction')}
              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-300 font-bold text-[10px] uppercase tracking-widest font-mono ${
                viewMode === 'prediction'
@@ -161,7 +161,7 @@ export default function TradingViewChart({
              }`}
            >
              {viewMode === 'prediction' ? 'Hide Forecast' : 'Trend Prediction'}
-           
+
            </button>
 
            <div className="flex flex-1 items-center justify-end gap-2">
@@ -256,3 +256,4 @@ export default function TradingViewChart({
     </div>
   );
 }
+

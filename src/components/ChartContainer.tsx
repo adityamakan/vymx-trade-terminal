@@ -18,3 +18,4 @@ export function ChartContainer({ children, width = '100%', height = '100%', minW
     </div>
   );
 }
+

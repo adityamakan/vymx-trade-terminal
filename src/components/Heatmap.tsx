@@ -147,9 +147,9 @@ export default function Heatmap({
 
           // Validation Wrapper: Ensure calculated price data is valid
           if (
-            updatedPrice === null || 
-            updatedPrice === undefined || 
-            isNaN(updatedPrice) || 
+            updatedPrice === null ||
+            updatedPrice === undefined ||
+            isNaN(updatedPrice) ||
             !isFinite(updatedPrice) ||
             updatedPrice < 0
           ) {
@@ -162,7 +162,7 @@ export default function Heatmap({
           const updatedChangePct = parseFloat(
             (currentChange + tickPctChange).toFixed(2),
           );
-          
+
           if (isNaN(updatedChangePct) || !isFinite(updatedChangePct)) {
             console.error(`[Data Integrity Error] Simulated Market Data Update Failed: Invalid change calculated for ${asset.symbol} - Change: ${updatedChangePct}`);
             continue;
@@ -174,7 +174,7 @@ export default function Heatmap({
               asset.type === "forex" || asset.type === "bond" ? 4 : 2,
             ),
           );
-          
+
           if (isNaN(updatedChangeAbs) || !isFinite(updatedChangeAbs)) {
             console.error(`[Data Integrity Error] Simulated Market Data Update Failed: Invalid absolute change calculated for ${asset.symbol} - ChangeAbs: ${updatedChangeAbs}`);
             continue;
@@ -845,7 +845,7 @@ export default function Heatmap({
                     if (asset.marketCap > 1000)
                       sizeClass = "col-span-1 sm:col-span-2 row-span-1 h-24";
                   }
-                  
+
                   if (expandedTile === asset.symbol) {
                     sizeClass = "col-span-2 sm:col-span-3 lg:col-span-2 row-span-2 min-h-[260px]";
                   }
@@ -930,10 +930,10 @@ export default function Heatmap({
                           </span>
                           <span>Vol: {asset.volumeDisplay}</span>
                         </div>
-                        
-                        
+
+
                         {expandedTile === asset.symbol && (
-                          <motion.div 
+                          <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
@@ -945,9 +945,9 @@ export default function Heatmap({
                               <span className="flex flex-col text-center"><span>H</span><span className="font-bold text-emerald-400">{asset.high52w.toFixed(2)}</span></span>
                               <span className="flex flex-col text-right"><span>L</span><span className="font-bold text-rose-400">{asset.low52w.toFixed(2)}</span></span>
                             </div>
-                            
+
                             <div className="h-12 w-full mt-1 bg-black/10 rounded">
-                              
+
                               <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 100" className="opacity-80">
                                 {(() => {
                                   const data = asset.history[heatmapTimeframe] || [];
@@ -955,7 +955,7 @@ export default function Heatmap({
                                   const min = Math.min(...data.map(d => d.value));
                                   const max = Math.max(...data.map(d => d.value));
                                   const range = max - min || 1;
-                                  
+
                                   const strokeColor = getTimeframeChange(asset) >= 0 ? "#10b981" : "#f43f5e";
                                   return (
                                     <>
@@ -977,9 +977,9 @@ export default function Heatmap({
                               </svg>
 
                             </div>
-                            
+
                             <div className="flex gap-1 mt-1">
-                              <input 
+                              <input
                                 type="number"
                                 min="1"
                                 className="w-12 bg-black/40 border border-white/20 rounded text-xs px-1 text-white outline-none font-mono focus:border-indigo-500"
@@ -987,7 +987,7 @@ export default function Heatmap({
                                 onChange={(e) => setTradeQuantity({...tradeQuantity, [asset.symbol]: parseInt(e.target.value) || 1})}
                                 onClick={(e) => e.stopPropagation()}
                               />
-                              <button 
+                              <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   if (onTradeSubmit) onTradeSubmit('BUY', asset.symbol, tradeQuantity[asset.symbol] || 1, asset.price);
@@ -996,7 +996,7 @@ export default function Heatmap({
                               >
                                 <ShoppingCart className="w-3 h-3" /> Buy
                               </button>
-                              <button 
+                              <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   if (onTradeSubmit) onTradeSubmit('SELL', asset.symbol, tradeQuantity[asset.symbol] || 1, asset.price);
@@ -1006,7 +1006,7 @@ export default function Heatmap({
                                 Sell
                               </button>
                             </div>
-                            <button 
+                            <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onSelectAsset(asset);
@@ -1018,7 +1018,7 @@ export default function Heatmap({
                           </motion.div>
                         )}
 
-                        
+
                         {densityMode === "high" && (
                           <div className="my-1 border-y border-white/5 py-1 flex flex-col gap-1 w-full">
                             <div className="flex justify-between items-center text-[7px] text-zinc-400 font-mono">
@@ -1319,3 +1319,4 @@ export default function Heatmap({
     </div>
   );
 }
+

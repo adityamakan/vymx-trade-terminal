@@ -24,7 +24,7 @@ export default function CompetitorDashboard({ asset, assets, formatCurrency }: C
         <Users className="h-4 w-4 text-emerald-400" />
         <h3 className="text-xs font-bold tracking-wider uppercase text-zinc-300">Sector Competitors ({asset.sector})</h3>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {topCompetitors.map((comp) => (
           <div key={comp.symbol} className="bg-zinc-800/30 rounded-xl p-4 border border-zinc-800/50 flex flex-col gap-2">
@@ -38,7 +38,7 @@ export default function CompetitorDashboard({ asset, assets, formatCurrency }: C
                 {Math.abs(comp.change).toFixed(2)}%
               </div>
             </div>
-            
+
             <div className="flex justify-between items-end mt-2">
               <div>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Price</p>
@@ -55,3 +55,4 @@ export default function CompetitorDashboard({ asset, assets, formatCurrency }: C
     </div>
   );
 }
+

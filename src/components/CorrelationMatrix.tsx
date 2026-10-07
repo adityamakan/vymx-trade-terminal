@@ -16,16 +16,16 @@ export default function CorrelationMatrix({ assets }: CorrelationMatrixProps) {
   // Generate deterministic mock correlation (-1 to 1)
   const getMockCorrelation = (assetA: Asset, assetB: Asset) => {
     if (assetA.symbol === assetB.symbol) return 1;
-    
+
     // Base correlation on sector/type
     let base = 0;
     if (assetA.type === assetB.type) base += 0.4;
     if (assetA.sector === assetB.sector) base += 0.3;
     if (assetA.country === assetB.country) base += 0.2;
-    
+
     // Add some deterministic noise based on symbols
     const noise = ((assetA.symbol.charCodeAt(0) + assetB.symbol.charCodeAt(0)) % 100) / 100 * 0.4 - 0.2;
-    
+
     return Math.max(-1, Math.min(1, base + noise));
   };
 
@@ -44,7 +44,7 @@ export default function CorrelationMatrix({ assets }: CorrelationMatrixProps) {
          <h3 className="text-sm font-bold text-zinc-100 mb-1">Asset Price Correlation Matrix</h3>
          <p className="text-xs text-zinc-500">Discover diversification opportunities by analyzing how different assets move in relation to one another. Green indicates positive correlation, red indicates inverse correlation.</p>
       </div>
-      
+
       <div className="min-w-[800px]">
         <div className="flex mb-2">
           <div className="w-24 shrink-0"></div>
@@ -54,7 +54,7 @@ export default function CorrelationMatrix({ assets }: CorrelationMatrixProps) {
             </div>
           ))}
         </div>
-        
+
         {topAssets.map((rowAsset) => (
           <div key={`row-${rowAsset.symbol}`} className="flex gap-1 mb-1 items-center">
             <div className="w-24 shrink-0 font-mono text-[10px] text-zinc-400 font-bold truncate pr-4 text-right">
@@ -63,7 +63,7 @@ export default function CorrelationMatrix({ assets }: CorrelationMatrixProps) {
             {topAssets.map((colAsset) => {
               const corr = getMockCorrelation(rowAsset, colAsset);
               return (
-                <div 
+                <div
                   key={`cell-${rowAsset.symbol}-${colAsset.symbol}`}
                   className={`flex-1 aspect-square rounded-sm flex items-center justify-center text-[9px] font-mono font-medium transition-colors hover:ring-2 hover:ring-white z-10 relative cursor-pointer ${getCorrelationColor(corr)}`}
                   title={`${rowAsset.symbol} vs ${colAsset.symbol}: ${corr.toFixed(2)}`}
@@ -74,7 +74,7 @@ export default function CorrelationMatrix({ assets }: CorrelationMatrixProps) {
             })}
           </div>
         ))}
-        
+
         <div className="mt-8 flex items-center justify-center gap-6 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pt-6">
             <div className="flex items-center gap-2 text-xs text-zinc-400">
                <div className="w-3 h-3 rounded-sm bg-emerald-500"></div> Strong Positive
@@ -96,3 +96,4 @@ export default function CorrelationMatrix({ assets }: CorrelationMatrixProps) {
     </div>
   );
 }
+

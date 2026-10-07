@@ -15,7 +15,7 @@ const generateHistory = (
     // Random walk calculation
     const changePercent = (Math.random() - 0.49) * volatility; // slightly upward drift
     currentPrice = currentPrice * (1 + changePercent);
-    
+
     // Safety check
     if (currentPrice < 0.01) currentPrice = 0.01;
 
@@ -31,7 +31,7 @@ const generateHistory = (
 const generate1DHistory = (startPrice: number, changePercent: number): { date: string; value: number }[] => {
   const points: { date: string; value: number }[] = [];
   const now = new Date();
-  
+
   // Backcalculate starting price 24h ago
   let currentPrice = startPrice / (1 + changePercent / 100);
   const step = changePercent / 24;
@@ -40,7 +40,7 @@ const generate1DHistory = (startPrice: number, changePercent: number): { date: s
     const pointTime = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
     const noise = (Math.random() - 0.5) * 0.4; // random market noise
     currentPrice = currentPrice * (1 + (step + noise) / 100);
-    
+
     points.push({
       date: pointTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
       value: parseFloat(currentPrice.toFixed(2)),
@@ -1538,3 +1538,4 @@ export const countries = [
   'South Korea',
   'United Kingdom',
 ];
+

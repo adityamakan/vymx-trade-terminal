@@ -1,32 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Globe, 
-  TrendingUp, 
-  TrendingDown, 
-  Activity, 
-  Bot, 
-  BarChart3, 
-  Layers, 
-  ShieldAlert, 
-  RefreshCw, 
-  Sliders, 
-  Sparkles, 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  Cpu, 
-  Compass, 
+import {
+  Globe,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  Bot,
+  BarChart3,
+  Layers,
+  ShieldAlert,
+  RefreshCw,
+  Sliders,
+  Sparkles,
+  ArrowUpRight,
+  ArrowDownRight,
+  Cpu,
+  Compass,
   Send
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  CartesianGrid, 
-  AreaChart, 
-  Area 
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  AreaChart,
+  Area
 } from 'recharts';
 import WorldMonitor from './EconomicCalendar';
 import { streamMacroeconomicSummary, streamFinancialChat } from '../lib/gemini';
@@ -266,7 +266,7 @@ export default function MacroeconomicAnalyzer() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto py-6 font-sans text-zinc-100">
-      
+
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800 pb-5">
         <div>
@@ -338,11 +338,11 @@ export default function MacroeconomicAnalyzer() {
       {/* TAB 1: ECONOMETRIC REGIME BACKTESTING */}
       {activeTab === 'backtest' && (
         <div className="space-y-6">
-          
+
           {/* Controls Bar: Regime + Strategy Selection */}
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5 backdrop-blur-sm">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              
+
               {/* Regime Selector */}
               <div>
                 <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">
@@ -472,7 +472,7 @@ export default function MacroeconomicAnalyzer() {
           {/* Econometric Key Performance Indicators Grid */}
           {backtestResult?.metrics && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              
+
               {/* CAGR */}
               <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
                 <span className="text-xs text-zinc-400 font-medium">CAGR (Annualized)</span>
@@ -532,7 +532,7 @@ export default function MacroeconomicAnalyzer() {
 
           {/* Interactive Recharts: Normalized Wealth Path vs SPY Benchmark */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             {/* Wealth & Drawdown Chart */}
             <div className="lg:col-span-2 bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-4">
@@ -589,7 +589,7 @@ export default function MacroeconomicAnalyzer() {
 
             {/* Asset Decomposition & Yield Curve PCA Factor */}
             <div className="space-y-6">
-              
+
               {/* Asset Allocation & Contribution */}
               <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
                 <h4 className="text-sm font-bold text-white mb-3">Asset Allocation & Stress Metrics</h4>
@@ -691,7 +691,7 @@ export default function MacroeconomicAnalyzer() {
       {/* TAB 2: LIVE MACROECONOMIC INDICATORS & CENTRAL BANK RADAR */}
       {activeTab === 'indicators' && (
         <div className="space-y-6">
-          
+
           {/* AI Real-Time Indicator Synthesis */}
           <div className="bg-zinc-900/60 border border-indigo-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none" />
@@ -908,3 +908,4 @@ export default function MacroeconomicAnalyzer() {
     </div>
   );
 }
+

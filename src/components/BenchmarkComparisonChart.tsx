@@ -44,13 +44,13 @@ export default function BenchmarkComparisonChart({ asset, timeframe }: Benchmark
   const { data, benchmarkName, finalAlpha } = useMemo(() => {
     const points = timeframe === '1D' ? 24 : timeframe === '1W' ? 7 : timeframe === '1M' ? 30 : 12;
     const result = [];
-    
+
     let assetPerformance = 0;
     let benchmarkPerformance = 0;
-    
+
     const assetVolatility = asset.type === 'crypto' ? 3 : 1.5;
     const benchmarkVolatility = 0.8;
-    
+
     const assetDirection = asset.change >= 0 ? 1 : -1;
     const isIndian = asset.country === 'India';
     const benchName = isIndian ? 'NIFTY 50' : 'S&P 500';
@@ -76,7 +76,7 @@ export default function BenchmarkComparisonChart({ asset, timeframe }: Benchmark
         assetPerformance += (seededRandom(i) - 0.45) * assetVolatility + (assetDirection * 0.2);
         benchmarkPerformance += (seededRandom(i + 50) - 0.5) * benchmarkVolatility + (assetDirection * 0.1);
       }
-      
+
       result.push({
         time: timeLabel,
         [asset.symbol]: Number(assetPerformance.toFixed(2)),
@@ -84,9 +84,9 @@ export default function BenchmarkComparisonChart({ asset, timeframe }: Benchmark
         Alpha: Number((assetPerformance - benchmarkPerformance).toFixed(2))
       });
     }
-    
-    return { 
-      data: result, 
+
+    return {
+      data: result,
       benchmarkName: benchName,
       finalAlpha: Number((assetPerformance - benchmarkPerformance).toFixed(2))
     };
@@ -95,7 +95,7 @@ export default function BenchmarkComparisonChart({ asset, timeframe }: Benchmark
   const isAlphaPositive = finalAlpha >= 0;
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -103,7 +103,7 @@ export default function BenchmarkComparisonChart({ asset, timeframe }: Benchmark
     >
       <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none mix-blend-screen"></div>
       <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none"></div>
-      
+
       {/* Header Overlay */}
       <div className="flex justify-between items-start p-4 z-10 border-b border-zinc-900/50 bg-zinc-950/40 backdrop-blur-sm">
         <div className="flex flex-col gap-1">
@@ -115,13 +115,13 @@ export default function BenchmarkComparisonChart({ asset, timeframe }: Benchmark
             {asset.symbol} vs {benchmarkName} • {timeframe} Scaled Alpha
           </p>
         </div>
-        
+
         <div className="flex items-center gap-4">
           <div className="flex flex-col items-end">
             <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Generated Alpha</span>
             <div className={`px-2 py-1 rounded border flex items-center gap-1.5 shadow-lg ${
-              isAlphaPositive 
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+              isAlphaPositive
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                 : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
             }`}>
               {isAlphaPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingUp className="w-3 h-3 rotate-180" />}
@@ -152,24 +152,24 @@ export default function BenchmarkComparisonChart({ asset, timeframe }: Benchmark
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-            <XAxis 
-              dataKey="time" 
-              stroke="#52525b" 
-              tick={{ fill: '#71717a', fontSize: 10, fontFamily: 'monospace' }} 
+            <XAxis
+              dataKey="time"
+              stroke="#52525b"
+              tick={{ fill: '#71717a', fontSize: 10, fontFamily: 'monospace' }}
               tickLine={false}
               axisLine={false}
             />
-            <YAxis 
-              stroke="#52525b" 
-              tick={{ fill: '#71717a', fontSize: 10, fontFamily: 'monospace' }} 
+            <YAxis
+              stroke="#52525b"
+              tick={{ fill: '#71717a', fontSize: 10, fontFamily: 'monospace' }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(value) => `${value}%`}
               domain={['dataMin - 2', 'dataMax + 2']}
             />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'rgba(9, 9, 11, 0.9)', 
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'rgba(9, 9, 11, 0.9)',
                 borderColor: '#27272a',
                 borderRadius: '8px',
                 boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
@@ -178,42 +178,42 @@ export default function BenchmarkComparisonChart({ asset, timeframe }: Benchmark
               itemStyle={{ fontSize: '11px', fontWeight: 'bold' }}
               labelStyle={{ color: '#a1a1aa', fontSize: '10px', marginBottom: '4px' }}
             />
-            <Legend 
-              verticalAlign="top" 
-              height={36} 
+            <Legend
+              verticalAlign="top"
+              height={36}
               iconType="circle"
               wrapperStyle={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: 'bold' }}
             />
-            
+
             <ReferenceLine y={0} stroke="#3f3f46" strokeDasharray="3 3" />
-            
+
             {/* Alpha Area (Spread) */}
-            <Area 
-              type="monotone" 
-              dataKey="Alpha" 
-              fill={isAlphaPositive ? "url(#colorAlphaPos)" : "url(#colorAlphaNeg)"} 
-              stroke={isAlphaPositive ? "#10b981" : "#f43f5e"} 
+            <Area
+              type="monotone"
+              dataKey="Alpha"
+              fill={isAlphaPositive ? "url(#colorAlphaPos)" : "url(#colorAlphaNeg)"}
+              stroke={isAlphaPositive ? "#10b981" : "#f43f5e"}
               strokeWidth={1}
               strokeDasharray="4 4"
               opacity={0.6}
             />
-            
+
             {/* Benchmark Line */}
-            <Line 
-              type="monotone" 
-              dataKey={benchmarkName} 
-              stroke="#a1a1aa" 
-              strokeWidth={2} 
+            <Line
+              type="monotone"
+              dataKey={benchmarkName}
+              stroke="#a1a1aa"
+              strokeWidth={2}
               dot={false}
               activeDot={{ r: 4, strokeWidth: 0, fill: '#a1a1aa' }}
             />
-            
+
             {/* Main Asset Line */}
-            <Line 
-              type="monotone" 
-              dataKey={asset.symbol} 
-              stroke="#818cf8" 
-              strokeWidth={3} 
+            <Line
+              type="monotone"
+              dataKey={asset.symbol}
+              stroke="#818cf8"
+              strokeWidth={3}
               dot={false}
               activeDot={{ r: 6, strokeWidth: 2, stroke: '#09090b', fill: '#818cf8' }}
               style={{ filter: 'drop-shadow(0px 0px 8px rgba(129, 140, 248, 0.5))' }}
@@ -221,7 +221,7 @@ export default function BenchmarkComparisonChart({ asset, timeframe }: Benchmark
           </ComposedChart>
         </ResponsiveContainer>
       </div>
-      
+
       {/* Footer Metrics */}
       <div className="grid grid-cols-3 gap-px bg-zinc-900 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
          <div id="metric-beta" className="bg-zinc-950 p-3 flex flex-col gap-1 items-center justify-center text-center">
@@ -240,3 +240,4 @@ export default function BenchmarkComparisonChart({ asset, timeframe }: Benchmark
     </motion.div>
   );
 }
+

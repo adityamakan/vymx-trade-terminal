@@ -136,7 +136,7 @@ export default function MarketNews() {
             <Clock className="h-3.5 w-3.5" />
             Last Updated: {lastRefreshed}
           </div>
-          <button 
+          <button
             onClick={handleRefresh}
             disabled={isRefreshing}
             className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
@@ -163,25 +163,25 @@ export default function MarketNews() {
               ))}
             </div>
           </div>
-          
+
           <div className="space-y-3">
             {news.map((item, idx) => (
-              <div 
-                key={`${item.id}-${idx}`} 
+              <div
+                key={`${item.id}-${idx}`}
                 className="group relative bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 rounded-xl p-5 hover:border-zinc-700/80 transition-all hover:bg-zinc-900/40"
               >
                 {/* Visual Indicator Line */}
                 <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl ${
-                  item.sentiment === 'bullish' ? 'bg-emerald-500/50' : 
-                  item.sentiment === 'bearish' ? 'bg-rose-500/50' : 
+                  item.sentiment === 'bullish' ? 'bg-emerald-500/50' :
+                  item.sentiment === 'bearish' ? 'bg-rose-500/50' :
                   'bg-zinc-600/50'
                 }`}></div>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-zinc-900 border ${
-                        item.sentiment === 'bullish' ? 'text-emerald-400 border-emerald-500/20' : 
-                        item.sentiment === 'bearish' ? 'text-rose-400 border-rose-500/20' : 
+                        item.sentiment === 'bullish' ? 'text-emerald-400 border-emerald-500/20' :
+                        item.sentiment === 'bearish' ? 'text-rose-400 border-rose-500/20' :
                         'text-zinc-400 border-zinc-700'
                       }`}>
                         {item.sentiment}
@@ -195,7 +195,7 @@ export default function MarketNews() {
                     <h3 className="text-base font-semibold text-zinc-200 group-hover:text-white transition-colors mb-2">
                       {item.title}
                     </h3>
-                    
+
                     {/* 100x Density AI Analysis Panel */}
                     <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 bg-black/40 rounded-lg p-3 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300/60">
                       <div className="space-y-1 border-r border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pr-2">
@@ -271,3 +271,4 @@ export default function MarketNews() {
     </div>
   );
 }
+

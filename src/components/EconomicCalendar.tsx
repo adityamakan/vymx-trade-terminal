@@ -87,7 +87,7 @@ export default function WorldMonitor() {
                 <AlertTriangle className="h-3.5 w-3.5" />
                 Fix Box: {flaggedRanks.length} Cleared
               </div>
-              <button 
+              <button
                 onClick={handleResetFixBox}
                 className="text-zinc-400 hover:text-white transition-colors p-1"
                 title="Restore flagged data points"
@@ -195,7 +195,7 @@ export default function WorldMonitor() {
                     {eco.central_bank_metrics.investment_rate_gdp_pct !== undefined ? eco.central_bank_metrics.investment_rate_gdp_pct + "%" : "N/A"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                     <span className="text-indigo-400 font-bold">{eco.corporate_anchor_profile.company_name}</span> 
+                     <span className="text-indigo-400 font-bold">{eco.corporate_anchor_profile.company_name}</span>
                      <span className="text-zinc-500 block text-[10px] font-mono mt-0.5">{eco.corporate_anchor_profile.representative_ticker} &bull; {eco.corporate_anchor_profile.benchmark_index}</span>
                   </td>
                   <td className="px-6 py-4 font-mono text-indigo-300 whitespace-nowrap">
@@ -233,3 +233,4 @@ export default function WorldMonitor() {
     </div>
   );
 }
+

@@ -27,7 +27,7 @@ export default function RiskDashboard({ portfolio, assets }: RiskDashboardProps)
     const chartData = Object.entries(sectorMap)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
-      
+
     return { sectorData: chartData, totalValue: total };
   }, [portfolio, assets]);
 
@@ -55,7 +55,7 @@ export default function RiskDashboard({ portfolio, assets }: RiskDashboardProps)
                 let corr = sameSector ? 0.6 + noise : 0.1 + noise;
                 // Cap between -1 and 1
                 if (corr > 0.99) corr = 0.99;
-                
+
                 row[heldAssets[j].symbol] = Number(corr.toFixed(2));
             }
         }
@@ -78,11 +78,11 @@ export default function RiskDashboard({ portfolio, assets }: RiskDashboardProps)
           <p className="text-zinc-300 font-bold mb-1 border-b border-zinc-800/60 pb-1">{name}</p>
           <div className="flex flex-col gap-1">
             <div className="flex justify-between items-center gap-4 text-emerald-400">
-              <span className="text-zinc-500">Value:</span> 
+              <span className="text-zinc-500">Value:</span>
               <span>${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className="flex justify-between items-center gap-4 text-indigo-400">
-              <span className="text-zinc-500">Weight:</span> 
+              <span className="text-zinc-500">Weight:</span>
               <span>{percentage}%</span>
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function RiskDashboard({ portfolio, assets }: RiskDashboardProps)
           <PieChartIcon className="h-4.5 w-4.5 text-indigo-400" />
           <h2 className="text-sm font-bold tracking-tight text-zinc-100">Sector Exposure</h2>
         </div>
-        
+
         {totalValue > 0 ? (
           <div className="w-full h-[300px] relative">
             <ChartContainer width="100%" height="100%" minHeight={1} minWidth={1}>
@@ -129,9 +129,9 @@ export default function RiskDashboard({ portfolio, assets }: RiskDashboardProps)
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
-                <Legend 
-                  verticalAlign="bottom" 
-                  height={36} 
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
                   iconType="circle"
                   formatter={(value) => (
                     <span className="text-[10px] font-mono text-zinc-400">{value}</span>
@@ -207,3 +207,4 @@ export default function RiskDashboard({ portfolio, assets }: RiskDashboardProps)
     </section>
   );
 }
+

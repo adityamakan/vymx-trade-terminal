@@ -55,3 +55,4 @@ export const MarketStateProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export const useMarketState = () => useContext(MarketStateContext);
+

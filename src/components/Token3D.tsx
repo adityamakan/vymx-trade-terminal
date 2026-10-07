@@ -16,10 +16,10 @@ function Coin({ color, symbol }: { color: string, symbol: string }) {
     <Float floatIntensity={2} speed={3} rotationIntensity={1}>
       <mesh ref={meshRef} castShadow receiveShadow rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[2.5, 2.5, 0.4, 64]} />
-        <meshStandardMaterial 
-          color={color} 
-          metalness={1} 
-          roughness={0.2} 
+        <meshStandardMaterial
+          color={color}
+          metalness={1}
+          roughness={0.2}
         />
         {/* Inner ring */}
         <mesh position={[0, 0.21, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -30,7 +30,7 @@ function Coin({ color, symbol }: { color: string, symbol: string }) {
            <ringGeometry args={[1.8, 2.2, 64]} />
            <meshStandardMaterial color={color} metalness={0.8} roughness={0.4} />
         </mesh>
-        
+
         {/* Symbol Text */}
         <Text
           position={[0, 0.22, 0]}
@@ -63,7 +63,7 @@ export default function Token3D({ assetType, symbol }: { assetType: string, symb
   // Determine color based on type
   let color = '#d4af37'; // Gold default
   let shortSymbol = symbol.substring(0, 3);
-  
+
   if (assetType === 'crypto') {
     if (symbol.includes('BTC')) {
       color = '#F7931A';
@@ -98,3 +98,4 @@ export default function Token3D({ assetType, symbol }: { assetType: string, symb
     </div>
   );
 }
+

@@ -1,12 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Star, 
-  ArrowUpRight, 
-  BookOpen, 
-  Sparkles, 
-  TrendingUp, 
-  TrendingDown, 
-  RefreshCw, 
+import {
+  Star,
+  ArrowUpRight,
+  BookOpen,
+  Sparkles,
+  TrendingUp,
+  TrendingDown,
+  RefreshCw,
   CircleAlert,
   SlidersHorizontal,
   Binary,
@@ -15,12 +15,12 @@ import {
   X,
   Bot
 } from 'lucide-react';
-import { 
-  ScatterChart, 
-  Scatter, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
+import {
+  ScatterChart,
+  Scatter,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip as ChartTooltip
 } from 'recharts';
 import { ChartContainer } from './ChartContainer';
@@ -113,11 +113,11 @@ function getPartsInTimezone(timezone: string) {
     return { day, hour, minute, totalMins: hour * 60 + minute };
   } catch (e) {
     const now = new Date();
-    return { 
-      day: now.toLocaleDateString('en-US', { weekday: 'long' }), 
-      hour: now.getHours(), 
-      minute: now.getMinutes(), 
-      totalMins: now.getHours() * 60 + now.getMinutes() 
+    return {
+      day: now.toLocaleDateString('en-US', { weekday: 'long' }),
+      hour: now.getHours(),
+      minute: now.getMinutes(),
+      totalMins: now.getHours() * 60 + now.getMinutes()
     };
   }
 }
@@ -212,11 +212,11 @@ export default function Dashboard({
     if (activeCount === 0) return 50;
 
     const ratioScore = (advCount / activeCount) * 100;
-    
+
     const avgAssetChange = assets
       .reduce((sum, a) => sum + Math.max(-4, Math.min(4, a.change)), 0);
     const avgChg = assets.length > 0 ? (avgAssetChange / assets.length) : 0;
-    
+
     const finalScore = Math.max(5, Math.min(95, ratioScore * 0.7 + (50 + avgChg * 11) * 0.3));
     return Math.round(finalScore);
   }, [assets, advCount, decCount]);
@@ -231,7 +231,7 @@ export default function Dashboard({
       sectorsMap[sectorName].sumChange += a.change;
       sectorsMap[sectorName].count += 1;
     });
-    
+
     const list = Object.entries(sectorsMap).map(([name, data]) => ({
       name,
       avgChange: data.sumChange / data.count,
@@ -267,7 +267,7 @@ export default function Dashboard({
 
   // Timeframe and assets setup for correlation analyzer
   const [timeframe, setTimeframe] = useState<'1W' | '1M' | '1Y'>('1M');
-  
+
   // Dynamic defaults based on portfolio values
   const [symbolA, setSymbolA] = useState<string>(() => {
     if (portfolio && portfolio.length > 0) return portfolio[0].symbol;
@@ -304,10 +304,10 @@ export default function Dashboard({
   const selectableAssets = useMemo(() => {
     const portfolioSymbols = portfolio.map(item => item.symbol);
     const watchlistSymbols = watchlist.filter(ws => !portfolioSymbols.includes(ws));
-    
+
     const combined = [...portfolioSymbols, ...watchlistSymbols];
     const defaultPool = ['AAPL', 'MSFT', 'NVDA', 'BTC', 'ETH', '.SPX', 'GC=F', 'RELIANCE', 'TCS', 'HDFCBANK'];
-    
+
     defaultPool.forEach(sym => {
       if (!combined.includes(sym) && assets.some(a => a.symbol === sym)) {
         combined.push(sym);
@@ -387,7 +387,7 @@ export default function Dashboard({
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, staggerChildren: 0.1 }}
@@ -395,16 +395,16 @@ export default function Dashboard({
     >
       {/* Real-time Ticker */}
       <MarketTicker />
-      
+
       {/* 0. Central Intelligence Globe Hero */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.1 }}
         className="relative overflow-hidden rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-950 p-0 shadow-2xl flex flex-col items-center justify-center min-h-[500px] sm:min-h-[600px] lg:min-h-[700px] w-full group bg-grid-pattern"
       >
         <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900/10 via-zinc-950/90 to-zinc-950 pointer-events-none"></div>
-        
+
         {/* Top Overlay Stats */}
         <div className="absolute top-6 left-6 right-6 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pointer-events-none">
           <div className="flex flex-col gap-3">
@@ -417,7 +417,7 @@ export default function Dashboard({
                  <div className="text-[10px] text-zinc-400 font-mono mt-0.5 uppercase tracking-wider">Synchronized 3D Node Intelligence</div>
                </div>
             </div>
-            
+
             {/* System Diagnostic Overlay */}
             <div className="hidden lg:flex flex-col gap-1.5 bg-zinc-950/70 p-3 rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 backdrop-blur-md">
                <div className="flex items-center justify-between gap-6">
@@ -433,7 +433,7 @@ export default function Dashboard({
                </div>
             </div>
           </div>
-          
+
           <div className="hidden md:flex items-center gap-4 bg-zinc-950/80 p-3 rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 backdrop-blur-md shadow-2xl transition-transform duration-500 group-hover:scale-105">
              <div className="flex flex-col text-right">
                <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Macro Risk Engine</span>
@@ -493,7 +493,7 @@ export default function Dashboard({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          
+
           {/* Indian Segment */}
           <div className="p-3.5 rounded-xl bg-zinc-950/40 border border-zinc-850 flex flex-col justify-between space-y-2">
             <div className="flex items-start justify-between">
@@ -669,7 +669,7 @@ export default function Dashboard({
                  <div className="absolute -bottom-2 -ml-[3px] w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-l-transparent border-r-transparent border-b-white"></div>
               </motion.div>
             </div>
-            
+
             <div className="flex justify-between items-center text-[9px] font-mono font-bold uppercase tracking-widest px-1">
               <span className="text-red-500">Extreme Fear</span>
               <span className="text-zinc-500">Neutral</span>
@@ -707,11 +707,11 @@ export default function Dashboard({
 
           {/* Market Breadth & Advancers/Decliners stats (Col span 7) */}
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            
+
             {/* Breadth Progress Bars */}
             <div className="bg-zinc-950/20 p-4 border border-zinc-900 rounded-xl space-y-3 font-sans">
               <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono block">Market Breadth</span>
-              
+
               <div className="space-y-2 font-mono text-xs">
                 {/* Advancers */}
                 <div>
@@ -720,7 +720,7 @@ export default function Dashboard({
                     <span className="text-zinc-400 font-semibold">{Math.round((advCount / (assets.length || 1)) * 100)}%</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-emerald-400 rounded-full transition-all duration-300"
                       style={{ width: `${(advCount / (assets.length || 1)) * 100}%` }}
                     />
@@ -734,7 +734,7 @@ export default function Dashboard({
                     <span className="text-zinc-400 font-semibold">{Math.round((decCount / (assets.length || 1)) * 100)}%</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-rose-400 rounded-full transition-all duration-300"
                       style={{ width: `${(decCount / (assets.length || 1)) * 100}%` }}
                     />
@@ -748,7 +748,7 @@ export default function Dashboard({
                     <span className="text-zinc-500">{Math.round((flatCount / (assets.length || 1)) * 100)}%</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900/55 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-zinc-700 rounded-full transition-all duration-300"
                       style={{ width: `${(flatCount / (assets.length || 1)) * 100}%` }}
                     />
@@ -761,7 +761,7 @@ export default function Dashboard({
             <div className="bg-zinc-950/20 p-4 border border-zinc-900 rounded-xl flex flex-col justify-between space-y-2">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono block mb-2">Sector Velocity Leaders</span>
-                
+
                 <div className="space-y-2 font-sans">
                   <div className="flex items-center justify-between text-[10px] font-mono">
                     <span className="text-zinc-500 font-sans">Top Leading Segment:</span>
@@ -780,9 +780,9 @@ export default function Dashboard({
               </div>
 
               <div className="pt-2 border-t border-zinc-900 font-mono text-[9.5px] leading-relaxed text-zinc-500">
-                {sentimentScore >= 55 
-                  ? "Overall momentum is bullish, driven by strong gains in the top outperforming sector. Consider momentum strategies." 
-                  : sentimentScore <= 45 
+                {sentimentScore >= 55
+                  ? "Overall momentum is bullish, driven by strong gains in the top outperforming sector. Consider momentum strategies."
+                  : sentimentScore <= 45
                   ? "Downside velocity exceeds bullish support. Consider risk-hedging configurations."
                   : "Markets exhibit strong consolidation. Directionless movement makes rangebound trading ideal."}
               </div>
@@ -845,7 +845,7 @@ export default function Dashboard({
               Select any two assets in your portfolio or watchlist to evaluate historical correlation ratios ($r$) and assess asset dispersion. AI engine interprets diversification properties.
             </p>
           </div>
-          
+
           {/* Timeframe switch */}
           <div className="flex items-center gap-1 border border-zinc-900 bg-zinc-900/20 p-0.5 rounded-lg shrink-0">
             {(['1W', '1M', '1Y'] as const).map((tf) => (
@@ -926,7 +926,7 @@ export default function Dashboard({
             {/* Pearson correlation summary information table */}
             <div className="rounded-xl border border-zinc-900 bg-zinc-900/10 p-4 space-y-3 font-mono">
               <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">Correlation Analysis</span>
-              
+
               <div className="p-3 rounded-lg bg-zinc-950/80 border border-zinc-900 flex items-center justify-between">
                 <div>
                   <span className="text-[9px] text-zinc-500 uppercase">Pearson Ratio (r)</span>
@@ -982,45 +982,45 @@ export default function Dashboard({
                     margin={{ top: 8, right: 16, bottom: 20, left: 16 }}
                   >
                     <CartesianGrid stroke="#141416" strokeDasharray="3 3" />
-                    <XAxis 
-                      type="number" 
-                      dataKey="xVal" 
-                      name={symbolA} 
-                      stroke="#52525b" 
+                    <XAxis
+                      type="number"
+                      dataKey="xVal"
+                      name={symbolA}
+                      stroke="#52525b"
                       tick={{ fill: '#71717a', fontSize: 9, fontFamily: 'monospace' }}
                       domain={['auto', 'auto']}
-                      label={{ 
-                        value: `${symbolA} (X-Axis price USD)`, 
-                        position: 'insideBottom', 
-                        offset: -12, 
-                        fill: '#a1a1aa', 
-                        fontSize: 9, 
+                      label={{
+                        value: `${symbolA} (X-Axis price USD)`,
+                        position: 'insideBottom',
+                        offset: -12,
+                        fill: '#a1a1aa',
+                        fontSize: 9,
                         fontWeight: 'bold',
-                        fontFamily: 'sans-serif' 
+                        fontFamily: 'sans-serif'
                       }}
                     />
-                    <YAxis 
-                      type="number" 
-                      dataKey="yVal" 
-                      name={symbolB} 
-                      stroke="#52525b" 
+                    <YAxis
+                      type="number"
+                      dataKey="yVal"
+                      name={symbolB}
+                      stroke="#52525b"
                       tick={{ fill: '#71717a', fontSize: 9, fontFamily: 'monospace' }}
                       domain={['auto', 'auto']}
-                      label={{ 
-                        value: `${symbolB} (Y-Axis price USD)`, 
-                        angle: -90, 
-                        position: 'insideLeft', 
-                        offset: -2, 
-                        fill: '#a1a1aa', 
-                        fontSize: 9, 
+                      label={{
+                        value: `${symbolB} (Y-Axis price USD)`,
+                        angle: -90,
+                        position: 'insideLeft',
+                        offset: -2,
+                        fill: '#a1a1aa',
+                        fontSize: 9,
                         fontWeight: 'bold',
-                        fontFamily: 'sans-serif' 
+                        fontFamily: 'sans-serif'
                       }}
                     />
                     <ChartTooltip content={<CustomScatterTooltip />} cursor={{ strokeDasharray: '3 3', stroke: '#27272a' }} />
-                    <Scatter 
-                      name={`${symbolA} vs ${symbolB}`} 
-                      data={correlationData} 
+                    <Scatter
+                      name={`${symbolA} vs ${symbolB}`}
+                      data={correlationData}
                       fill="#6366f1"
                       stroke="#818cf8"
                       strokeWidth={1.5}
@@ -1039,16 +1039,16 @@ export default function Dashboard({
 
       {/* Grid: Watchlist on Left, Categorized Discoveries on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+
         {/* Left Grid: Watchlist Management */}
         <div className="lg:col-span-4 space-y-6" id="watchlist-section">
           {/* Market Sentiment Gauge */}
-          <SentimentGauge 
+          <SentimentGauge
             assets={assets}
             onSelectAssetBySymbol={(sym) => {
               const matching = assets.find(a => a.symbol === sym);
               if (matching) onSelectAsset(matching);
-            }} 
+            }}
           />
 
           <div className="rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-5 space-y-4 shadow-xl">
@@ -1089,7 +1089,7 @@ export default function Dashboard({
                               {isUp ? '+' : ''}{asset.change}%
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center gap-1.5 border-l border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pl-3">
                             <button
                               onClick={() => isAlertInputActive ? setActiveAlertInput(null) : setActiveAlertInput(asset.symbol)}
@@ -1121,7 +1121,7 @@ export default function Dashboard({
                                <option value="above">Above</option>
                                <option value="below">Below</option>
                              </select>
-                             <input 
+                             <input
                                type="number"
                                placeholder="Target Price"
                                value={alertInputValue}
@@ -1135,7 +1135,7 @@ export default function Dashboard({
                                Set
                              </button>
                           </div>
-                          
+
                           {/* Active Alerts List */}
                           {assetAlerts.length > 0 && (
                             <div className="space-y-1.5 pt-2 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
@@ -1179,8 +1179,8 @@ export default function Dashboard({
                 <div>
                   <p className="text-xs font-semibold text-indigo-300">Watchlist Intelligence</p>
                   <p className="text-[10px] text-indigo-200/70 mt-1 leading-relaxed">
-                    {watchlistAssets.filter(a => a.change > 2).length > 0 
-                      ? `${watchlistAssets.filter(a => a.change > 2).length} assets in your watchlist are showing unusually high bullish momentum today. Consider setting up price alerts.` 
+                    {watchlistAssets.filter(a => a.change > 2).length > 0
+                      ? `${watchlistAssets.filter(a => a.change > 2).length} assets in your watchlist are showing unusually high bullish momentum today. Consider setting up price alerts.`
                       : `Your tracked assets are showing standard market correlation. No unusual earnings or volatility detected today.`}
                   </p>
                 </div>
@@ -1195,7 +1195,7 @@ export default function Dashboard({
               <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">MVP Sandbox Environment</span>
             </div>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              Welcome to the **Vymx Trade MVP**. Trade safely with an initial **$100,000 in Virtual USD**. 
+              Welcome to the **Vymx Trade MVP**. Trade safely with an initial **$100,000 in Virtual USD**.
               Search any asset to open the financial visual chart and prompt the server-side **Gemini API** for an immediate, professional analysis of market operations.
             </p>
           </div>
@@ -1205,7 +1205,7 @@ export default function Dashboard({
         <div className="lg:col-span-8 space-y-6">
           <MarketAurasWidget />
           <DashboardNewsWidget />
-        
+
           <div className="rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-6 shadow-xl space-y-6">
             <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
               <h2 className="text-sm font-semibold tracking-tight text-white">Global Markets Discovery</h2>
@@ -1213,7 +1213,7 @@ export default function Dashboard({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
+
               {/* Hot Stocks segment */}
               <div className="space-y-3">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Popular Equities</span>
@@ -1325,11 +1325,11 @@ export default function Dashboard({
                   <span className="text-zinc-500">{n.source}</span>
                   <span className="text-zinc-500">{n.time}</span>
                 </div>
-                
+
                 <h3 className="text-xs font-bold text-white tracking-normal group-hover:text-emerald-400 transition-colors">
                   {n.title}
                 </h3>
-                
+
                 <p className="text-[11px] text-zinc-400 leading-relaxed">
                   {n.summary}
                 </p>
@@ -1337,8 +1337,8 @@ export default function Dashboard({
 
               <div className="mt-5 flex items-center justify-between border-t border-zinc-900 pt-3">
                 <span className={`text-[9px] font-semibold px-2 py-0.5 rounded border ${
-                    n.sentiment === 'positive' 
-                    ? 'bg-emerald-500/5 text-emerald-400 border-emerald-500/10' 
+                    n.sentiment === 'positive'
+                    ? 'bg-emerald-500/5 text-emerald-400 border-emerald-500/10'
                     : n.sentiment === 'negative'
                     ? 'bg-rose-500/5 text-rose-400 border-rose-500/10'
                     : 'bg-zinc-500/5 text-zinc-400 border-zinc-500/10'
@@ -1405,3 +1405,4 @@ export default function Dashboard({
     </motion.div>
   );
 }
+

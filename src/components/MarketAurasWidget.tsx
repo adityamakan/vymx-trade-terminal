@@ -55,7 +55,7 @@ export default function MarketAurasWidget() {
            </button>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {data.map((item, i) => (
           <div key={i} className={`p-3 rounded-xl border bg-gradient-to-br ${getAuraColor(item.score)} relative overflow-hidden group transition-all duration-300 hover:scale-[1.02] hover:shadow-lg`}>
@@ -78,3 +78,4 @@ export default function MarketAurasWidget() {
     </div>
   );
 }
+

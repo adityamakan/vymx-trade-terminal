@@ -28,7 +28,7 @@ export default function TrendPredictionChart({ asset, timeframe }: TrendPredicti
     // Linear Regression Formula: y = mx + b
     let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
     const n = recentHistory.length;
-    
+
     recentHistory.forEach((point, i) => {
       sumX += i;
       sumY += point.value;
@@ -43,13 +43,13 @@ export default function TrendPredictionChart({ asset, timeframe }: TrendPredicti
       // Find relative index for regression line, only show line for the recent points
       const recentIdx = history.length - 30;
       const isRecent = index >= recentIdx;
-      
+
       let predicted = null;
       if (isRecent) {
         const x = index - recentIdx;
         predicted = slope * x + intercept;
       }
-      
+
       return {
         date: point.date,
         actual: point.value,
@@ -89,18 +89,18 @@ export default function TrendPredictionChart({ asset, timeframe }: TrendPredicti
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#2A2E37" vertical={false} />
-            <XAxis 
-              dataKey="date" 
-              stroke="#71717A" 
-              fontSize={10} 
-              tickLine={false} 
-              axisLine={false} 
+            <XAxis
+              dataKey="date"
+              stroke="#71717A"
+              fontSize={10}
+              tickLine={false}
+              axisLine={false}
               minTickGap={30}
             />
-            <YAxis 
-              stroke="#71717A" 
-              fontSize={10} 
-              tickLine={false} 
+            <YAxis
+              stroke="#71717A"
+              fontSize={10}
+              tickLine={false}
               axisLine={false}
               domain={[minVal * 0.98, maxVal * 1.02]}
               tickFormatter={(val) => val.toLocaleString(undefined, { maximumFractionDigits: 2 })}
@@ -111,21 +111,21 @@ export default function TrendPredictionChart({ asset, timeframe }: TrendPredicti
               labelStyle={{ color: '#94A3B8', marginBottom: '4px' }}
             />
             <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
-            <Line 
-              type="monotone" 
-              dataKey="actual" 
-              name="Historical Price" 
-              stroke="#6366f1" 
-              strokeWidth={2} 
+            <Line
+              type="monotone"
+              dataKey="actual"
+              name="Historical Price"
+              stroke="#6366f1"
+              strokeWidth={2}
               dot={false}
               activeDot={{ r: 4 }}
             />
-            <Line 
-              type="monotone" 
-              dataKey="predicted" 
-              name="Linear Regression & Forecast" 
-              stroke="#f59e0b" 
-              strokeWidth={2} 
+            <Line
+              type="monotone"
+              dataKey="predicted"
+              name="Linear Regression & Forecast"
+              stroke="#f59e0b"
+              strokeWidth={2}
               strokeDasharray="5 5"
               dot={false}
             />
@@ -135,3 +135,4 @@ export default function TrendPredictionChart({ asset, timeframe }: TrendPredicti
     </div>
   );
 }
+

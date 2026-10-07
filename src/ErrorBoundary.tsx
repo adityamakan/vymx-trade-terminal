@@ -37,11 +37,11 @@ export class ErrorBoundary extends Component<Props, State> {
               </div>
               <h1 className="text-xl font-bold tracking-tight text-white">Application Exception Caught</h1>
             </div>
-            
+
             <p className="text-sm text-zinc-400 mb-6 leading-relaxed">
               Vymx Terminal encountered a fatal runtime rendering error. The application has safely halted execution to prevent state corruption.
             </p>
-            
+
             <div className="bg-[#050607] rounded-xl border border-zinc-800/60 p-4 mb-6 overflow-auto max-h-[300px] custom-scrollbar">
               <pre className="text-[11px] font-mono leading-relaxed text-rose-400/80 whitespace-pre-wrap break-words">
                 {this.state.error && this.state.error.toString()}
@@ -49,7 +49,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 {this.state.errorInfo && this.state.errorInfo.componentStack}
               </pre>
             </div>
-            
+
             <div className="flex justify-end">
               <button
                 onClick={() => window.location.reload()}
@@ -67,3 +67,4 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
+

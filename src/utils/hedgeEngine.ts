@@ -37,3 +37,4 @@ export function generateHedgeSuggestions(asset: Asset): HedgeSuggestion[] {
 
   return suggestions;
 }
+

@@ -23,18 +23,18 @@ export default function AssetCorrelation({ asset, allAssets }: AssetCorrelationP
     const timeframe = '1Y';
     const assetHistory = asset.history[timeframe];
     const benchHistory = benchmarkAsset.history[timeframe];
-    
+
     if (!assetHistory || !benchHistory) return [];
 
     // Assuming same length for simplicity, we map over the asset history
     return assetHistory.map((pt, i) => {
       const benchPt = benchHistory[i];
       if (!benchPt) return null;
-      
+
       // Normalize values to percentage change from start (index 0)
       const baseAsset = assetHistory[0].value;
       const baseBench = benchHistory[0].value;
-      
+
       return {
         date: pt.date,
         assetValue: ((pt.value - baseAsset) / baseAsset) * 100,
@@ -60,7 +60,7 @@ export default function AssetCorrelation({ asset, allAssets }: AssetCorrelationP
         </div>
         <div className="flex items-center gap-2">
           <label className="text-xs text-zinc-500 font-mono uppercase">Correlation Toggle:</label>
-          <select 
+          <select
             value={compareSymbol}
             onChange={(e) => setCompareSymbol(e.target.value)}
             className="bg-zinc-800 border border-zinc-700 rounded-md text-xs text-zinc-200 px-2 py-1 outline-none focus:border-indigo-500 transition-colors"
@@ -76,17 +76,17 @@ export default function AssetCorrelation({ asset, allAssets }: AssetCorrelationP
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#2A2E37" vertical={false} />
-            <XAxis 
-               dataKey="date" 
-               stroke="#71717A" 
-               fontSize={10} 
-               tickLine={false} 
-               axisLine={false} 
+            <XAxis
+               dataKey="date"
+               stroke="#71717A"
+               fontSize={10}
+               tickLine={false}
+               axisLine={false}
              />
-            <YAxis 
-               stroke="#71717A" 
-               fontSize={10} 
-               tickLine={false} 
+            <YAxis
+               stroke="#71717A"
+               fontSize={10}
+               tickLine={false}
                axisLine={false}
               tickFormatter={(val) => `${val.toFixed(0)}%`}
             />
@@ -95,26 +95,26 @@ export default function AssetCorrelation({ asset, allAssets }: AssetCorrelationP
               itemStyle={{ color: '#E2E8F0' }}
               labelStyle={{ color: '#94A3B8', marginBottom: '4px' }}
               formatter={(value, name) => [
-                `${Number(value).toFixed(2)}%`, 
+                `${Number(value).toFixed(2)}%`,
                  name === 'assetValue' ? asset.symbol : compareSymbol
               ]}
             />
             <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
-            <Line 
-               type="monotone" 
-               dataKey="assetValue" 
-               name={asset.symbol} 
-               stroke="#10b981" 
-               strokeWidth={2} 
+            <Line
+               type="monotone"
+               dataKey="assetValue"
+               name={asset.symbol}
+               stroke="#10b981"
+               strokeWidth={2}
                dot={false}
               activeDot={{ r: 4 }}
             />
-            <Line 
-               type="monotone" 
-               dataKey="benchValue" 
-               name={compareSymbol} 
-               stroke="#3b82f6" 
-               strokeWidth={2} 
+            <Line
+               type="monotone"
+               dataKey="benchValue"
+               name={compareSymbol}
+               stroke="#3b82f6"
+               strokeWidth={2}
                dot={false}
               activeDot={{ r: 4 }}
             />
@@ -124,3 +124,4 @@ export default function AssetCorrelation({ asset, allAssets }: AssetCorrelationP
     </div>
   );
 }
+

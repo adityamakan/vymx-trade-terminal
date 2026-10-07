@@ -39,7 +39,7 @@ export default function EventShockwave() {
         color: point.color,
         timestamp: Date.now(),
       };
-      
+
       setEvents((prev) => [...prev, newEvent]);
 
       // Remove after animation completes (3 seconds)
@@ -102,3 +102,4 @@ export default function EventShockwave() {
     </div>
   );
 }
+

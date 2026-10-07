@@ -370,3 +370,4 @@ export async function streamFinancialChat(
     return fallbackAnswer;
   }
 }
+

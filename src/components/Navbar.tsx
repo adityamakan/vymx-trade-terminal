@@ -55,7 +55,7 @@ export default function Navbar({
     <nav id="VYMXTRADER-navbar" className="sticky top-0 z-50 w-full border-b border-white/5 bg-zinc-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-zinc-950/40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
-          
+
           {/* Left: Brand Identity */}
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { setView('macro'); setIsMobileMenuOpen(false); }}>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/10 border border-indigo-500/30 group-hover:border-indigo-400/50 transition-all duration-500 shadow-[0_0_15px_rgba(99,102,241,0.15)] group-hover:shadow-[0_0_25px_rgba(99,102,241,0.3)]">
@@ -583,3 +583,4 @@ export default function Navbar({
     </nav>
   );
 }
+

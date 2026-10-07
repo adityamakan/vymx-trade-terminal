@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ShieldCheck, 
-  Terminal, 
-  Cpu, 
-  Activity, 
-  AlertTriangle, 
-  RefreshCw, 
-  Binary, 
-  FileLock2, 
-  Globe2, 
-  CheckCircle2, 
+import {
+  ShieldCheck,
+  Terminal,
+  Cpu,
+  Activity,
+  AlertTriangle,
+  RefreshCw,
+  Binary,
+  FileLock2,
+  Globe2,
+  CheckCircle2,
   Layers2,
   Lock
 } from 'lucide-react';
@@ -22,7 +22,7 @@ interface SecurityLedgerProps {
 export default function SecurityLedger({ currentUser }: SecurityLedgerProps) {
   const [logs, setLogs] = useState<SecurityEvent[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // Load and refresh logs safely
   const loadLogs = () => {
     setLogs(getSecurityLogs());
@@ -30,7 +30,7 @@ export default function SecurityLedger({ currentUser }: SecurityLedgerProps) {
 
   useEffect(() => {
     loadLogs();
-    
+
     // Periodically fetch log state in case background activities occurred
     const interval = setInterval(loadLogs, 4000);
     return () => clearInterval(interval);
@@ -63,7 +63,7 @@ export default function SecurityLedger({ currentUser }: SecurityLedgerProps) {
   return (
     <div className="rounded-2xl border border-zinc-850 bg-zinc-950 p-6 shadow-xl space-y-6 text-left relative overflow-hidden" id="vymx-security-ledger-panel">
       <div className="absolute top-0 right-0 h-40 w-40 bg-emerald-500/[0.015] rounded-full blur-3xl pointer-events-none"></div>
-      
+
       {/* Ledger Title Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-900">
         <div className="space-y-1">
@@ -76,7 +76,7 @@ export default function SecurityLedger({ currentUser }: SecurityLedgerProps) {
           </p>
         </div>
 
-        <button 
+        <button
           onClick={handleRefresh}
           disabled={refreshing}
           className="px-3 py-1.5 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/60 hover:bg-zinc-900 text-zinc-300 hover:text-white transition flex items-center justify-center gap-1.5 text-xs font-mono disabled:opacity-50 select-none cursor-pointer"
@@ -88,7 +88,7 @@ export default function SecurityLedger({ currentUser }: SecurityLedgerProps) {
 
       {/* Grid: Cockpit Metrics & Visual Cryptography Container */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="ledger-analytics-metrics">
-        
+
         {/* Core State Integrity */}
         <div className="rounded-xl border border-zinc-900 bg-zinc-900/10 p-4 space-y-3">
           <div className="flex items-center justify-between text-zinc-500">
@@ -196,8 +196,8 @@ export default function SecurityLedger({ currentUser }: SecurityLedgerProps) {
                       </td>
                       <td className="px-4 py-2.5 text-center shrink-0">
                         <span className={`px-2 py-0.5 rounded text-[8px] font-black tracking-wider uppercase border ${
-                          log.status === 'SUCCESS' 
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                          log.status === 'SUCCESS'
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                             : log.status === 'ALIGNED'
                             ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                             : log.status === 'WARNING'
@@ -219,3 +219,4 @@ export default function SecurityLedger({ currentUser }: SecurityLedgerProps) {
     </div>
   );
 }
+

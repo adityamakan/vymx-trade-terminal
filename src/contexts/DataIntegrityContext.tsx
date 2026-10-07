@@ -46,7 +46,7 @@ export const DataIntegrityProvider = ({ children }: { children: ReactNode }) => 
     });
   };
 
-  
+
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     let retryCount = 0;
@@ -100,7 +100,7 @@ export const DataIntegrityProvider = ({ children }: { children: ReactNode }) => 
         }
       }
     };
-    
+
     pingHealth();
     return () => clearTimeout(timeoutId);
   }, []);
@@ -118,3 +118,4 @@ export const DataIntegrityProvider = ({ children }: { children: ReactNode }) => 
 };
 
 export const useDataIntegrity = () => useContext(DataIntegrityContext);
+

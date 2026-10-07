@@ -41,7 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
           </div>
           <h2 className="text-xl font-bold text-slate-200 mb-2">Application Render Error</h2>
           <p className="text-slate-400 max-w-md mb-6">{this.state.error?.message || 'An unexpected error occurred while rendering the data UI.'}</p>
-          <button 
+          <button
             onClick={this.handleReset}
             className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors border border-zinc-700 font-medium"
           >
@@ -55,3 +55,4 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
+

@@ -2,23 +2,23 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ReferenceLine } from 'recharts';
 import { ChartContainer } from './ChartContainer';
-import { 
-  BookOpen, 
-  GraduationCap, 
-  Search, 
-  Clock, 
-  TrendingUp, 
-  TrendingDown, 
-  ShieldCheck, 
-  Cpu, 
-  Globe, 
-  Layers, 
-  Award, 
-  Bookmark, 
-  ChevronRight, 
-  ChevronDown, 
-  Percent, 
-  Play, 
+import {
+  BookOpen,
+  GraduationCap,
+  Search,
+  Clock,
+  TrendingUp,
+  TrendingDown,
+  ShieldCheck,
+  Cpu,
+  Globe,
+  Layers,
+  Award,
+  Bookmark,
+  ChevronRight,
+  ChevronDown,
+  Percent,
+  Play,
   Sparkles,
   HelpCircle,
   Lightbulb,
@@ -413,7 +413,7 @@ const FLASHCARDS: Flashcard[] = [
 export default function Academy({ onSelectAsset, setView, assets }: AcademyProps) {
 // Main Sub-Tab selection: briefings, candlesticks, calculators, flashcards, options
   const [activeAcademySubTab, setActiveAcademySubTab] = useState<'briefings' | 'candlesticks' | 'calculators' | 'flashcards' | 'options'>('briefings');
-  
+
   // Tab 1: Briefings State
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'bonds' | 'stocks' | 'crypto' | 'forex' | 'risk_management' | 'advanced'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -429,13 +429,13 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
 
   // Tab 3: Calculators State
   const [calcCurrency, setCalcCurrency] = useState<'USD' | 'INR' | 'GBP'>('INR');
-  
+
   // Position Sizing variables
   const [accountBalance, setAccountBalance] = useState<string>('500000');
   const [riskPercentage, setRiskPercentage] = useState<string>('1.5');
   const [entryPrice, setEntryPrice] = useState<string>('3400');
   const [stopLossPrice, setStopLossPrice] = useState<string>('3250');
-  
+
   // SIP Growth variables
   const [sipMonthly, setSipMonthly] = useState<string>('10000');
   const [sipRate, setSipRate] = useState<string>('13.5');
@@ -472,7 +472,7 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
         const p2 = optStrike - 5;
         const c1 = optStrike + 5;
         const c2 = optStrike + 15;
-        
+
         let profit = optPremium; // credits
         if (stockPrice < p2) {
           profit -= Math.min(p2 - p1, p2 - stockPrice);
@@ -572,8 +572,8 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
   const filteredArticles = EDUCATIONAL_ARTICLES.filter(article => {
     const matchesCategory = selectedCategory === 'all' || article.category === selectedCategory;
     const matchesDifficulty = difficultyFilter === 'all' || article.difficulty === difficultyFilter;
-    const matchesSearch = searchQuery.trim() === '' || 
-      article.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchesSearch = searchQuery.trim() === '' ||
+      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       article.summary.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesDifficulty && matchesSearch;
   });
@@ -614,12 +614,12 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
     const i = annualRate / 12 / 100;
     const n = years * 12;
     if (i === 0) return { invested: monthlyAmt * n, futureValue: monthlyAmt * n, wealthGained: 0 };
-    
+
     // SIP mutual fund compounding algorithm
     const futureValue = monthlyAmt * ((Math.pow(1 + i, n) - 1) / i) * (1 + i);
     const invested = monthlyAmt * n;
     const wealthGained = Math.max(0, futureValue - invested);
-    
+
     return {
       invested: Math.round(invested),
       futureValue: Math.round(futureValue),
@@ -648,19 +648,19 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
   };
 
   const toggleFlashcardFlip = (id: string) => {
-    setFlippedCardIds(prev => 
+    setFlippedCardIds(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
   };
 
   return (
     <div id="vymx-academy-portal" className="space-y-6 pt-2 animate-fade-in">
-      
+
       {/* Onboarding Header Banner */}
       <div className="rounded-2xl border border-zinc-850 bg-gradient-to-tr from-zinc-950 via-zinc-900 to-indigo-950/25 p-5 shadow-xl relative overflow-hidden" id="academy-hero-banner">
         <div className="absolute top-0 right-0 h-48 w-48 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-10 h-32 w-32 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
-        
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="space-y-2 max-w-xl">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black tracking-widest bg-cyan-500/10 text-cyan-400 uppercase border border-cyan-500/20">
@@ -726,7 +726,7 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
       </div>
 
       <AnimatePresence mode="wait">
-        
+
         {/* TAB 1: CURATED LESSONS & ARTICLES (The core documentation layout) */}
         {activeAcademySubTab === 'briefings' && (
           <motion.div
@@ -739,10 +739,10 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
           >
             {/* Left 2 Columns: Filters & Article Listings */}
             <div className="lg:col-span-2 space-y-4">
-              
+
               {/* Controls Panel */}
               <div className="flex flex-col sm:flex-row gap-3 bg-zinc-950 border border-zinc-850 p-3 rounded-xl" id="academy-controls">
-                
+
                 {/* Search Input */}
                 <div className="flex-1 relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
@@ -893,7 +893,7 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
                             <p className="text-xs text-zinc-400 line-clamp-2">
                               {art.summary}
                             </p>
-                            
+
                             {/* 100x AI Density Lesson Metrics */}
                             <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
                                <div>
@@ -949,11 +949,11 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
 
             {/* Sidebar Columns: Interactive Quiz & Rules */}
             <div className="space-y-5" id="academy-sidebar">
-              
+
               {/* Interactive Knowledge check Card */}
               <div className="rounded-xl border border-zinc-850 bg-zinc-950 p-4 space-y-4 relative overflow-hidden" id="academy-quiz-card">
                 <div className="absolute top-0 right-0 h-16 w-16 bg-blue-500/[0.02] rounded-full blur-xl"></div>
-                
+
                 <div className="flex items-center justify-between border-b border-zinc-900 pb-2">
                   <div className="flex items-center gap-1.5 text-indigo-400">
                     <HelpCircle className="h-4 w-4 text-indigo-400" />
@@ -972,7 +972,7 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
                   <div className="space-y-1.5" id="quiz-options-list">
                     {activeQuestion.options.map((opt, idx) => {
                       let optionStyle = 'border-zinc-850 hover:border-zinc-700 bg-zinc-900/30 text-zinc-300';
-                      
+
                       if (quizAnswered) {
                         if (idx === activeQuestion.correctIdx) {
                           optionStyle = 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-semibold';
@@ -1006,7 +1006,7 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
                         <Lightbulb className="h-3 w-3 text-amber-500" /> Explanation Summary:
                       </p>
                       <p>{activeQuestion.explanation}</p>
-                      
+
                       <div className="flex gap-2 items-center pt-1">
                         {currentQuizIdx < QUIZ_QUESTIONS.length - 1 ? (
                           <button
@@ -1074,7 +1074,7 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
                 <div className="flex items-center pb-2 border-b border-zinc-900">
                   <span className="text-[10px] font-black tracking-widest uppercase font-mono text-zinc-400">Fast Market Glossary</span>
                 </div>
-                
+
                 <div className="space-y-2.5" id="glossary-terms">
                   {[
                     { term: 'Gilts / Treasuries', desc: 'Government bonds issued by United Kingdom (Gilts) and United States (Treasuries) representing bedrock default-free sovereign debt.' },
@@ -1129,8 +1129,8 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
                       >
                         <span className="font-sans font-bold">{pattern.name}</span>
                         <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono uppercase font-black tracking-wider ${
-                          pattern.type === 'bullish' 
-                            ? 'bg-emerald-500/10 text-emerald-400' 
+                          pattern.type === 'bullish'
+                            ? 'bg-emerald-500/10 text-emerald-400'
                             : (pattern.type === 'bearish' ? 'bg-rose-500/10 text-rose-450' : 'bg-zinc-500/10 text-zinc-400')
                         }`}>
                           {pattern.type}
@@ -1155,14 +1155,14 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
             {/* Central Annotated visual Workspace */}
             <div className="lg:col-span-2 space-y-4">
               <div className="bg-zinc-950 border border-zinc-850 rounded-xl p-5 md:p-6 space-y-6">
-                
+
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-900 pb-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg font-bold text-white font-sans">{selectedPattern.name}</h3>
                       <span className={`px-2 py-0.5 rounded text-[9px] font-black font-mono uppercase border ${
-                        selectedPattern.type === 'bullish' 
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                        selectedPattern.type === 'bullish'
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                           : (selectedPattern.type === 'bearish' ? 'bg-rose-500/10 text-rose-450 border-rose-500/20' : 'bg-zinc-500/10 text-zinc-400 border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300')
                       }`}>
                         {selectedPattern.type} reversal
@@ -1174,8 +1174,8 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
                   <div className="flex items-center gap-1.5 text-xs text-zinc-500 bg-zinc-900/60 p-2 rounded-lg border border-zinc-850">
                     <span className="font-mono text-[9px] uppercase">Reliability:</span>
                     <strong className={`font-mono text-[10px] ${
-                      selectedPattern.reliability === 'High' 
-                        ? 'text-emerald-400' 
+                      selectedPattern.reliability === 'High'
+                        ? 'text-emerald-400'
                         : (selectedPattern.reliability === 'Medium' ? 'text-amber-400' : 'text-zinc-400')
                     }`}>{selectedPattern.reliability}</strong>
                   </div>
@@ -1183,7 +1183,7 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
 
                 {/* Annotation visualization render */}
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-                  
+
                   {/* Candle SVG Drawing Canvas */}
                   <div className="md:col-span-2 bg-[#0c0d10] rounded-xl border border-zinc-900 p-5 flex flex-col items-center justify-center min-h-[250px] relative">
                     <div className="absolute top-2 left-2 flex items-center gap-1 text-[9px] font-mono text-zinc-500">
@@ -1200,17 +1200,17 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
                       {selectedPattern.candles.map((candle, idx) => {
                         // Position x calculations based on candle count
                         const x = selectedPattern.candles.length === 1 ? 100 : (idx === 0 ? 65 : 135);
-                        
+
                         // Theme variables
                         const isGreen = candle.color === 'green';
                         const isRed = candle.color === 'red';
-                        
+
                         const strokeColor = isGreen ? '#10b981' : (isRed ? '#f43f5e' : '#71717a');
                         const fillColor = isGreen ? 'rgba(16, 185, 129, 0.25)' : (isRed ? 'rgba(244, 63, 94, 0.25)' : 'rgba(113, 113, 122, 0.25)');
-                        
+
                         // Map percentages to canvas coordinates
                         // high/low/open/close spans are indexed 0-100% of 120 pixels (shifted)
-                        const mappingFactor = 1.1; 
+                        const mappingFactor = 1.1;
                         const offsetHeight = 135;
                         const highY = offsetHeight - (candle.high * mappingFactor);
                         const lowY = offsetHeight - (candle.low * mappingFactor);
@@ -1223,16 +1223,16 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
                         return (
                           <g key={idx}>
                             {/* Shadow/Wick Line */}
-                            <line 
-                              x1={x} 
-                              y1={highY} 
-                              x2={x} 
-                              y2={lowY} 
-                              stroke={strokeColor} 
-                              strokeWidth="2" 
-                              strokeLinecap="round" 
+                            <line
+                              x1={x}
+                              y1={highY}
+                              x2={x}
+                              y2={lowY}
+                              stroke={strokeColor}
+                              strokeWidth="2"
+                              strokeLinecap="round"
                             />
-                            
+
                             {/* Real Candle Body */}
                             <rect
                               x={x - 14}
@@ -1358,7 +1358,7 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              
+
               {/* Calculator 1: Professional Position Sizer */}
               <div className="bg-zinc-950 border border-zinc-850 rounded-xl p-5 space-y-4">
                 <div className="flex items-center gap-1.5 text-indigo-400 border-b border-zinc-900 pb-2.5">
@@ -1420,9 +1420,9 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
                 {/* Live Position Sizing Output Metrics Box */}
                 <div className="bg-zinc-950/40 border border-zinc-900 rounded-xl p-4 space-y-3.5 mt-2 shadow-inner">
                   <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wide border-b border-zinc-900 pb-1.5">Risk Calculations Outputs:</div>
-                  
+
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    
+
                     <div className="space-y-0.5">
                       <div className="text-[9px] text-zinc-500 uppercase font-mono">Capital Under Risk</div>
                       <div className="text-sm font-bold text-rose-400 font-mono">
@@ -1522,7 +1522,7 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
                     {sipMilestones.slice(1).map((m) => {
                       const totalWidthPercent = Math.min(100, Math.max(12, (m.futureValue / sipMilestones[sipMilestones.length - 1].futureValue) * 100));
                       const investedWidthPercent = (m.invested / m.futureValue) * 100;
-                      
+
                       return (
                         <div key={m.years} className="space-y-1 bg-zinc-900/30 p-2.5 rounded-lg border border-zinc-900">
                           <div className="flex items-center justify-between text-[11px]">
@@ -1538,15 +1538,15 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
                           {/* Graphical compound indicators */}
                           <div className="w-full bg-zinc-950 rounded-full h-2.5 overflow-hidden flex" style={{ width: '100%' }}>
                             {/* Invested Segment (Indigo) */}
-                            <div 
-                              className="bg-indigo-600 h-full transition-all duration-300 rounded-l-full" 
-                              style={{ width: `${investedWidthPercent}%` }} 
+                            <div
+                              className="bg-indigo-600 h-full transition-all duration-300 rounded-l-full"
+                              style={{ width: `${investedWidthPercent}%` }}
                               title={`Invested portion: ${investedWidthPercent.toFixed(1)}%`}
                             />
                             {/* Wealth Gained Segment (Emerald) */}
-                            <div 
-                              className="bg-emerald-500 h-full transition-all duration-300 rounded-r-full" 
-                              style={{ width: `${100 - investedWidthPercent}%` }} 
+                            <div
+                              className="bg-emerald-500 h-full transition-all duration-300 rounded-r-full"
+                              style={{ width: `${100 - investedWidthPercent}%` }}
                               title={`Gain interest: ${(100 - investedWidthPercent).toFixed(1)}%`}
                             />
                           </div>
@@ -1680,7 +1680,7 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
                   <Cpu className="h-4 w-4" />
                   <span className="text-[10px] font-black tracking-widest uppercase font-mono">Strategy Workspace</span>
                 </div>
-                
+
                 {/* Select strategy buttons */}
                 <div className="space-y-2">
                   <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest font-mono block">Select Option Structure</span>
@@ -1757,7 +1757,7 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
                   <Lightbulb className="h-4 w-4" />
                   <span className="text-[10px] font-black tracking-widest uppercase font-mono">Structure Anatomy</span>
                 </div>
-                
+
                 {optStrategy === 'covered_call' && (
                   <div className="space-y-2 text-xs leading-relaxed text-zinc-450">
                     <h5 className="font-extrabold text-zinc-200">Income Strategy</h5>
@@ -1863,7 +1863,7 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
                         ]}
                       />
                       <ReferenceLine y={0} stroke="#444" strokeWidth={1} strokeDasharray="3 3" />
-                      
+
                       {/* Profit curve plotted */}
                       <Line
                         type="monotone"
@@ -1893,3 +1893,4 @@ export default function Academy({ onSelectAsset, setView, assets }: AcademyProps
     </div>
   );
 }
+

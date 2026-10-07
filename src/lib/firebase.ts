@@ -15,3 +15,4 @@ try {
   console.error("Firebase initialization error", error);
 }
 export { app, auth, db, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, doc, setDoc, getDoc, updateDoc };
+

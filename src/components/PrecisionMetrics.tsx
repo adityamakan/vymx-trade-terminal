@@ -5,16 +5,16 @@ import { motion } from 'motion/react';
 
 export default function PrecisionMetrics() {
   const { isBackendConnected, lastPingLatency, telemetry } = useDataIntegrity();
-  
+
   const latency = lastPingLatency || 0;
-  
+
   // Format Memory
   const formatMB = (bytes: number) => (bytes / 1024 / 1024).toFixed(1) + ' MB';
   const memUsed = telemetry?.memoryUsage?.heapUsed ? formatMB(telemetry.memoryUsage.heapUsed) : '0 MB';
-  
+
   // Format CPU (load avg 1 min)
   const cpuLoad = telemetry?.cpuLoad ? telemetry.cpuLoad[0].toFixed(2) : '0.00';
-  
+
   // Cache stats
   const cacheSize = telemetry?.cache?.size || 0;
   const cachePercent = telemetry?.cache ? ((telemetry.cache.size / telemetry.cache.capacity) * 100).toFixed(1) : '0.0';
@@ -24,7 +24,7 @@ export default function PrecisionMetrics() {
       <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none group-hover:opacity-20 transition-opacity">
         <Server className="w-24 h-24 text-indigo-500" />
       </div>
-      
+
       <div className="flex items-center justify-between z-10">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
@@ -51,7 +51,7 @@ export default function PrecisionMetrics() {
           <span className="text-[10px] text-zinc-500 font-mono uppercase flex items-center gap-1"><Network className="w-3 h-3 text-zinc-400" /> API Round-Trip</span>
           <span className="text-lg font-black text-white font-mono tracking-tighter">{latency.toFixed(1)}<span className="text-[10px] text-zinc-500 ml-0.5">ms</span></span>
         </div>
-        
+
         <div className="flex flex-col gap-1 p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/50 relative overflow-hidden">
           <span className="text-[10px] text-zinc-500 font-mono uppercase flex items-center gap-1"><Cpu className="w-3 h-3 text-zinc-400" /> Node CPU Load</span>
           <span className="text-lg font-black text-white font-mono tracking-tighter">{cpuLoad}<span className="text-[10px] text-zinc-500 ml-0.5">avg</span></span>
@@ -73,3 +73,4 @@ export default function PrecisionMetrics() {
     </div>
   );
 }
+

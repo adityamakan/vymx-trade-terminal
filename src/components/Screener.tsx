@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Filter, 
-  SlidersHorizontal, 
-  BookOpen, 
-  ArrowUpDown, 
-  ChevronRight, 
-  Layers, 
-  Tag, 
+import {
+  Filter,
+  SlidersHorizontal,
+  BookOpen,
+  ArrowUpDown,
+  ChevronRight,
+  Layers,
+  Tag,
   Percent,
   Scale,
   ArrowLeftRight,
@@ -30,9 +30,9 @@ interface ScreenerProps {
   isStrictHours?: boolean;
 }
 
-export default function Screener({ 
-  onSelectAsset, 
-  watchlist, 
+export default function Screener({
+  onSelectAsset,
+  watchlist,
   toggleWatchlist,
   assets,
   formatCurrency: formatCurrencyProp,
@@ -156,7 +156,7 @@ export default function Screener({
 
   return (
     <div className="py-6 space-y-6">
-      
+
       {/* Visual Hub Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-zinc-900 pb-4">
         <div>
@@ -681,7 +681,7 @@ export default function Screener({
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
+
         {/* Left Side: Filter Sidebar Panel */}
         <aside className="lg:col-span-3 rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-5 space-y-5 shadow-lg">
           <div className="flex items-center gap-2 border-b border-zinc-900 pb-3">
@@ -690,7 +690,7 @@ export default function Screener({
           </div>
 
           <div className="space-y-4">
-            
+
             {/* Filter: Asset Type */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Asset Category</label>
@@ -985,3 +985,4 @@ export default function Screener({
     </div>
   );
 }
+

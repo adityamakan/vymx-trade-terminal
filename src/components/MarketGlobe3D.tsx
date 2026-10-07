@@ -952,3 +952,4 @@ export default function MarketGlobe3D() {
     </div>
   );
 }
+

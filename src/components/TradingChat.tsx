@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  MessageSquare, 
-  Send, 
-  Users, 
-  ChevronRight, 
-  Sparkles, 
-  TrendingUp, 
-  TrendingDown, 
-  Volume2, 
+import {
+  MessageSquare,
+  Send,
+  Users,
+  ChevronRight,
+  Sparkles,
+  TrendingUp,
+  TrendingDown,
+  Volume2,
   ShieldAlert,
   Loader2,
   Lock,
@@ -96,7 +96,7 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
-  
+
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll chat to bottom
@@ -112,7 +112,7 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
       // Pick a random channel
       const channels = ['general', 'stocks', 'crypto', 'forex'];
       const targetChan = channels[Math.floor(Math.random() * channels.length)];
-      
+
       const assetTicker = activeAsset ? activeAsset.symbol : 'NIFTY50';
       const phrases = [
         `Highly monitoring ${assetTicker} order sweep profiles on the 5-minute chart right now.`,
@@ -122,7 +122,7 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
         `Are we buying the breakout or waiting for the backtest of key support blocks?`,
         `Rupee fluctuations turning key forex pairs highly volatile. Staying defensive with gold and blue chips.`
       ];
-      
+
       const textMessage = phrases[Math.floor(Math.random() * phrases.length)];
       const now = new Date();
       const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -181,7 +181,7 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
       });
 
       const data = await response.json();
-      
+
       const aiMsg: ChatMessage = {
         id: `ai-${Date.now()}-${Math.random().toString(36).substring(2)}`,
         username: 'Vymx AI Guru',
@@ -209,7 +209,7 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
 
   return (
     <div className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl flex flex-col h-[520px] overflow-hidden shadow-2xl relative" id="tradingview-comm-chat">
-      
+
       {/* Visual Header */}
       <div className="border-b border-zinc-900 bg-zinc-900/40 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -224,7 +224,7 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
             <p className="text-[11px] text-zinc-500">Discuss active setups & trade alerts with real-time AI strategist insights.</p>
           </div>
         </div>
-        
+
         {/* Active Traders stats */}
         <div className="flex items-center gap-1.5 bg-zinc-900/60 px-2.5 py-1 rounded-lg border border-zinc-850 text-[10px] text-zinc-400 font-mono">
           <Users className="h-3.5 w-3.5 text-zinc-500" />
@@ -234,7 +234,7 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
 
       {/* Main Layout Area */}
       <div className="flex flex-1 overflow-hidden">
-        
+
         {/* Left Side Channels Select */}
         <div className="w-40 sm:w-56 border-r border-zinc-900 bg-zinc-950 hidden sm:flex flex-col py-3">
           <span className="text-[10px] text-zinc-500 font-black font-mono tracking-widest uppercase px-4 mb-2 block">
@@ -256,7 +256,7 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
               </button>
             ))}
           </div>
-          
+
           <div className="px-4 pt-3 border-t border-zinc-900 text-[10px] text-zinc-500 flex items-center gap-1">
             <Sparkles className="h-3 w-3 text-indigo-400" />
             <span>AI responses enabled</span>
@@ -265,7 +265,7 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
 
         {/* Right Chat window */}
         <div className="flex-1 flex flex-col bg-zinc-950">
-          
+
           {/* Mobile Channel Picker */}
           <div className="sm:hidden border-b border-zinc-900 p-2 overflow-x-auto flex items-center gap-1.5 scrollbar-none bg-zinc-900/20">
             {CHANNELS.map((chan) => (
@@ -286,8 +286,8 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
           {/* Messages stream timeline */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {filteredMessages.map((msg) => (
-              <div 
-                key={msg.id} 
+              <div
+                key={msg.id}
                 className={`flex gap-3 items-start ${
                   msg.isAi ? 'bg-indigo-950/20 border border-indigo-950/50 p-3 rounded-2xl' : ''
                 }`}
@@ -297,21 +297,21 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
                     V
                   </div>
                 ) : (
-                  <img 
-                    src={msg.avatar} 
-                    alt={msg.username} 
+                  <img
+                    src={msg.avatar}
+                    alt={msg.username}
                     referrerPolicy="no-referrer"
-                    className="h-8 w-8 rounded-full border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 object-cover" 
+                    className="h-8 w-8 rounded-full border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 object-cover"
                   />
                 )}
 
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="text-xs font-black text-zinc-200">{msg.username}</span>
-                    
+
                     {msg.badge && (
                       <span className={`text-[8px] font-black uppercase px-1 py-0.5 rounded ${
-                        msg.isAi 
+                        msg.isAi
                           ? 'bg-emerald-600/10 text-emerald-400 border border-emerald-500/15'
                           : 'bg-zinc-900 text-zinc-500 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300'
                       }`}>
@@ -321,8 +321,8 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
 
                     {msg.sentiment && (
                       <span className={`inline-flex items-center gap-0.5 text-[8px] font-black uppercase px-1.5 py-0.5 rounded font-mono ${
-                        msg.sentiment === 'bullish' 
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                        msg.sentiment === 'bullish'
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                           : msg.sentiment === 'bearish'
                           ? 'bg-rose-500/10 text-rose-450 border border-rose-500/20'
                           : 'bg-zinc-900 text-zinc-400'
@@ -341,14 +341,14 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
                 </div>
               </div>
             ))}
-            
+
             {isSending && (
               <div className="flex gap-3 items-center bg-indigo-950/10 border border-indigo-950/45 p-3 rounded-2xl text-xs text-indigo-400 animate-pulse">
                 <Loader2 className="h-4 w-4 animate-spin text-indigo-400" />
                 <span>Vymx AI Guru is building quant analysis for active discussion channel...</span>
               </div>
             )}
-            
+
             <div ref={chatEndRef} />
           </div>
 
@@ -377,3 +377,4 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
     </div>
   );
 }
+

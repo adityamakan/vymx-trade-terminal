@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Sparkles, 
-  HelpCircle, 
-  CheckCircle, 
-  ArrowRight, 
-  PieChart as PieIcon, 
-  RefreshCw, 
-  Coins, 
-  User, 
-  Briefcase, 
-  LineChart, 
-  ShieldCheck, 
+import {
+  Sparkles,
+  HelpCircle,
+  CheckCircle,
+  ArrowRight,
+  PieChart as PieIcon,
+  RefreshCw,
+  Coins,
+  User,
+  Briefcase,
+  LineChart,
+  ShieldCheck,
   Wallet,
   Compass,
   DollarSign,
@@ -69,7 +69,7 @@ export default function WealthAdvisor({
   const [riskTolerance, setRiskTolerance] = useState<string>('');
   const [futureGoals, setFutureGoals] = useState<string>('');
   const [investmentHorizon, setInvestmentHorizon] = useState<string>('');
-  
+
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [streamingReasoning, setStreamingReasoning] = useState<string>('');
   const [result, setResult] = useState<AdvisorResult | null>(null);
@@ -90,14 +90,14 @@ export default function WealthAdvisor({
     const P = sipMonthly;
     const r = sipExpectedReturn / 12 / 100;
     const n = sipYears * 12;
-    
+
     if (r === 0) return { totalInvested: P * n, totalWealth: P * n, gains: 0 };
-    
+
     // SIP Compound Formula: M = P * [ ( (1 + r)^n - 1 ) / r ] * (1 + r)
     const totalWealth = P * (((Math.pow(1 + r, n) - 1) / r) * (1 + r));
     const totalInvested = P * n;
     const gains = Math.max(0, totalWealth - totalInvested);
-    
+
     return {
       totalInvested: Math.round(totalInvested),
       totalWealth: Math.round(totalWealth),
@@ -273,7 +273,7 @@ export default function WealthAdvisor({
 
   return (
     <div id="vymx-advisor-panel" className="max-w-4xl mx-auto space-y-6 pt-4 animate-fade-in">
-      
+
       {/* Advisor Header */}
       <div className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-6 shadow-xl relative overflow-hidden" id="advisor-header-card">
         <div className="absolute top-0 right-0 h-40 w-40 bg-zinc-900/40 rounded-full blur-3xl pointer-events-none"></div>
@@ -458,7 +458,7 @@ export default function WealthAdvisor({
 
                 <div className="flex items-center justify-between pt-4 border-t border-zinc-900">
                   <button onClick={() => setStep(4)} className="text-xs text-zinc-500 hover:text-zinc-400 font-bold cursor-pointer">← Previous Step</button>
-                  
+
                   <button
                     disabled={!investmentHorizon}
                     onClick={executeAdvisorAI}
@@ -511,14 +511,14 @@ export default function WealthAdvisor({
               </div>
             ) : result ? (
               <div className="space-y-6" id="optimized-portfolio-card">
-                
+
                 {/* Result header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-900 pb-4">
                   <div>
                     <span className="text-[9px] font-black tracking-widest text-indigo-400 font-mono uppercase">AI Asset Mix Optimization Complete</span>
                     <h2 className="text-lg font-bold text-white font-sans font-sans">Your Optimized Portfolio Structure</h2>
                   </div>
-                  
+
                   <button
                     onClick={handleReset}
                     className="text-xs text-zinc-400 hover:text-zinc-200 font-bold flex items-center gap-1 bg-zinc-900 border border-zinc-850 px-3 py-1.5 rounded-lg cursor-pointer transition-colors"
@@ -528,7 +528,7 @@ export default function WealthAdvisor({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                  
+
                   {/* Allocation Chart Pie */}
                   <div className="h-64 flex flex-col justify-center relative">
                     <ChartContainer width="100%" height="80%" minHeight={1} minWidth={1}>
@@ -560,13 +560,13 @@ export default function WealthAdvisor({
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip 
+                        <Tooltip
                           contentStyle={{ backgroundColor: '#09090b', borderColor: '#1f1f2e' }}
                           itemStyle={{ fontSize: '11px', color: '#fff' }}
                         />
                       </PieChart>
                     </ChartContainer>
-                    
+
                     {/* Centered label */}
                     <div className="absolute inset-0 flex flex-col items-center justify-content justify-center pointer-events-none mt-[-10px]">
                       <span className="text-[10px] font-black tracking-widest text-zinc-500 uppercase font-mono">Portfolio</span>
@@ -794,13 +794,13 @@ export default function WealthAdvisor({
                       {/* Power of Compounding Visual bar */}
                       <div className="col-span-2 pt-2.5">
                         <div className="h-2 rounded-full overflow-hidden bg-zinc-800 flex">
-                          <div 
-                            className="bg-zinc-650" 
+                          <div
+                            className="bg-zinc-650"
                             style={{ width: `${(sipCalc.totalInvested / Math.max(1, sipCalc.totalWealth)) * 100}%` }}
                             title="Capital Invested"
                           />
-                          <div 
-                            className="bg-emerald-500" 
+                          <div
+                            className="bg-emerald-500"
                             style={{ width: `${(sipCalc.gains / Math.max(1, sipCalc.totalWealth)) * 100}%` }}
                             title="Compounded Wealth Gain"
                           />
@@ -858,16 +858,16 @@ export default function WealthAdvisor({
                   {/* Message Thread Box */}
                   <div className="h-48 overflow-y-auto rounded-lg bg-zinc-900/40 border border-zinc-900 p-4 space-y-3.5 scrollbar-thin scrollbar-thumb-zinc-800" id="chat-messages-container">
                     {chatHistory.map((chat, idx) => (
-                      <div 
-                        key={idx} 
+                      <div
+                        key={idx}
                         className={`flex flex-col max-w-[85%] ${chat.sender === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'}`}
                       >
                         <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-zinc-500 mb-1">
                           {chat.sender === 'user' ? 'You' : 'Vymx Wealth Advisor AI'}
                         </span>
                         <div className={`p-3 rounded-2xl text-[11px] leading-relaxed font-sans ${
-                          chat.sender === 'user' 
-                            ? 'bg-blue-600 text-white rounded-tr-none' 
+                          chat.sender === 'user'
+                            ? 'bg-blue-600 text-white rounded-tr-none'
                             : 'bg-zinc-900 text-zinc-200 border border-zinc-850/80 rounded-tl-none'
                         }`}>
                           {chat.text}
@@ -953,3 +953,4 @@ export default function WealthAdvisor({
     </div>
   );
 }
+

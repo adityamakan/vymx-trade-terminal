@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  RefreshCw, 
-  Sparkles, 
-  Info, 
-  Activity, 
-  HelpCircle, 
-  DollarSign, 
-  Layers, 
+import {
+  TrendingUp,
+  TrendingDown,
+  RefreshCw,
+  Sparkles,
+  Info,
+  Activity,
+  HelpCircle,
+  DollarSign,
+  Layers,
   TrendingUp as BulletUp,
   X,
   Gauge
@@ -37,8 +37,8 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
   const computedSentiment = useMemo(() => {
     // A. Indices & Stock Momentum Sub-indicator
     const equitiesSubset = assets.filter(a => a.type === 'stock' || a.type === 'index');
-    const eqAvgChange = equitiesSubset.length > 0 
-      ? equitiesSubset.reduce((sum, item) => sum + item.change, 0) / equitiesSubset.length 
+    const eqAvgChange = equitiesSubset.length > 0
+      ? equitiesSubset.reduce((sum, item) => sum + item.change, 0) / equitiesSubset.length
       : 0;
     // Map avg change % to score (0 - 100). Avg change around 0% is 50. +2% or more is Extreme Greed.
     // eqScore = 50 + (avgChange * 15). Clamped 5-95
@@ -47,8 +47,8 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
 
     // B. Crypto Velocity Sub-indicator
     const cryptoSubset = assets.filter(a => a.type === 'crypto');
-    const cryptoAvgChange = cryptoSubset.length > 0 
-      ? cryptoSubset.reduce((sum, item) => sum + item.change, 0) / cryptoSubset.length 
+    const cryptoAvgChange = cryptoSubset.length > 0
+      ? cryptoSubset.reduce((sum, item) => sum + item.change, 0) / cryptoSubset.length
       : 0;
     // Cryptocurrencies are 3x more volatile, so scale appropriately:
     // score = 50 + (avgChange * 6). Clamped 5-95
@@ -60,7 +60,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
     const spxAsset = assets.find(a => a.symbol === '.SPX');
     const goldChange = goldAsset ? goldAsset.change : 0;
     const spxChange = spxAsset ? spxAsset.change : 0;
-    
+
     // Inverse relationship: standard stock outperformance over safe-havens signals greed.
     // Gold outperformance over stocks signals fear/protective capital allocation.
     const safeHavenGap = (spxChange - goldChange);
@@ -71,17 +71,17 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
     const totalAssetsCount = assets.length;
     const advancingAssets = assets.filter(a => a.change > 0).length;
     const advancingRatio = totalAssetsCount > 0 ? advancingAssets / totalAssetsCount : 0.5;
-    
+
     // E. Top 5 Assets Volatility & Volume Sub-indicator
     // We sort the top 5 most volatile/traded assets (using change as a proxy for volatility)
     const sortedAssets = [...assets].sort((a, b) => Math.abs(b.change) - Math.abs(a.change)).slice(0, 5);
     const top5AvgVolatility = sortedAssets.reduce((sum, item) => sum + Math.abs(item.change), 0) / 5;
-    
+
     // Convert volatility (e.g., 0-5% avg) into a 0-100 score. High volatility + high volume = extreme fear or greed
     // We'll map it such that higher volatility increases the extreme nature of the score.
     let top5VolScore = (top5AvgVolatility * 20 * simulationMultiplier);
     top5VolScore = Math.max(5, Math.min(95, top5VolScore));
-    
+
     // Add volume breadth to the mix
     let volumeBreadthScore = advancingRatio * 100 * simulationMultiplier;
 
@@ -227,7 +227,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
 
   return (
     <div className="rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-950 p-5 space-y-4 shadow-xl" id="sentiment-gauge-card">
-      
+
       {/* 1. Header with Recalculator */}
       <div className="flex items-center justify-between border-b border-zinc-900 pb-3" id="sentiment-gauge-header">
         <div className="flex items-center gap-2">
@@ -239,7 +239,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
             <span className="text-[9px] font-mono text-zinc-550 block">Market Breadth Pulse</span>
           </div>
         </div>
-        
+
         <button
           onClick={handleRecalculate}
           disabled={isRecalculating}
@@ -253,7 +253,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
 
       {/* 2. Graphical Gauging Ring Box */}
       <div className="flex flex-col items-center justify-center pt-2 pb-1 relative" id="gauge-display-arena">
-        
+
         {/* Arc representation SVG */}
         <div className="w-56 h-32 relative">
           <svg viewBox="0 0 100 50" className="w-full h-full overflow-visible">
@@ -268,21 +268,21 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
             </defs>
 
             {/* Inner background track arc */}
-            <path 
-              d="M 10,48 A 40,40 0 0,1 90,48" 
-              fill="none" 
-              stroke="#1b1b1f" 
-              strokeWidth="10" 
-              strokeLinecap="round" 
+            <path
+              d="M 10,48 A 40,40 0 0,1 90,48"
+              fill="none"
+              stroke="#1b1b1f"
+              strokeWidth="10"
+              strokeLinecap="round"
             />
 
             {/* Colored gradient overlay track */}
-            <path 
-              d="M 10,48 A 40,40 0 0,1 90,48" 
-              fill="none" 
-              stroke="url(#gaugeGradient)" 
-              strokeWidth="9" 
-              strokeLinecap="round" 
+            <path
+              d="M 10,48 A 40,40 0 0,1 90,48"
+              fill="none"
+              stroke="url(#gaugeGradient)"
+              strokeWidth="9"
+              strokeLinecap="round"
               className="opacity-90"
             />
 
@@ -297,20 +297,20 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
 
             {/* Pivot Needle Indicator */}
             <g transform={`rotate(${needleAngle}, 50, 48)`}>
-              <line 
-                x1="50" 
-                y1="48" 
-                x2="50" 
-                y2="12" 
-                stroke="#ffffff" 
-                strokeWidth="2.5" 
-                strokeLinecap="round" 
+              <line
+                x1="50"
+                y1="48"
+                x2="50"
+                y2="12"
+                stroke="#ffffff"
+                strokeWidth="2.5"
+                strokeLinecap="round"
                 className="transition-transform duration-700 ease-out drop-shadow-lg"
               />
               <polygon points="48.5,42 51.5,42 50,8" fill="#ffffff" />
             </g>
           </svg>
-          
+
           {/* Centered Absolute values readouthub */}
           <div className="absolute inset-x-0 bottom-1 flex flex-col items-center justify-center text-center">
             <span className="text-3xl font-black font-mono tracking-tight text-white">{computedSentiment.score}</span>
@@ -327,7 +327,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
 
         {/* Mode options */}
         <div className="flex bg-zinc-900/60 border border-zinc-850 p-1 rounded-lg w-full mt-4 text-[9px] font-mono">
-          <button 
+          <button
             onClick={() => setActiveAnalysisMode('standard')}
             className={`flex-1 py-1 text-center rounded-md font-bold transition-all cursor-pointer ${
               activeAnalysisMode === 'standard' ? 'bg-zinc-950 text-white shadow border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300' : 'text-zinc-550 hover:text-zinc-300'
@@ -335,7 +335,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
           >
             Terminal Standard Weights
           </button>
-          <button 
+          <button
             onClick={() => setActiveAnalysisMode('risk_off')}
             className={`flex-1 py-1 text-center rounded-md font-bold transition-all cursor-pointer ${
               activeAnalysisMode === 'risk_off' ? 'bg-zinc-950 text-white shadow border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300' : 'text-zinc-550 hover:text-zinc-300'
@@ -359,8 +359,8 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
             <span className="font-bold text-zinc-200">{computedSentiment.metrics.equities} / 100</span>
           </div>
           <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
-            <div 
-              style={{ width: `${computedSentiment.metrics.equities}%` }} 
+            <div
+              style={{ width: `${computedSentiment.metrics.equities}%` }}
               className={`h-full transition-all duration-500 bg-amber-500`}
             />
           </div>
@@ -373,8 +373,8 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
             <span className="font-bold text-zinc-200">{computedSentiment.metrics.crypto} / 100</span>
           </div>
           <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
-            <div 
-              style={{ width: `${computedSentiment.metrics.crypto}%` }} 
+            <div
+              style={{ width: `${computedSentiment.metrics.crypto}%` }}
               className="h-full transition-all duration-500 bg-violet-500"
             />
           </div>
@@ -387,14 +387,14 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
             <span className="font-bold text-zinc-200">{computedSentiment.metrics.safeHaven} / 100</span>
           </div>
           <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
-            <div 
-              style={{ width: `${computedSentiment.metrics.safeHaven}%` }} 
+            <div
+              style={{ width: `${computedSentiment.metrics.safeHaven}%` }}
               className="h-full transition-all duration-500 bg-cyan-500"
             />
           </div>
         </div>
 
-        
+
         <div className="flex items-center justify-between mt-4 p-3 bg-zinc-900/50 rounded-xl border border-zinc-800/50">
           <div className="flex items-center space-x-3">
             <Activity className="w-5 h-5 text-indigo-400" />
@@ -407,7 +407,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
             <p className="text-sm font-bold text-white">{computedSentiment.metrics.top5}<span className="text-xs text-zinc-500 font-normal">/100</span></p>
           </div>
         </div>
-        
+
         {/* Meter row: Volume breadth index */}
 
         <div className="space-y-1">
@@ -416,8 +416,8 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
             <span className="font-bold text-zinc-200">{computedSentiment.metrics.breadth} / 100</span>
           </div>
           <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
-            <div 
-              style={{ width: `${computedSentiment.metrics.breadth}%` }} 
+            <div
+              style={{ width: `${computedSentiment.metrics.breadth}%` }}
               className="h-full transition-all duration-500 bg-indigo-500"
             />
           </div>
@@ -437,8 +437,8 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
             <Activity className="h-3 w-3 text-emerald-400" /> Sentiment Simulator
           </div>
           {simulationMultiplier !== 1.0 && (
-            <button 
-              onClick={handleResetMultiplier} 
+            <button
+              onClick={handleResetMultiplier}
               className="text-[8px] text-zinc-500 hover:text-rose-450 underline cursor-pointer"
             >
               Reset Scale
@@ -525,3 +525,4 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
     </div>
   );
 }
+

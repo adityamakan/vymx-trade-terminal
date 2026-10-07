@@ -4,7 +4,7 @@ import { NewsArticle } from '../types';
 
 export default function MarketTicker() {
   const [headlines, setHeadlines] = useState<NewsArticle[]>([]);
-  
+
   useEffect(() => {
     // Fetch live news for the ticker
     const fetchTickerNews = async () => {
@@ -22,7 +22,7 @@ export default function MarketTicker() {
         // Silenced error
       }
     };
-    
+
     fetchTickerNews();
     const intervalId = setInterval(fetchTickerNews, 60000 * 5); // Refresh every 5 minutes
     return () => clearInterval(intervalId);
@@ -38,7 +38,7 @@ export default function MarketTicker() {
         </div>
         <span className="text-[10px] font-black text-indigo-100 tracking-[0.2em] uppercase font-mono shadow-indigo-500/50 drop-shadow-md">LIVE TELEMETRY</span>
       </div>
-      
+
       <div className="flex-1 overflow-hidden relative h-full flex items-center pl-48">
         <div className="flex items-center whitespace-nowrap animate-ticker group-hover:[animation-play-state:paused]">
           {[...headlines, ...headlines].map((article, i) => (
@@ -62,3 +62,4 @@ export default function MarketTicker() {
     </div>
   );
 }
+

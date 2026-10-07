@@ -35,12 +35,12 @@ export default function CommandCenter({ isOpen, onClose, setView, assets, onSele
     }
   }, [isOpen]);
 
-  const filteredModules = MODULES.filter(m => 
+  const filteredModules = MODULES.filter(m =>
     m.label.toLowerCase().includes(query.toLowerCase())
   );
 
-  const filteredAssets = assets.filter(a => 
-    a.symbol.toLowerCase().includes(query.toLowerCase()) || 
+  const filteredAssets = assets.filter(a =>
+    a.symbol.toLowerCase().includes(query.toLowerCase()) ||
     a.name.toLowerCase().includes(query.toLowerCase())
   ).slice(0, 5);
 
@@ -190,3 +190,4 @@ export default function CommandCenter({ isOpen, onClose, setView, assets, onSele
     </AnimatePresence>
   );
 }
+

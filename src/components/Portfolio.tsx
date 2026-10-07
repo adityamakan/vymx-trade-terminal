@@ -41,10 +41,10 @@ export default function Portfolio({
 
   const handleExportCSV = () => {
     if (transactions.length === 0) return;
-    
+
     // Headers for transactions records
     const headers = ['Transaction ID', 'Timestamp Date', 'Asset Symbol', 'Trade Action', 'Quantity', 'Execution Price', 'Total Settlement Value (USD)'];
-    
+
     // Rows mapped cleanly
     const rows = transactions.map((tx) => [
       tx.id,
@@ -55,7 +55,7 @@ export default function Portfolio({
       tx.price,
       tx.total
     ]);
-    
+
     // CSV Generation with double-bracket quotation safeguards for excel formats
     const csvContent = [
       headers.join(','),
@@ -84,16 +84,16 @@ export default function Portfolio({
     try {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
-      
+
       // Add header
       doc.setFontSize(22);
       doc.setTextColor(40, 40, 40);
       doc.text('Vymx Portfolio Summary', 14, 22);
-      
+
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
       doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
-      
+
       let currentY = 40;
 
       // Try capturing Growth Chart
@@ -141,15 +141,15 @@ export default function Portfolio({
       doc.setFontSize(14);
       doc.setTextColor(20, 20, 20);
       doc.text('Asset Holdings', 14, currentY);
-      
+
       const holdingRows = portfolio.map(item => {
         const liveAsset = assets.find(a => a.symbol === item.symbol);
         const currentPrice = liveAsset ? liveAsset.price : item.avgBuyPrice;
         const totalValue = item.quantity * currentPrice;
         return [
-          item.symbol, 
-          item.name, 
-          item.quantity.toString(), 
+          item.symbol,
+          item.name,
+          item.quantity.toString(),
           formatCurrency(item.avgBuyPrice, item.symbol),
           formatCurrency(currentPrice, item.symbol),
           formatCurrency(totalValue)
@@ -163,11 +163,11 @@ export default function Portfolio({
         theme: 'grid',
         headStyles: { fillColor: [40, 40, 40] }
       });
-      
+
       // Transactions Record
       const finalY = (doc as any).lastAutoTable.finalY || (currentY + 10);
       doc.text('Recent Transactions', 14, finalY + 15);
-      
+
       const txRows = transactions.slice(0, 50).map(tx => [ // Limit up to 50
         tx.date.split(',')[0],
         tx.type,
@@ -226,7 +226,7 @@ export default function Portfolio({
 
       // Very basic AI mock based on allocations
       const topAllocation = sectorAllocation.sort((a,b) => b.value - a.value)[0];
-      
+
       let review = `### Portfolio Executive Summary\n\n`;
       review += `Based on current holdings, your portfolio displays a concentration in the **${topAllocation?.name || 'unknown'}** sector, making up approximately ${Math.round((topAllocation?.value || 0) / (totalHoldingsValue || 1) * 100)}% of your active equity.\n\n`;
       review += `**Diversification Check:**\n`;
@@ -235,7 +235,7 @@ export default function Portfolio({
       } else {
         review += `- Healthy sector spread across ${sectorAllocation.length} distinct industries.\n`;
       }
-      
+
       const isTechHeavy = !!sectorAllocation.find(s => s.name === 'Technology' && s.value / totalHoldingsValue > 0.4);
       if (isTechHeavy) {
         review += `- High technology exposure implies higher beta. Great in bull markets but vulnerable to rate hikes.\n`;
@@ -243,7 +243,7 @@ export default function Portfolio({
 
       review += `\n**Risk Profile:** Growth / Aggressive\n`;
       review += `\n*Recommendation*: Monitor macro variables such as inflation data closely, as they will disproportionately impact your top holdings.`;
-      
+
       setAiReviewResult(review);
       setIsAiLoading(false);
     }, 2500);
@@ -253,7 +253,7 @@ export default function Portfolio({
   const performanceHistory = useMemo(() => {
     const data = [];
     const now = new Date();
-    
+
     // Calculate final net equity first to ensure we can match today's actual value perfectly
     let calcTotalHoldings = 0;
     portfolio.forEach((item) => {
@@ -264,7 +264,7 @@ export default function Portfolio({
     const finalNetEquity = virtualBalance + calcTotalHoldings;
 
     // Seed based on portfolio contents or fallback
-    const seed = portfolio.length > 0 
+    const seed = portfolio.length > 0
       ? portfolio.reduce((acc, h) => acc + h.symbol.charCodeAt(0) * h.quantity, 0)
       : 124;
 
@@ -272,10 +272,10 @@ export default function Portfolio({
     for (let i = 29; i >= 0; i--) {
       const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
       const dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-      
+
       // Compute smooth multi-octave performance walk
       const ratio = (30 - i) / 30; // 0.033 to 1.0
-      
+
       // Sine wave walk
       const sineWave = Math.sin((30 - i) * 0.45 + (seed % 10)) * (calcTotalHoldings * 0.05 + 800);
       // Cosine secondary octave
@@ -285,9 +285,9 @@ export default function Portfolio({
 
       // Interpolate starting balance around 95% to 102% of final equity
       const baseInterpolated = finalNetEquity * (0.94 + 0.04 * (seed % 100 / 100));
-      
+
       let stepBalance = baseInterpolated + trendLine + sineWave + cosWave;
-      
+
       // Ensure the very last element (today) is strictly equal to the actual live Net Equity
       if (i === 0) {
         stepBalance = finalNetEquity;
@@ -301,17 +301,17 @@ export default function Portfolio({
         cashVal: Math.round(virtualBalance),
       });
     }
-    
+
     return data;
   }, [portfolio, virtualBalance, assets]);
 
   // Compute key institutional portfolio parameters
   const quantStats = useMemo(() => {
     if (performanceHistory.length === 0) {
-      return { 
-        sharpe: 2.1, 
-        maxDrawdown: 1.2, 
-        volatility: 4.8, 
+      return {
+        sharpe: 2.1,
+        maxDrawdown: 1.2,
+        volatility: 4.8,
         totalReturnPct: 5.4,
         portfolioBeta: 1.15,
         diversificationScore: 85,
@@ -319,14 +319,14 @@ export default function Portfolio({
         alpha: 2.45
       };
     }
-    
+
     const balances = performanceHistory.map(d => d.balance);
     const start = balances[0];
     const end = balances[balances.length - 1];
-    
+
     // Sharpe Ratio representation
     const sharpe = parseFloat((1.85 + (end > start ? 0.95 : -0.45) + (portfolio.length * 0.15)).toFixed(2));
-    
+
     // Peak finding for max drawdown
     let peak = start;
     let maxDd = 0;
@@ -351,11 +351,11 @@ export default function Portfolio({
       const pPrice = assets.find(a => a.symbol === p.symbol)?.price || p.avgBuyPrice;
       const pValue = p.quantity * pPrice;
       const weight = totalEquity !== 0 ? pValue / totalEquity : 0;
-      
+
       let assetBeta = 1.15; // default stock
       const symUpper = p.symbol.toUpperCase();
       const typeUpper = (p.type || '').toUpperCase();
-      
+
       if (symUpper.includes('BTC') || symUpper.includes('ETH') || symUpper.includes('SOL') || typeUpper.includes('CRYPTO')) {
         assetBeta = 1.85;
       } else if (symUpper.includes('GOLD') || symUpper.includes('SLV') || typeUpper.includes('COMMODITY')) {
@@ -365,7 +365,7 @@ export default function Portfolio({
       } else if (typeUpper.includes('FX') || typeUpper.includes('CURRENCY')) {
         assetBeta = 0.12;
       }
-      
+
       weightedBetaSum += assetBeta * weight;
     });
     const portfolioBeta = parseFloat(Math.max(0.05, weightedBetaSum).toFixed(2));
@@ -412,14 +412,14 @@ export default function Portfolio({
       if (!holdingsMap[sym]) {
         holdingsMap[sym] = { quantity: 0, avgCost: 0 };
       }
-      
+
       const current = holdingsMap[sym];
-      
+
       if (tx.type === 'BUY') {
         const totalCostBefore = current.quantity * current.avgCost;
         const newTotalCost = totalCostBefore + tx.total;
         const newQuantity = current.quantity + tx.quantity;
-        
+
         holdingsMap[sym] = {
           quantity: newQuantity,
           avgCost: newQuantity > 0 ? newTotalCost / newQuantity : 0,
@@ -427,7 +427,7 @@ export default function Portfolio({
       } else if (tx.type === 'SELL') {
         const gain = (tx.price - current.avgCost) * tx.quantity;
         realizedGains += gain;
-        
+
         const newQuantity = current.quantity - tx.quantity;
         holdingsMap[sym] = {
           quantity: newQuantity,
@@ -437,14 +437,14 @@ export default function Portfolio({
     });
 
     const activePositions = portfolio.filter(p => p.quantity > 0).length;
-    
+
     // Total Return (percentage)
     const startingBalance = 100000;
     const netEquity = virtualBalance + portfolio.reduce((acc, p) => {
       const livePrice = assets.find(a => a.symbol === p.symbol)?.price || p.avgBuyPrice;
       return acc + (p.quantity * livePrice);
     }, 0);
-    
+
     const totalReturnPct = ((netEquity - startingBalance) / startingBalance) * 100;
 
     return {
@@ -457,14 +457,14 @@ export default function Portfolio({
   // Compute transaction history breakdown for Recharts BarChart
   const transactionPerformance = useMemo(() => {
     const dataByDate: Record<string, { date: string; buyTotal: number; sellTotal: number; count: number }> = {};
-    
+
     [...transactions].forEach((tx) => {
       // Group by local date string
       const dateKey = new Date(tx.date).toLocaleDateString();
       if (!dataByDate[dateKey]) {
         dataByDate[dateKey] = { date: dateKey, buyTotal: 0, sellTotal: 0, count: 0 };
       }
-      
+
       dataByDate[dateKey].count++;
       if (tx.type === 'BUY') {
         dataByDate[dateKey].buyTotal += tx.total;
@@ -509,11 +509,11 @@ export default function Portfolio({
       const pPrice = assets.find(a => a.symbol === p.symbol)?.price || p.avgBuyPrice;
       const pValue = p.quantity * pPrice;
       const weight = totalEquity > 0 ? pValue / totalEquity : (1 / portfolio.length);
-      
+
       // Calculate spherical coordinates (longitude/latitude allocation placement on sphere surface)
-      const latAngle = (idx % 2 === 0 ? 0.45 : -0.45) + (idx * 0.1); 
+      const latAngle = (idx % 2 === 0 ? 0.45 : -0.45) + (idx * 0.1);
       const lonAngle = (idx / Math.max(1, portfolio.length)) * Math.PI * 2;
-      
+
       const nodeX = sphereRadius * Math.cos(latAngle) * Math.cos(lonAngle);
       const nodeY = sphereRadius * Math.sin(latAngle);
       const nodeZ = sphereRadius * Math.cos(latAngle) * Math.sin(lonAngle);
@@ -539,7 +539,7 @@ export default function Portfolio({
     let cursorY = 0;
     let targetCursorX = 0;
     let targetCursorY = 0;
-    
+
     const mouseMoveHandler = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       targetCursorX = (e.clientX - rect.left - w / 2) * 0.005;
@@ -658,7 +658,7 @@ export default function Portfolio({
       assetCoordinates.sort((a, b) => b.z - a.z); // Z-sorting for correct depth layers render!
       assetCoordinates.forEach((pt) => {
         const projection = translate3D(pt);
-        
+
         // Glowing halo sphere
         ctx.beginPath();
         ctx.arc(projection.x, projection.y, Math.max(4, pt.radiusSize * 1.8 * projection.scale), 0, Math.PI * 2);
@@ -760,10 +760,10 @@ export default function Portfolio({
 
   return (
     <div className="py-6 space-y-8">
-      
+
       {/* 1. Portfolio Header Stats Summary Grid */}
       <section id="portfolio-stats-summary" className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        
+
         {/* Net Equity */}
         <div className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-5 space-y-1.5 shadow-md flex flex-col">
           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Total Net Equity</p>
@@ -876,7 +876,7 @@ export default function Portfolio({
                   Dynamic valuation updates. Quantitatively weighted regression curves.
                 </p>
               </div>
-              
+
               {/* Dynamic Period summary pills */}
               <div className="flex items-center gap-4 bg-zinc-900/30 border border-zinc-900 px-3 py-1.5 rounded-xl text-[10px] font-mono shrink-0">
                 <div className="text-right">
@@ -905,17 +905,17 @@ export default function Portfolio({
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#18181b" vertical={false} />
-                <XAxis 
-                  dataKey="date" 
-                  stroke="#52525b" 
-                  fontSize={9} 
-                  tickLine={false} 
+                <XAxis
+                  dataKey="date"
+                  stroke="#52525b"
+                  fontSize={9}
+                  tickLine={false}
                   axisLine={false}
                 />
-                <YAxis 
-                  stroke="#52525b" 
-                  fontSize={9} 
-                  tickLine={false} 
+                <YAxis
+                  stroke="#52525b"
+                  fontSize={9}
+                  tickLine={false}
                   axisLine={false}
                   tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`}
                 />
@@ -944,13 +944,13 @@ export default function Portfolio({
                     return null;
                   }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="balance" 
-                  stroke="#10b981" 
+                <Area
+                  type="monotone"
+                  dataKey="balance"
+                  stroke="#10b981"
                   strokeWidth={2.5}
-                  fillOpacity={1} 
-                  fill="url(#gradientBalance)" 
+                  fillOpacity={1}
+                  fill="url(#gradientBalance)"
                   activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981' }}
                 />
               </AreaChart>
@@ -1027,12 +1027,12 @@ export default function Portfolio({
 
       {/* Grid: Allocation Chart & Holdings Table */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
+
         {/* Left: Allocation Breakdowns */}
         <div className="lg:col-span-4 space-y-6">
           <div className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-5 shadow-lg space-y-5">
             <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-900 pb-2">Fund Allocation Matrix</h3>
-            
+
             {portfolio.length > 0 ? (
               <>
                 <div className="h-48 w-full relative flex items-center justify-center" id="allocation-chart-container">
@@ -1058,7 +1058,7 @@ export default function Portfolio({
                       </Pie>
                     </PieChart>
                   </ChartContainer>
-                  
+
                   {/* Decorative center info */}
                   <div className="absolute flex flex-col items-center justify-center text-center">
                     <span className="text-[10px] uppercase font-bold text-zinc-500">Net Wealth</span>
@@ -1272,8 +1272,8 @@ export default function Portfolio({
                     <td className="py-3 px-6">
                       {editingNoteId === tx.id ? (
                         <div className="flex items-center gap-2">
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             className="bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 outline-none w-32"
                             value={editingNoteText}
                             onChange={(e) => setEditingNoteText(e.target.value)}
@@ -1287,7 +1287,7 @@ export default function Portfolio({
                             }}
                             autoFocus
                           />
-                          <button 
+                          <button
                             className="text-[10px] text-emerald-400 font-sans font-bold hover:text-emerald-300 transition-colors"
                             onClick={() => {
                               onUpdateTransactionNote(tx.id, editingNoteText);
@@ -1298,7 +1298,7 @@ export default function Portfolio({
                           </button>
                         </div>
                       ) : (
-                        <div 
+                        <div
                           className="flex items-center gap-2 cursor-pointer group"
                           onClick={() => {
                             setEditingNoteId(tx.id);
@@ -1355,3 +1355,4 @@ export default function Portfolio({
     </div>
   );
 }
+

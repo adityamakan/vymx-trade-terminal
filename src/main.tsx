@@ -20,7 +20,7 @@ console.warn = (...args) => {
 window.addEventListener('unhandledrejection', (event) => {
   const reason = event.reason;
   if (
-    reason && 
+    reason &&
     (
        (typeof reason.message === 'string' && reason.message.includes('WebSocket')) ||
        (typeof reason === 'string' && reason.includes('WebSocket'))
@@ -42,3 +42,4 @@ createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </StrictMode>,
 );
+

@@ -21,29 +21,29 @@ export function getParsedTimezone(timezone: string) {
     };
     const formatter = new Intl.DateTimeFormat('en-US', options);
     const parts = formatter.formatToParts(new Date());
-    
+
     let day = 'Monday';
     let hour = 12;
     let minute = 0;
-    
+
     for (const part of parts) {
       if (part.type === 'weekday') day = part.value;
       if (part.type === 'hour') hour = parseInt(part.value, 10);
       if (part.type === 'minute') minute = parseInt(part.value, 10);
     }
-    
+
     if (isNaN(hour)) hour = 0;
     if (isNaN(minute)) minute = 0;
-    
+
     return { day, hour, minute, totalMins: hour * 60 + minute };
   } catch (e) {
     const d = new Date();
     // Default fallback to local system time if formatter fails
-    return { 
-      day: d.toLocaleDateString('en-US', { weekday: 'long' }), 
-      hour: d.getHours(), 
-      minute: d.getMinutes(), 
-      totalMins: d.getHours() * 60 + d.getMinutes() 
+    return {
+      day: d.toLocaleDateString('en-US', { weekday: 'long' }),
+      hour: d.getHours(),
+      minute: d.getMinutes(),
+      totalMins: d.getHours() * 60 + d.getMinutes()
     };
   }
 }
@@ -160,7 +160,7 @@ export function calculateEMA(data: number[], period: number): number[] {
   const ema = [];
   const multiplier = 2 / (period + 1);
   let prevEma = data.slice(0, period).reduce((a, b) => a + b, 0) / period;
-  
+
   for (let i = 0; i < data.length; i++) {
     if (i < period - 1) {
       ema.push(NaN);
@@ -224,7 +224,7 @@ export function calculateBollingerBands(data: number[], period: number = 20, mul
       const mean = sma[i];
       const variance = slice.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / period;
       const stdDev = Math.sqrt(variance);
-      
+
       upper.push(mean + multiplier * stdDev);
       lower.push(mean - multiplier * stdDev);
     }
@@ -234,16 +234,17 @@ export function calculateBollingerBands(data: number[], period: number = 20, mul
 
 export function detectMACrossover(prices: number[], shortPeriod: number = 5, longPeriod: number = 20): 'BULLISH' | 'BEARISH' | 'NEUTRAL' {
   if (prices.length < longPeriod) return 'NEUTRAL';
-  
+
   const shortSMA = calculateSMA(prices, shortPeriod);
   const longSMA = calculateSMA(prices, longPeriod);
-  
+
   const currentShort = shortSMA[shortSMA.length - 1];
   const currentLong = longSMA[longSMA.length - 1];
-  
+
   if (isNaN(currentShort) || isNaN(currentLong)) return 'NEUTRAL';
-  
+
   if (currentShort > currentLong) return 'BULLISH';
   if (currentShort < currentLong) return 'BEARISH';
   return 'NEUTRAL';
 }
+

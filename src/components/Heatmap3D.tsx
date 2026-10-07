@@ -20,12 +20,12 @@ const getChangeColor = (change: number) => {
 function AssetCube({ asset, position, onSelectAsset }: { asset: Asset; position: [number, number, number], onSelectAsset?: (asset: Asset) => void }) {
   const [hovered, setHovered] = useState(false);
   const meshRef = useRef<THREE.Mesh>(null);
-  
+
   // Height based on relative weighting (mocking market cap/volume representation)
   // Let's make height between 0.2 and 3
   const height = Math.max(0.2, Math.min(3, (asset.marketCap || 100) / 500));
   const color = getChangeColor(asset.change);
-  
+
   const targetScale = hovered ? 1.05 : 1;
   const targetY = position[1] + height / 2 + (hovered ? 0.2 : 0);
 
@@ -48,7 +48,7 @@ function AssetCube({ asset, position, onSelectAsset }: { asset: Asset; position:
         <boxGeometry args={[0.9, height, 0.9]} />
         <meshStandardMaterial color={color} roughness={0.2} metalness={0.8} />
       </mesh>
-      
+
       {/* 3D Text Label on top of the cube */}
       <Text
         position={[0, height + 0.1 + (hovered ? 0.2 : 0), 0]}
@@ -87,7 +87,7 @@ export default function Heatmap3D({ assets, onSelectAsset }: Heatmap3DProps) {
 
   // Create a grid layout constraint
   const gridSize = Math.ceil(Math.sqrt(displayAssets.length));
-  
+
   const gridSpacing = 1.2;
   const offsetX = (gridSize * gridSpacing) / 2;
   const offsetZ = (gridSize * gridSpacing) / 2;
@@ -97,22 +97,22 @@ export default function Heatmap3D({ assets, onSelectAsset }: Heatmap3DProps) {
       <Canvas shadows camera={{ position: [0, 8, 10], fov: 45 }}>
         <fog attach="fog" args={['#09090b', 10, 25]} />
         <ambientLight intensity={0.4} />
-        <directionalLight 
-          castShadow 
-          position={[10, 15, 10]} 
-          intensity={1.2} 
+        <directionalLight
+          castShadow
+          position={[10, 15, 10]}
+          intensity={1.2}
           shadow-mapSize={[1024, 1024]}
         />
         <pointLight position={[-10, 5, -10]} intensity={0.5} color="#3b82f6" />
-        
+
         <group position={[-offsetX + gridSpacing/2, 0, -offsetZ + gridSpacing/2]}>
           {displayAssets.map((asset, index) => {
             const row = Math.floor(index / gridSize);
             const col = index % gridSize;
             return (
-              <AssetCube 
-                key={asset.symbol} 
-                asset={asset} 
+              <AssetCube
+                key={asset.symbol}
+                asset={asset}
                 position={[col * gridSpacing, 0, row * gridSpacing]}
                 onSelectAsset={onSelectAsset}
               />
@@ -125,10 +125,10 @@ export default function Heatmap3D({ assets, onSelectAsset }: Heatmap3DProps) {
           <planeGeometry args={[gridSize * gridSpacing + 4, gridSize * gridSpacing + 4]} />
           <meshStandardMaterial color="#09090b" roughness={0.8} metalness={0.2} />
         </mesh>
-        
+
         <gridHelper args={[gridSize * gridSpacing + 4, gridSize * gridSpacing + 4, '#27272a', '#18181b']} position={[0, 0, 0]} />
 
-        <OrbitControls 
+        <OrbitControls
           enablePan={true}
           enableZoom={true}
           maxPolarAngle={Math.PI / 2 - 0.05} // don't go below ground
@@ -150,3 +150,4 @@ export default function Heatmap3D({ assets, onSelectAsset }: Heatmap3DProps) {
     </div>
   );
 }
+

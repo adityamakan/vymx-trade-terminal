@@ -6,7 +6,7 @@ export function useResizeObserver() {
 
   useEffect(() => {
     if (!ref.current) return;
-    
+
     // Get initial size
     const rect = ref.current.getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0) {
@@ -35,3 +35,4 @@ export function useResizeObserver() {
 
   return { ref, dimensions };
 }
+

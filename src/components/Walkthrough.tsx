@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Compass, 
-  HelpCircle, 
-  X, 
-  ChevronRight, 
-  ChevronLeft, 
-  Sparkles, 
-  Play, 
+import {
+  Compass,
+  HelpCircle,
+  X,
+  ChevronRight,
+  ChevronLeft,
+  Sparkles,
+  Play,
   CheckCircle,
   TrendingUp,
   Sliders,
@@ -95,7 +95,7 @@ export default function Walkthrough({ currentView, setView }: WalkthroughProps) 
 
   useEffect(() => {
     if (!isActive) return;
-    
+
     // Auto-navigate to appropriate view for the step
     if (activeStepConfig.actionRequiredView) {
       if (currentView !== activeStepConfig.actionRequiredView) {
@@ -183,7 +183,7 @@ export default function Walkthrough({ currentView, setView }: WalkthroughProps) 
     const spaceBelow = viewportHeight - targetRect.bottom;
     const spaceAbove = targetRect.top;
     const spaceRight = viewportWidth - targetRect.right;
-    
+
     // Default position values
     let top = targetRect.bottom + window.scrollY + 16;
     let left = targetRect.left + window.scrollX + (targetRect.width / 2) - 160; // center tooltip horizontally
@@ -233,8 +233,8 @@ export default function Walkthrough({ currentView, setView }: WalkthroughProps) 
             {targetRect && (
               <motion.div
                 initial={{ opacity: 0, scale: 1.15 }}
-                animate={{ 
-                  opacity: 1, 
+                animate={{
+                  opacity: 1,
                   scale: 1,
                   top: targetRect.top + window.scrollY - 6,
                   left: targetRect.left + window.scrollX - 6,
@@ -298,11 +298,11 @@ export default function Walkthrough({ currentView, setView }: WalkthroughProps) 
                 {/* Visual mini circles */}
                 <div className="flex gap-1">
                   {steps.map((_, idx) => (
-                    <div 
-                      key={idx} 
+                    <div
+                      key={idx}
                       className={`h-1.5 rounded-full transition-all duration-300 ${
                         idx === currentStep ? 'w-4 bg-emerald-400' : 'w-1.5 bg-zinc-800'
-                      }`} 
+                      }`}
                     />
                   ))}
                 </div>
@@ -334,3 +334,4 @@ export default function Walkthrough({ currentView, setView }: WalkthroughProps) 
     </>
   );
 }
+

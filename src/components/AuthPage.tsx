@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ShieldCheck, 
-  Lock, 
-  Mail, 
-  Smartphone, 
-  Eye, 
-  EyeOff, 
-  CheckCircle, 
-  KeyRound, 
-  ArrowRight, 
-  TrendingUp, 
-  Info, 
-  Server, 
+import {
+  ShieldCheck,
+  Lock,
+  Mail,
+  Smartphone,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  KeyRound,
+  ArrowRight,
+  TrendingUp,
+  Info,
+  Server,
   Fingerprint,
   Sparkles
 } from 'lucide-react';
@@ -45,7 +45,7 @@ interface ConstellationNode {
 
 export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
   const [authMode, setAuthMode] = useState<'google' | 'phone' | 'email'>('google');
-  
+
   // Form values
   const [phoneVal, setPhoneVal] = useState<string>('');
   const [emailVal, setEmailVal] = useState<string>('');
@@ -53,7 +53,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
   const [otpVal, setOtpVal] = useState<string>('');
   const [isOtpSent, setIsOtpSent] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  
+
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorText, setErrorText] = useState<string>('');
   const [dispatchedPhoneOtp, setDispatchedPhoneOtp] = useState<string>('');
@@ -138,7 +138,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
       // Rotate nodes based on camera angle and mouse position drift
       const targetAngleX = (mouse.y / height) * 0.4;
       const targetAngleY = (mouse.x / width) * 0.4;
-      
+
       angleX += (targetAngleX - angleX) * 0.05;
       angleY += (targetAngleY - angleY) * 0.05;
 
@@ -173,7 +173,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
         const scale = cameraDepth / z2;
         const screenX = cx + x1 * scale;
         const screenY = cy + y2 * scale;
-        
+
         return {
           screenX,
           screenY,
@@ -240,7 +240,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      
+
       const payload = {
         uid: user.uid,
         name: user.displayName || 'Vymx Trader',
@@ -248,7 +248,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
         authType: 'google_personal' as const,
         avatarUrl: user.photoURL || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&fit=crop&q=80',
       };
-      
+
       // Attempt to save basic user record to Firestore (requires firestore init later)
       try {
         if (db) {
@@ -385,7 +385,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
 
   return (
     <div id="vymx-auth-gate" className="relative w-full min-h-screen py-12 flex flex-col justify-center items-center overflow-hidden">
-      
+
       {/* 3D background constellations container */}
       <div className="absolute inset-0 z-0 bg-[#06070a]">
         <canvas ref={canvasRef} className="w-full h-full opacity-60 block" />
@@ -394,7 +394,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
       {/* Phone Notification popup banner */}
       <AnimatePresence>
         {showPhoneNotification && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -40 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -411,10 +411,10 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
       </AnimatePresence>
 
       <div className="relative z-10 w-full max-w-md px-4">
-        
+
         {/* Main Authenticator card */}
         <div className="rounded-3xl border border-zinc-900 bg-zinc-950/80 backdrop-blur-xl p-6 sm:p-8 shadow-2xl space-y-6 overflow-hidden">
-          
+
           {/* Brand logo header */}
           <div className="text-center space-y-3">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-900 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 shadow-2xl relative overflow-hidden">
@@ -424,7 +424,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
               }} />
               <ShieldCheck className="h-6 w-6 text-emerald-400 absolute hidden [.fallback-icon_&]:block" />
             </div>
-            
+
             <div>
               <span className="inline-flex items-center gap-1 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 text-blue-400 border border-blue-500/10 text-[8px] font-mono font-black tracking-widest px-3 py-1 rounded-full uppercase mb-1">
                 <Fingerprint className="h-3 w-3 text-blue-400" />
@@ -484,7 +484,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
           )}
 
           <AnimatePresence mode="wait">
-            
+
             {/* GOOGLE SIGN-IN GATE */}
             {authMode === 'google' && (
               <motion.div
@@ -671,3 +671,4 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
     </div>
   );
 }
+

@@ -22,7 +22,7 @@ export function simulateSHA256(input: string): string {
     hash ^= input.charCodeAt(i);
     hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
   }
-  return (hash >>> 0).toString(16).padStart(8, '0') + 
+  return (hash >>> 0).toString(16).padStart(8, '0') +
          Math.abs(hash * 31).toString(16).padStart(8, '0') +
          "e4b8d9c2a3f5f6e8";
 }
@@ -98,7 +98,7 @@ export function saveSecurityLogs(logs: SecurityEvent[]): void {
 // Add a log to the immutable ledger
 export function logSecurityEvent(event: string, status: SecurityEvent['status'], severity: SecurityEvent['severity']): SecurityEvent {
   const logs = getSecurityLogs();
-  
+
   // Simulated dynamic but stable IP & Fingerprint
   const ipAddress = "172.56.221." + Math.floor(Math.random() * 254 + 1);
   const fingerprint = "fp_" + simulateSHA256(navigator.userAgent).substring(0, 10);
@@ -143,3 +143,4 @@ export function validateSession(): boolean {
   }
   return false;
 }
+

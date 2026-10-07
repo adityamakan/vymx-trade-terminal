@@ -11,3 +11,7 @@ dist/
 *.txt
 node_output.txt
 out.txt
+
+.env
+
+.env.local

@@ -72,3 +72,4 @@ export interface PriceAlert {
   direction: 'above' | 'below';
   active: boolean;
 }
+

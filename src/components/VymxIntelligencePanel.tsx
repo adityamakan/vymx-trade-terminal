@@ -36,7 +36,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiData, setAiData] = useState<any>(null);
   const [deepDiveTile, setDeepDiveTile] = useState<string | null>(null);
-  
+
   // Real-time data streams
   const [realtimeData, setRealtimeData] = useState<any>({
     fearGreed: 72,
@@ -74,7 +74,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
         console.warn('Vymx Intelligence fetch failed', e);
       }
     };
-    
+
     fetchLiveIntelligence();
     const interval = setInterval(fetchLiveIntelligence, 3000); // Poll real data every 3 seconds
     return () => {
@@ -83,7 +83,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
     };
   }, []);
 
-  
+
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -164,7 +164,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
   const renderAdvancedInsights = () => (
     <AnimatePresence>
       {showAdvanced && (
-        <motion.div 
+        <motion.div
            initial={{ opacity: 0, height: 0 }}
            animate={{ opacity: 1, height: 'auto' }}
            exit={{ opacity: 0, height: 0 }}
@@ -181,7 +181,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
                   <BrainCircuit className="w-4 h-4 text-emerald-400" />
                   <span className="text-xs font-bold text-white uppercase tracking-widest">Predictive AI Model Output</span>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-zinc-950/80 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-3 rounded-lg hover:border-zinc-700 transition-colors">
                     <span className="text-[9px] text-zinc-500 uppercase tracking-widest mb-1 block">Directional Bias</span>
@@ -272,7 +272,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
             <X className="w-4 h-4" />
           </button>
         </div>
-        
+
         <div className="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
            <div className="bg-black/40 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-3 rounded-lg">
              <span className="text-[10px] uppercase text-zinc-500 font-bold tracking-widest block border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2 mb-2">100x Historical Context (vs NIFTY50)</span>
@@ -826,3 +826,4 @@ export default function VymxIntelligencePanel({ mode }: Props) {
     </div>
   );
 }
+

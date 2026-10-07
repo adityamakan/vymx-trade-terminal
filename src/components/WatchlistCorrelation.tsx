@@ -32,7 +32,7 @@ export default function WatchlistCorrelation({ watchlist, assets }: WatchlistCor
 
         let sumA = 0, sumB = 0, sumAB = 0, sumA2 = 0, sumB2 = 0;
         const n = Math.min(historyA.length, historyB.length);
-        
+
         for (let k = 0; k < n; k++) {
           const valA = historyA[k].value;
           const valB = historyB[k].value;
@@ -77,9 +77,9 @@ export default function WatchlistCorrelation({ watchlist, assets }: WatchlistCor
 
   const CustomShape = (props: any) => {
     const { cx, cy, payload } = props;
-    const size = 35; 
+    const size = 35;
     const correlation = payload.correlation;
-    
+
     let color = '#3b82f6'; // neutral/low
     if (correlation > 0.8) color = '#10b981'; // high positive (emerald)
     else if (correlation > 0.4) color = '#34d399'; // mild positive
@@ -92,12 +92,12 @@ export default function WatchlistCorrelation({ watchlist, assets }: WatchlistCor
     return (
       <g transform={`translate(${cx - size / 2},${cy - size / 2})`}>
         <rect width={size} height={size} fill={color} rx={4} stroke="#27272a" strokeWidth={1} />
-        <text 
-          x={size/2} 
-          y={size/2 + 3} 
-          textAnchor="middle" 
-          fill={payload.xSymbol === payload.ySymbol ? '#52525b' : '#fff'} 
-          fontSize="10" 
+        <text
+          x={size/2}
+          y={size/2 + 3}
+          textAnchor="middle"
+          fill={payload.xSymbol === payload.ySymbol ? '#52525b' : '#fff'}
+          fontSize="10"
           fontWeight="bold"
         >
           {correlation.toFixed(2)}
@@ -116,35 +116,35 @@ export default function WatchlistCorrelation({ watchlist, assets }: WatchlistCor
         <div style={{ width: Math.max(100 + activeAssets.length * 40, 300), height: Math.max(100 + activeAssets.length * 40, 300) }}>
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-              <XAxis 
-                type="number" 
-                dataKey="x" 
-                domain={[0, activeAssets.length - 1]} 
-                tickCount={activeAssets.length} 
+              <XAxis
+                type="number"
+                dataKey="x"
+                domain={[0, activeAssets.length - 1]}
+                tickCount={activeAssets.length}
                 tickFormatter={tickFormatter}
                 interval={0}
-                stroke="#71717A" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false} 
+                stroke="#71717A"
+                fontSize={10}
+                tickLine={false}
+                axisLine={false}
                 orientation="top"
               />
-              <YAxis 
-                type="number" 
-                dataKey="y" 
-                domain={[0, activeAssets.length - 1]} 
-                tickCount={activeAssets.length} 
+              <YAxis
+                type="number"
+                dataKey="y"
+                domain={[0, activeAssets.length - 1]}
+                tickCount={activeAssets.length}
                 tickFormatter={tickFormatter}
                 interval={0}
-                stroke="#71717A" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false} 
+                stroke="#71717A"
+                fontSize={10}
+                tickLine={false}
+                axisLine={false}
                 reversed
               />
               <ZAxis type="number" dataKey="correlation" range={[100, 100]} />
-              <Tooltip 
-                cursor={{ strokeDasharray: '3 3' }} 
+              <Tooltip
+                cursor={{ strokeDasharray: '3 3' }}
                 contentStyle={{ backgroundColor: '#09090b', borderColor: '#2A2E37', borderRadius: '8px', fontSize: '12px' }}
                 itemStyle={{ color: '#E2E8F0' }}
                 labelStyle={{ display: 'none' }}
@@ -163,3 +163,4 @@ export default function WatchlistCorrelation({ watchlist, assets }: WatchlistCor
     </div>
   );
 }
+

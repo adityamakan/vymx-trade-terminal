@@ -1,17 +1,17 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  DollarSign, 
-  X, 
-  Search, 
-  TrendingUp, 
-  TrendingDown, 
-  CheckCircle2, 
-  AlertCircle, 
-  Coins, 
-  Wallet, 
-  Percent, 
-  ArrowUpRight 
+import {
+  DollarSign,
+  X,
+  Search,
+  TrendingUp,
+  TrendingDown,
+  CheckCircle2,
+  AlertCircle,
+  Coins,
+  Wallet,
+  Percent,
+  ArrowUpRight
 } from 'lucide-react';
 import { Asset, PortfolioItem } from '../types';
 
@@ -30,9 +30,9 @@ interface QuickTradeProps {
   formatCurrency: (val: number, type?: string, country?: string) => string;
 }
 
-export default function QuickTrade({ 
-  virtualBalance, 
-  portfolio, 
+export default function QuickTrade({
+  virtualBalance,
+  portfolio,
   onTradeSubmit,
   assets,
   formatCurrency: formatCurrencyProp,
@@ -80,8 +80,8 @@ export default function QuickTrade({
     }
     return assets
       .filter(a => a.type !== 'index')
-      .filter(a => 
-        a.symbol.toLowerCase().includes(query) || 
+      .filter(a =>
+        a.symbol.toLowerCase().includes(query) ||
         a.name.toLowerCase().includes(query) ||
         a.sector.toLowerCase().includes(query)
       );
@@ -132,7 +132,7 @@ export default function QuickTrade({
     if (!currentAsset || !canExecute) return;
 
     const res = onTradeSubmit(tradeType, currentAsset.symbol, quantity, currentAsset.price);
-    
+
     if (res.success) {
       setTradeResult({ type: 'success', text: res.message });
       // Clear out the input or reset trade volume state
@@ -205,7 +205,7 @@ export default function QuickTrade({
 
               {/* Internal transaction panel container */}
               <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
-                
+
                 {/* Available virtual Cash Indicator */}
                 <div className="grid grid-cols-2 gap-3 p-3 rounded-xl border border-zinc-900 bg-zinc-900/10">
                   <div className="space-y-0.5">
@@ -349,7 +349,7 @@ export default function QuickTrade({
                         </span>
                       )}
                     </div>
-                    
+
                     <div className="relative">
                       <input
                         type="number"
@@ -504,3 +504,4 @@ export default function QuickTrade({
     </>
   );
 }
+
