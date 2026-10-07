@@ -1,0 +1,6 @@
+﻿{
+  "us_indices": ["^GSPC", "^IXIC", "^DJI", "^VIX"],
+  "indian_indices": ["^NSEI", "^BSESN", "^NSEBANK"],
+  "tech_magnificent_7": ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA"],
+  "indian_bluechips": ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS"]
+}
