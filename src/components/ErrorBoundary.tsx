@@ -1,52 +1,56 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+﻿import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children?: ReactNode;
-  fallback?: ReactNode;
 }
 
 interface State {
   hasError: boolean;
-  error: Error | null;
+  errorMsg: string;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
-    error: null
+    errorMsg: ''
   };
 
   public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, errorMsg: error.message };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error in ErrorBoundary:', error, errorInfo);
+    console.error('Terminal Boundary Caught Error:', error, errorInfo);
   }
-
-  private handleReset = () => {
-    this.setState({ hasError: false, error: null });
-  };
 
   public render() {
     if (this.state.hasError) {
-      if (this.props.fallback) {
-        return this.props.fallback;
-      }
       return (
-        <div className="flex flex-col items-center justify-center w-full h-full min-h-[400px] p-6 text-center border-2 border-dashed border-red-900/30 bg-red-950/10 rounded-xl my-8">
-          <div className="w-16 h-16 bg-red-900/20 rounded-full flex items-center justify-center mb-4">
-            <AlertTriangle className="w-8 h-8 text-red-500" />
-          </div>
-          <h2 className="text-xl font-bold text-slate-200 mb-2">Application Render Error</h2>
-          <p className="text-slate-400 max-w-md mb-6">{this.state.error?.message || 'An unexpected error occurred while rendering the data UI.'}</p>
-          <button
-            onClick={this.handleReset}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors border border-zinc-700 font-medium"
+        <div style={{
+          padding: '2rem',
+          background: '#0d1117',
+          color: '#f85149',
+          fontFamily: 'monospace',
+          borderRadius: '8px',
+          border: '1px solid #30363d',
+          margin: '2rem'
+        }}>
+          <h2>⚡ Vymx-Trade Session Recovery</h2>
+          <p>A non-critical rendering anomaly occurred in this panel.</p>
+          <pre style={{ color: '#8b949e', fontSize: '0.85rem' }}>{this.state.errorMsg}</pre>
+          <button 
+            onClick={() => this.setState({ hasError: false, errorMsg: '' })}
+            style={{
+              background: '#238636',
+              color: '#ffffff',
+              border: 'none',
+              padding: '0.5rem 1rem',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              marginTop: '1rem'
+            }}
           >
-            <RefreshCw className="w-4 h-4" />
-            Reload Component
+            Reset Terminal View
           </button>
         </div>
       );
@@ -55,4 +59,3 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-
