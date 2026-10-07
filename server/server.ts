@@ -78,11 +78,11 @@ function parseJsonSafe<T>(text: string | undefined | null, fallback: T): T {
   try {
     const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
     return JSON.parse(cleaned);
-  } catch (e) {
+  } catch (e: any) {
     try {
       const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
       if (match) return JSON.parse(match[0]);
-    } catch (_) {}
+    } catch (_: any) {}
     return fallback;
   }
 }
@@ -119,7 +119,7 @@ function getGeminiClient(explicitKey?: string): GoogleGenAI | null {
     lastUsedKey = envKey;
     try {
       ai = new GoogleGenAI({ apiKey: envKey });
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Failed to initialize GoogleGenAI with key:', err);
       ai = null;
     }
@@ -396,7 +396,7 @@ Return EXACTLY 6 tension items and EXACTLY 5 news items. The data must be based 
 
     setToCache(cacheKey, parsed);
     res.json(parsed);
-  } catch(e) {
+  } catch (e: any) {
     console.warn("Geopolitics API returned an error, falling back to cached/fallback data.");
     // If Gemini fails, fallback to our rich 6-item fallback array
     res.json(fallbackData);
@@ -559,7 +559,7 @@ Only return the raw JSON array.`;
     });
     const parsed = parseJsonSafe(response.text, []);
     return res.json({ suggestions: Array.isArray(parsed) && parsed.length ? parsed : fallbackHedges });
-  } catch (error) {
+  } catch (error: any) {
     // Silenced fallback
     return res.json({ suggestions: fallbackHedges });
   }
@@ -740,7 +740,7 @@ Ensure there are exactly 6 recent articles. ONLY return valid JSON.`;
     const finalData = { articles: parsed.articles || fallbackData.articles, isMock: false };
     setToCache(cacheKey, finalData);
     return res.json(finalData);
-  } catch (e) {
+  } catch (e: any) {
     setToCache(cacheKey, fallbackData);
     return res.json(fallbackData);
   }
@@ -780,7 +780,7 @@ Return ONLY the raw JSON.`;
     });
     
     return res.json(parseJsonSafe(response.text, fallbackQuiz));
-  } catch(e) {
+  } catch (e: any) {
     return res.json(fallbackQuiz);
   }
 });
@@ -801,7 +801,7 @@ app.get('/api/ai/narrative', async (req, res) => {
     });
     
     return res.json({ text: response.text?.trim() || "Massive capital flow out of European bonds into emerging market commodities." });
-  } catch(e) {
+  } catch (e: any) {
     return res.json({ text: "Massive capital flow out of European bonds into emerging market commodities." });
   }
 });
@@ -837,7 +837,7 @@ app.get('/api/ai/exchange-latest', async (req, res) => {
     });
     
     return res.json(parseJsonSafe(response.text, fallbackData));
-  } catch(e) {
+  } catch (e: any) {
     return res.json(fallbackData);
   }
 });
@@ -875,7 +875,7 @@ For each, provide:
     });
     const parsed = parseJsonSafe(response.text, fallbackData);
     return res.json(Array.isArray(parsed) && parsed.length > 0 ? parsed : fallbackData);
-  } catch(e) {
+  } catch (e: any) {
     return res.json(fallbackData);
   }
 });
@@ -936,7 +936,7 @@ Return only JSON.`;
     });
     const parsed = parseJsonSafe(response.text, fallbackData);
     return res.json({ ...parsed, isMock: false });
-  } catch(e) {
+  } catch (e: any) {
     return res.json({ ...fallbackData, isMock: true });
   }
 });
@@ -990,7 +990,7 @@ Return only JSON.`;
     });
     const parsed = parseJsonSafe(response.text, fallbackData);
     return res.json({ events: parsed.events || fallbackData.events, isMock: false });
-  } catch(e) {
+  } catch (e: any) {
     return res.json({ ...fallbackData, isMock: true });
   }
 });
@@ -1046,7 +1046,7 @@ async function fetchDirectYahooPrice(yahooSym: string): Promise<any | null> {
         prevClose
       };
     }
-  } catch (e) {
+  } catch (e: any) {
     // Silenced fallback
   }
   return null;
@@ -1062,7 +1062,7 @@ async function fetchPricesForSymbols(symbols: string[]): Promise<Record<string, 
   try {
     const qResp = await yahooFinance.quote(queries);
     batchQuotes = Array.isArray(qResp) ? qResp : [qResp];
-  } catch (batchErr) {
+  } catch (batchErr: any) {
     // If batch fails, try individual quotes via Promise.allSettled
     const settled = await Promise.allSettled(
       queries.map(q => yahooFinance.quote(q).catch(() => null))
@@ -1233,7 +1233,7 @@ app.get('/api/macro/indicators', async (req, res) => {
     try {
       const qResp = await yahooFinance.quote(macroSymbols);
       quotes = Array.isArray(qResp) ? qResp : [qResp];
-    } catch (e) {
+    } catch (e: any) {
       // Fallback
     }
 
@@ -1311,7 +1311,7 @@ app.get('/api/ai/vymx-intelligence', async (req, res) => {
     const quotes = await yahooFinance.quote(symbolsToFetch);
     
     // Process quotes
-    const quoteMap = {};
+    const quoteMap: Record<string, any> = {};
     for (const q of quotes) {
       quoteMap[q.symbol] = q;
     }
@@ -1405,7 +1405,7 @@ app.get('/api/ai/vymx-intelligence', async (req, res) => {
     const responseData = { success: true, data: realtimeData };
     setToCache(cacheKey, responseData, 5000); // 5 second cache
     res.json(responseData);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Vymx Intelligence Pipeline Error:', error);
     res.status(500).json({ error: 'Pipeline breakdown' });
   }
@@ -1531,7 +1531,7 @@ app.post('/api/yahoo/screener', async (req, res) => {
             "Total Cash": quoteSummary.financialData?.totalCash || null,
             "Forward EPS": quoteSummary.defaultKeyStatistics?.forwardEps || null,
           };
-        } catch (e) {
+        } catch (e: any) {
           console.warn(`Skipping ${sym} for screener: ${e.message}`);
           return null;
         }
@@ -1797,7 +1797,7 @@ class CompleteSovereignAndCorporateEngine {
                         masterRawMatrix[isoCode].central_bank_metrics[key] = Math.round(parseFloat(value) * 100) / 100;
                     }
                 }
-            } catch (err) {
+            } catch (err: any) {
                 console.log(`⚠️ Warning: Minor data line skipping on factor '${key}'`);
             }
         }
@@ -1909,7 +1909,7 @@ class CompleteSovereignAndCorporateEngine {
                         forward_pe: Math.round((11.0 + (Math.random() * 8)) * 10) / 10
                     };
                 }
-            } catch (err) {
+            } catch (err: any) {
                 country.corporate_anchor_profile.company_name = country.country_name + " National Enterprise";
                     country.corporate_anchor_profile.equity_fundamentals = { 
                         market_cap_usd: country.central_bank_metrics.gdp_nominal_usd * (0.05 + Math.random() * 0.1),
@@ -1943,7 +1943,7 @@ app.get('/api/world-monitor', async (req, res) => {
     try {
         const payload = await fintechEngine.generateUnifiedJsonPayload();
         res.type('json').send(payload);
-    } catch(err) {
+    } catch (err: any) {
         res.status(500).json({ error: 'Failed to generate world monitor payload' });
     }
 });
@@ -1965,7 +1965,7 @@ app.get('/api/quant/optimize', (req, res) => {
   const scriptPath = require('path').join(process.cwd(), 'scripts', 'quant_engine.py');
   require('child_process').exec(`"${pyCmd}" "${scriptPath}" optimize "${tickers}"`, { timeout: 25000 }, (error, stdout) => {
     if (error) return res.json({ AAPL: 0.25, MSFT: 0.25, NVDA: 0.25, GOOGL: 0.25 });
-    try { res.json(JSON.parse(stdout)); } catch (e) { res.json({ AAPL: 0.25, MSFT: 0.25, NVDA: 0.25, GOOGL: 0.25 }); }
+    try { res.json(JSON.parse(stdout)); } catch (e: any) { res.json({ AAPL: 0.25, MSFT: 0.25, NVDA: 0.25, GOOGL: 0.25 }); }
   });
 });
 
@@ -1976,7 +1976,7 @@ app.get('/api/quant/volatility', (req, res) => {
   const scriptPath = require('path').join(process.cwd(), 'scripts', 'quant_engine.py');
   require('child_process').exec(`"${pyCmd}" "${scriptPath}" volatility "${ticker}"`, { timeout: 25000 }, (error, stdout) => {
     if (error) return res.json({ ticker, garch_volatility: 15.5 });
-    try { res.json(JSON.parse(stdout)); } catch (e) { res.json({ ticker, garch_volatility: 15.5 }); }
+    try { res.json(JSON.parse(stdout)); } catch (e: any) { res.json({ ticker, garch_volatility: 15.5 }); }
   });
 });
 
@@ -1985,7 +1985,7 @@ app.get('/api/quant/volatility', (req, res) => {
   const pyCmd = process.platform === 'win32' ? 'python' : 'python3';
   require('child_process').exec(pyCmd + ' scripts/quant_engine.py volatility ' + ticker, (error, stdout) => {
     if (error) return res.status(500).json({ error: 'Volatility engine failed' });
-    try { res.json(JSON.parse(stdout)); } catch (e) { res.status(500).json({ error: 'Invalid JSON response' }); }
+    try { res.json(JSON.parse(stdout)); } catch (e: any) { res.status(500).json({ error: 'Invalid JSON response' }); }
   });
 });
 app.use(express.static(distPath));
@@ -2021,7 +2021,7 @@ app.use(express.static(distPath));
       } else {
         socket.destroy();
       }
-    } catch (_) {
+    } catch (_: any) {
       socket.destroy();
     }
   });
@@ -2043,7 +2043,7 @@ app.use(express.static(distPath));
           prices: initialPrices
         }));
       }
-    } catch (_) {}
+    } catch (_: any) {}
 
     ws.on('message', async (data) => {
       try {
@@ -2070,7 +2070,7 @@ app.use(express.static(distPath));
             }));
           }
         }
-      } catch (_) {}
+      } catch (_: any) {}
     });
 
     ws.on('close', () => {
@@ -2106,7 +2106,7 @@ app.use(express.static(distPath));
           client.send(payload);
         }
       }
-    } catch (_) {}
+    } catch (_: any) {}
   }, 2000);
 
   // 2. General WebSocket Handler at /api/ws
@@ -2137,3 +2137,4 @@ app.use(express.static(distPath));
 bootstrapServer().catch((err) => {
   console.error('Failed to bootstrap Express server:', err);
 });
+
