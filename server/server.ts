@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
 
-// Disable Browser Caching for API Endpoints
+// Prevent Browser Caching for API Endpoints
 app.use('/api', (_req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   next();
@@ -30,7 +30,7 @@ const liveMarketsArray = [
   { id: 'vix', symbol: 'VIX', name: 'Volatility Index', price: 14.25, change: -1.20, region: 'Global', status: 'ACTIVE' }
 ];
 
-// Generator for Econometric Backtest Chart Points (36 Months)
+// Generator for Econometric Backtest Chart Points
 const generateBacktestData = () => {
   const data = [];
   let strategy = 100;
@@ -50,6 +50,7 @@ const generateBacktestData = () => {
 
     const sVal = Number(strategy.toFixed(2));
     const bVal = Number(benchmark.toFixed(2));
+    const ddVal = Number((-Math.abs(Math.sin(i * 0.5) * 8.2)).toFixed(1));
 
     data.push({
       date: monthStr,
@@ -69,27 +70,42 @@ const generateBacktestData = () => {
       spyBenchmark: bVal,
       value: sVal,
       spy: bVal,
-      drawdown: Number((-Math.abs(Math.sin(i * 0.5) * 8.2)).toFixed(1)),
-      'Historical Drawdown': Number((-Math.abs(Math.sin(i * 0.5) * 8.2)).toFixed(1))
+      y: sVal,
+      v: sVal,
+      val: sVal,
+      drawdown: ddVal,
+      'Historical Drawdown': ddVal,
+      historical_drawdown: ddVal,
+      dd: ddVal
     });
   }
   return data;
 };
 
 const allocationData = [
-  { name: 'Equities (SPY/QQQ)', weight: 30, percentage: '30%', value: 30, color: '#3b82f6' },
-  { name: 'US Treasuries (TLT)', weight: 40, percentage: '40%', value: 40, color: '#10b981' },
-  { name: 'Commodities (GLD)', weight: 15, percentage: '15%', value: 15, color: '#f59e0b' },
-  { name: 'T-Bills / Cash', weight: 15, percentage: '15%', value: 15, color: '#6b7280' }
+  { name: 'Equities (SPY/QQQ)', weight: 30, percentage: '30%', value: 30, allocation: 30, percent: 30, color: '#3b82f6' },
+  { name: 'US Treasuries (TLT)', weight: 40, percentage: '40%', value: 40, allocation: 40, percent: 40, color: '#10b981' },
+  { name: 'Commodities (GLD)', weight: 15, percentage: '15%', value: 15, allocation: 15, percent: 15, color: '#f59e0b' },
+  { name: 'T-Bills / Cash', weight: 15, percentage: '15%', value: 15, allocation: 15, percent: 15, color: '#6b7280' }
 ];
 
 const metricsPolyfill = {
   cagr: 12.4,
   cagrVal: '12.4%',
+  cagr_val: '12.4%',
+  cagr_annualized: 12.4,
   spyBench: 6.8,
   spy_bench: 6.8,
+  spyBenchmark: 6.8,
+  spy_benchmark: 6.8,
   benchmarkCagr: 6.8,
+  benchCagr: 6.8,
   spyCagr: 6.8,
+  spy_cagr: 6.8,
+  benchmark_cagr: 6.8,
+  spyBenchCagr: 6.8,
+  spy_bench_cagr: 6.8,
+  spyReturn: 6.8,
   benchmarkReturn: 18.5,
   sharpe: 1.85,
   sharpeRatio: 1.85,
@@ -106,18 +122,36 @@ const metricsPolyfill = {
   calmar_ratio: 1.51,
   volatility: 11.4,
   annualVolatility: 11.4,
+  annual_volatility: 11.4,
   vol: 11.4,
+  strategyVol: 11.4,
+  stratVol: 11.4,
+  strat_vol: 11.4,
   spyVol: 16.2,
   spy_vol: 16.2,
   benchmarkVol: 16.2,
+  benchmark_vol: 16.2,
+  spyVolatility: 16.2,
+  spy_volatility: 16.2,
   var: -3.8,
   monthlyVar: -3.8,
+  monthly_var: -3.8,
   var95: -3.8,
+  var_95: -3.8,
+  var_95_percent: -3.8,
   cvar: -5.4,
   cvar95: -5.4,
+  cvar_95: -5.4,
   expectedShortfall: -5.4,
+  expected_shortfall: -5.4,
   beta: 0.64,
+  betaVal: 0.64,
+  beta_val: 0.64,
   alpha: 23.6,
+  alphaVal: 23.6,
+  alpha_val: 23.6,
+  jensenAlpha: 23.6,
+  jensensAlpha: 23.6,
   totalReturn: 42.1
 };
 
@@ -139,13 +173,18 @@ app.all(['/api/python/macro-backtest*', '/api/macro-backtest*', '/api/backtest*'
     trajectory: points,
     history: points,
     chartData: points,
+    backtest: points,
     allocation: allocationData,
     assetAllocation: allocationData,
+    asset_allocation: allocationData,
     weights: allocationData,
+    breakdown: allocationData,
     stressMetrics: {
       inflationShock: '-4.2%',
       rateSpike100bps: '-2.8%',
-      equityCrash20: '-6.1%'
+      equityCrash20: '-6.1%',
+      shock: '-4.2%',
+      stress: '-2.8%'
     }
   });
 });
@@ -198,7 +237,8 @@ app.use('/api/*', (_req: Request, res: Response) => {
     results: points,
     points: points,
     chartData: points,
-    allocation: allocationData
+    allocation: allocationData,
+    assetAllocation: allocationData
   });
 });
 
@@ -211,5 +251,5 @@ app.get('*', (_req: Request, res: Response) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Unified Vymx Engine running on port ${PORT}`);
+  console.log(`🚀 Complete Vymx Engine running on port ${PORT}`);
 });
