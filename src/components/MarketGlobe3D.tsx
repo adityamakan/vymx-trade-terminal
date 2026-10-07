@@ -5,7 +5,7 @@ import { X, Info, TrendingUp, TrendingDown, Activity, Newspaper, BarChart3, Glob
 import VymxIntelligencePanel from './VymxIntelligencePanel';
 import { useMarketState } from '../contexts/MarketStateContext';
 
-const EXCHANGE_DETAILS: Record<string, any> = {
+    const EXCHANGE_DETAILS: Record<string, any> = {
   'NYSE': {
     name: 'New York Stock Exchange',
     indices: [{ name: 'S&P 500', value: '5,123.41', change: '+1.2%' }],
@@ -17,8 +17,8 @@ const EXCHANGE_DETAILS: Record<string, any> = {
     topSector: 'Technology'
   },
   'NSE': {
-    name: 'National Stock Exchange (India)',
-    indices: [{ name: 'Nifty 50', value: '22,514.65', change: '+0.8%' }],
+    name: 'National Stock Exchange of India',
+    indices: [{ name: 'Nifty 50', value: '24,850.10', change: '+0.8%' }],
     sentiment: 'Cautiously Optimistic',
     fearAndGreed: 62,
     gainers: ['RELIANCE (+2.3%)', 'TCS (+1.1%)', 'HDFCBANK (+0.9%)'],
@@ -38,7 +38,7 @@ const EXCHANGE_DETAILS: Record<string, any> = {
   },
   'TSE': {
     name: 'Tokyo Stock Exchange',
-    indices: [{ name: 'Nikkei 225', value: '39,120.50', change: '+2.1%' }],
+    indices: [{ name: 'Nikkei 225', value: '39,120.50', change: '+1.4%' }],
     sentiment: 'Strongly Bullish',
     fearAndGreed: 84,
     gainers: ['TOYOTA (+3.5%)', 'SONY (+2.1%)'],
@@ -48,7 +48,7 @@ const EXCHANGE_DETAILS: Record<string, any> = {
   },
   'HKEX': {
     name: 'Hong Kong Exchange',
-    indices: [{ name: 'Hang Seng', value: '16,589.44', change: '-1.5%' }],
+    indices: [{ name: 'Hang Seng', value: '16,589.44', change: '-1.1%' }],
     sentiment: 'Bearish',
     fearAndGreed: 35,
     gainers: ['TENCENT (+0.8%)', 'ALIBABA (-2.1%)'],
@@ -88,7 +88,7 @@ const EXCHANGE_DETAILS: Record<string, any> = {
   },
   'B3': {
     name: 'B3 - Brasil Bolsa Balcão',
-    indices: [{ name: 'Ibovespa', value: '128,100.20', change: '-0.5%' }],
+    indices: [{ name: 'Ibovespa', value: '128,100.20', change: '+0.4%' }],
     sentiment: 'Neutral Bearish',
     fearAndGreed: 45,
     gainers: ['PETR4 (+0.5%)', 'VALE3 (-1.2%)'],
@@ -98,25 +98,13 @@ const EXCHANGE_DETAILS: Record<string, any> = {
   },
   'JSE': {
     name: 'Johannesburg Stock Exchange',
-    indices: [{ name: 'JSE Top 40', value: '68,200.40', change: '+0.2%' }],
+    indices: [{ name: 'JSE Top 40', value: '68,200.40', change: '+0.1%' }],
     sentiment: 'Neutral',
-    fearAndGreed: 50,
-    gainers: ['NPN (+0.8%)', 'FSR (+0.4%)'],
-    news: 'Precious metals seeing increased tracking volume.',
-    volume: '250M Shares',
-    topSector: 'Mining'
-  },
-  'TSX': {
-    name: 'Toronto Stock Exchange',
-    indices: [{ name: 'S&P/TSX', value: '21,450.31', change: '+0.6%' }],
-    sentiment: 'Bullish',
-    fearAndGreed: 70,
-    gainers: ['RY (+0.9%)', 'ABX (+1.4%)'],
-    news: 'Bank earnings exceed analyst estimates.',
-    volume: '550M Shares',
-    topSector: 'Financials'
+    fearAndGreed: 50
   }
 };
+    
+
 
 const MARKERS = [
   { label: 'NYSE', lat: 40.7128, lng: -74.0060, risk: 'extreme' },

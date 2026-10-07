@@ -10,10 +10,8 @@ let db: ReturnType<typeof getFirestore>;
 try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
-  // Important part from skill!
-  db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+  db = getFirestore(app);
 } catch (error) {
   console.error("Firebase initialization error", error);
 }
-
 export { app, auth, db, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, doc, setDoc, getDoc, updateDoc };
