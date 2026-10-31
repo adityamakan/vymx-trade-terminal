@@ -35,7 +35,9 @@ export default function VymxIntelligencePanel({ mode }: Props) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiData, setAiData] = useState<any>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [deepDiveTile, setDeepDiveTile] = useState<string | null>(null);
+  const [quoteFeedStatus, setQuoteFeedStatus] = useState<'connecting' | 'connected' | 'unavailable'>('connecting');
 
   // Real-time data streams
   const [realtimeData, setRealtimeData] = useState<any>({
@@ -67,16 +69,18 @@ export default function VymxIntelligencePanel({ mode }: Props) {
         if (res.ok) {
           const json = await res.json();
           if (json.success && isActive) {
-            setRealtimeData(json.data);
+            setRealtimeData((previous: any) => ({ ...previous, ...json.data }));
+            setQuoteFeedStatus('connected');
           }
         }
       } catch (e) {
+        setQuoteFeedStatus('unavailable');
         console.warn('Vymx Intelligence fetch failed', e);
       }
     };
 
     fetchLiveIntelligence();
-    const interval = setInterval(fetchLiveIntelligence, 3000); // Poll real data every 3 seconds
+    const interval = setInterval(fetchLiveIntelligence, 30_000); // Match the upstream quote refresh cadence
     return () => {
       isActive = false;
       clearInterval(interval);
@@ -85,79 +89,47 @@ export default function VymxIntelligencePanel({ mode }: Props) {
 
 
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (showAdvanced && aiData) {
-      interval = setInterval(() => {
-        setAiData((prev: any) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            orderBook: {
-              ...prev.orderBook,
-              bids: (6.4 + Math.random() * 0.5 - 0.25).toFixed(1) + 'M',
-              asks: (3.1 + Math.random() * 0.3 - 0.15).toFixed(1) + 'M',
-              spread: (0.001 + Math.random() * 0.0005).toFixed(4) + '%'
-            },
-            volatility: {
-              ...prev.volatility,
-              index: (22.4 + Math.random() * 1.5 - 0.75).toFixed(2),
-            },
-            sentiment: {
-              social: Math.max(0, Math.min(100, (prev.sentiment?.social ?? 75) + Math.floor(Math.random() * 3 - 1))),
-              news: Math.max(0, Math.min(100, (prev.sentiment?.news ?? 82) + Math.floor(Math.random() * 3 - 1))),
-              institutional: Math.max(0, Math.min(100, (prev.sentiment?.institutional ?? 88) + Math.floor(Math.random() * 3 - 1)))
-            },
-            correlations: (prev.correlations || []).map((c: any) => ({
-              ...c,
-              value: (parseFloat(c.value) + (Math.random() * 0.04 - 0.02)).toFixed(2)
-            }))
-          };
-        });
-      }, 2000);
-    }
-    return () => clearInterval(interval);
-  }, [showAdvanced, !!aiData]);
-
-  const toggleAdvanced = () => {
-    if (!showAdvanced) {
-      setLoadingAI(true);
-      setShowAdvanced(true);
-      setTimeout(() => {
-        setAiData({
-           predictiveModel: {
-             score: 94.2,
-             direction: 'BULLISH',
-             confidence: 'High',
-             projectedMove: '+4.2% (24h)'
-           },
-           orderBook: {
-             bids: '6.4M',
-             asks: '3.1M',
-             imbalance: 'Long-skewed',
-             spread: '0.001%'
-           },
-           volatility: {
-             index: 22.4,
-             trend: 'Decreasing',
-             historical30d: 28.1
-           },
-           sentiment: {
-             social: 82,
-             news: 76,
-             institutional: 88
-           },
-           correlations: [
-             { asset: 'DXY', value: -0.85 },
-             { asset: 'US10Y', value: -0.65 },
-             { asset: 'BTC', value: 0.92 }
-           ]
-        });
-        setLoadingAI(false);
-      }, 1500);
-    } else {
+  const toggleAdvanced = async () => {
+    if (showAdvanced) {
       setShowAdvanced(false);
       setAiData(null);
+      setAiError(null);
+      return;
+    }
+
+    setShowAdvanced(true);
+    setLoadingAI(true);
+    setAiData(null);
+    setAiError(null);
+    const quoteContext = {
+      provider: 'Yahoo Finance',
+      S_P_500: { price: realtimeData?.spxPrice ?? null, changePercent: realtimeData?.spxChange ?? null },
+      NIFTY_50: { price: realtimeData?.niftyPrice ?? null, changePercent: realtimeData?.niftyChange ?? null },
+      SENSEX: { price: realtimeData?.sensexPrice ?? null, changePercent: realtimeData?.sensexChange ?? null },
+      Bitcoin: { price: realtimeData?.btcPrice ?? null, dayHigh: realtimeData?.btcHigh ?? null, dayLow: realtimeData?.btcLow ?? null },
+      VIX: { price: realtimeData?.vixPrice ?? null, changePercent: realtimeData?.vixChange ?? null }
+    };
+
+    try {
+      const response = await fetch('/api/ai/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: 'Analyze this market snapshot for an educational research dashboard. Separate observed quote data from interpretation, state which important datasets are missing, do not infer institutional flows, order-book depth, dark-pool activity, sentiment scores, or future returns, and do not give a trade instruction.',
+          contextData: quoteContext,
+          systemInstruction: 'You are a cautious financial research assistant. Use only supplied observations. Explicitly state uncertainty and missing data.'
+        }),
+        signal: AbortSignal.timeout(25_000)
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.error || `AI analysis unavailable (HTTP ${response.status})`);
+      }
+      setAiData({ summary: payload.answer || payload.text || payload.reply || '' });
+    } catch (error: any) {
+      setAiError(error?.message || 'AI analysis is currently unavailable.');
+    } finally {
+      setLoadingAI(false);
     }
   };
 
@@ -165,86 +137,29 @@ export default function VymxIntelligencePanel({ mode }: Props) {
     <AnimatePresence>
       {showAdvanced && (
         <motion.div
-           initial={{ opacity: 0, height: 0 }}
-           animate={{ opacity: 1, height: 'auto' }}
-           exit={{ opacity: 0, height: 0 }}
-           className="mt-4 border-t border-indigo-500/30 pt-4 relative overflow-hidden"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          className="mt-4 border-t border-indigo-500/30 pt-4 relative overflow-hidden"
         >
           {loadingAI ? (
             <div className="flex flex-col items-center justify-center py-6 gap-3">
               <BrainCircuit className="w-8 h-8 text-indigo-400 animate-pulse" />
-              <span className="text-xs font-mono text-indigo-300 animate-pulse uppercase tracking-widest">Running Deep-Dive AI Analysis...</span>
+              <span className="text-xs font-mono text-indigo-300 animate-pulse uppercase tracking-widest">Analyzing verified quote snapshot...</span>
             </div>
-          ) : aiData ? (
-             <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <BrainCircuit className="w-4 h-4 text-emerald-400" />
-                  <span className="text-xs font-bold text-white uppercase tracking-widest">Predictive AI Model Output</span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-zinc-950/80 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-3 rounded-lg hover:border-zinc-700 transition-colors">
-                    <span className="text-[9px] text-zinc-500 uppercase tracking-widest mb-1 block">Directional Bias</span>
-                    <span className="text-lg font-black text-emerald-400">{aiData.predictiveModel.direction}</span>
-                    <div className="text-[10px] text-zinc-400 mt-1 font-mono flex justify-between">
-                       <span>Conf:</span>
-                       <span className="text-emerald-400">{aiData.predictiveModel.confidence} ({aiData.predictiveModel.score}%)</span>
-                    </div>
-                    <div className="text-[10px] text-zinc-400 mt-1 font-mono flex justify-between">
-                       <span>Move:</span>
-                       <span className="text-emerald-400">{aiData.predictiveModel.projectedMove}</span>
-                    </div>
-                  </div>
-                  <div className="bg-zinc-950/80 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-3 rounded-lg hover:border-zinc-700 transition-colors">
-                    <span className="text-[9px] text-zinc-500 uppercase tracking-widest mb-1 block">Order Book Depth</span>
-                    <div className="flex justify-between items-center text-[10px] font-mono text-zinc-300">
-                       <span>Bids: {aiData.orderBook.bids}</span>
-                       <span className="text-emerald-400 text-[12px]">■■■■</span>
-                    </div>
-                    <div className="flex justify-between items-center text-[10px] font-mono text-zinc-300 mt-1">
-                       <span>Asks: {aiData.orderBook.asks}</span>
-                       <span className="text-rose-400 text-[12px]">■■</span>
-                    </div>
-                    <div className="text-[10px] text-indigo-400 mt-2 font-mono bg-indigo-500/10 px-2 py-0.5 rounded text-center">
-                       {aiData.orderBook.imbalance} | Sprd: {aiData.orderBook.spread}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                   <div className="bg-zinc-950/80 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-3 rounded-lg hover:border-zinc-700 transition-colors">
-                      <span className="text-[9px] text-zinc-500 uppercase tracking-widest mb-1 block">Sentiment Matrix</span>
-                      <div className="space-y-1 mt-2">
-                         <div className="flex justify-between items-center text-[10px] font-mono"><span className="text-zinc-400">Social</span> <span className="text-emerald-400">{aiData.sentiment.social}/100</span></div>
-                         <div className="flex justify-between items-center text-[10px] font-mono"><span className="text-zinc-400">News</span> <span className="text-emerald-400">{aiData.sentiment.news}/100</span></div>
-                         <div className="flex justify-between items-center text-[10px] font-mono"><span className="text-zinc-400">Inst. Flow</span> <span className="text-emerald-400">{aiData.sentiment.institutional}/100</span></div>
-                      </div>
-                   </div>
-                   <div className="bg-zinc-950/80 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-3 rounded-lg hover:border-zinc-700 transition-colors">
-                      <span className="text-[9px] text-zinc-500 uppercase tracking-widest mb-1 block">Multi-Factor Correlation</span>
-                      <div className="space-y-1 mt-2">
-                         {aiData.correlations.map((c: any) => (
-                           <div key={c.asset} className="flex justify-between items-center text-[10px] font-mono">
-                             <span className="text-zinc-400">{c.asset}</span>
-                             <span className={c.value > 0 ? "text-emerald-400" : "text-rose-400"}>{c.value > 0 ? '+' : ''}{c.value}</span>
-                           </div>
-                         ))}
-                      </div>
-                   </div>
-                </div>
-
-                <div className="bg-zinc-950/80 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-3 rounded-lg flex justify-between items-center hover:border-zinc-700 transition-colors">
-                   <div>
-                     <span className="text-[9px] text-zinc-500 uppercase tracking-widest block">Real-time Volatility Index</span>
-                     <span className="text-xl font-mono font-black text-amber-400">{aiData.volatility.index}</span>
-                   </div>
-                   <div className="text-right">
-                     <span className="text-[10px] text-zinc-400 block font-mono">Trend: <span className="text-emerald-400">{aiData.volatility.trend}</span></span>
-                     <span className="text-[10px] text-zinc-400 block font-mono">30d Avg: <span className="text-zinc-200">{aiData.volatility.historical30d}</span></span>
-                   </div>
-                </div>
-             </div>
-          ) : null}
+          ) : aiData?.summary ? (
+            <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4 text-xs leading-relaxed text-zinc-200 whitespace-pre-wrap">
+              <div className="mb-2 flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-indigo-300">
+                <BrainCircuit className="h-3.5 w-3.5" /> AI-generated research commentary
+              </div>
+              {aiData.summary}
+              <p className="mt-3 border-t border-zinc-800 pt-2 text-[9px] text-zinc-500">Generated commentary, not a verified market signal or investment recommendation.</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-xs leading-relaxed text-amber-200">
+              {aiError || 'AI analysis is unavailable. Configure a server-side Gemini API key to enable this feature.'}
+            </div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>
@@ -259,95 +174,18 @@ export default function VymxIntelligencePanel({ mode }: Props) {
 
   if (deepDiveTile) {
     return (
-      <div className="bg-zinc-900/95 backdrop-blur-xl border border-indigo-500/50 rounded-xl p-5 shadow-2xl relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/10 opacity-50"></div>
+      <div className="bg-zinc-900/95 backdrop-blur-xl border border-indigo-500/50 rounded-xl p-5 shadow-2xl relative overflow-hidden">
         <div className="flex justify-between items-center mb-4 relative z-10">
           <div className="flex items-center gap-2">
-            <Database className="w-5 h-5 text-indigo-400 animate-pulse" />
-            <span className="text-sm font-bold text-white uppercase tracking-widest">
-              {deepDiveTile} Deep-Dive
-            </span>
+            <Database className="w-5 h-5 text-indigo-400" />
+            <span className="text-sm font-bold text-white uppercase tracking-widest">{deepDiveTile} Deep-Dive</span>
           </div>
           <button onClick={() => setDeepDiveTile(null)} className="text-zinc-400 hover:text-white p-1 rounded bg-zinc-800/80 hover:bg-zinc-700 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
-
-        <div className="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
-           <div className="bg-black/40 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-3 rounded-lg">
-             <span className="text-[10px] uppercase text-zinc-500 font-bold tracking-widest block border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2 mb-2">100x Historical Context (vs NIFTY50)</span>
-             <div className="h-24 flex items-end gap-1">
-               {Array.from({ length: 40 }).map((_, i) => {
-                 const isPositive = Math.sin(i * 0.3) + 0.2 > 0;
-                 const barHeight = Math.min(95, Math.max(20, 40 + Math.sin(i * 0.25) * 35 + ((i * 7) % 15)));
-                 return (
-                   <div key={i} className={`flex-1 ${isPositive ? 'bg-emerald-500/50' : 'bg-rose-500/50'} rounded-t-sm`} style={{ height: `${barHeight}%` }}></div>
-                 );
-               })}
-             </div>
-             <div className="flex justify-between text-[8px] text-zinc-500 font-mono mt-1">
-               <span>10Y Ago</span>
-               <span>5Y Ago</span>
-               <span>Today</span>
-             </div>
-           </div>
-
-           <div className="grid grid-cols-2 gap-3">
-             <div className="bg-black/40 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-3 rounded-lg">
-               <span className="text-[9px] uppercase text-zinc-500 font-bold tracking-widest block mb-2">Correlation Matrix</span>
-               <div className="space-y-1.5">
-                 <div className="flex justify-between text-[10px] font-mono"><span className="text-zinc-400">vs NIFTY50</span><span className="text-emerald-400">+0.84</span></div>
-                 <div className="flex justify-between text-[10px] font-mono"><span className="text-zinc-400">vs S&P500</span><span className="text-emerald-400">+0.62</span></div>
-                 <div className="flex justify-between text-[10px] font-mono"><span className="text-zinc-400">vs GOLD</span><span className="text-rose-400">-0.41</span></div>
-                 <div className="flex justify-between text-[10px] font-mono"><span className="text-zinc-400">vs US10Y</span><span className="text-rose-400">-0.78</span></div>
-               </div>
-             </div>
-             <div className="bg-black/40 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-3 rounded-lg">
-               <span className="text-[9px] uppercase text-zinc-500 font-bold tracking-widest block mb-2">Predictive Volatility</span>
-               <div className="space-y-1.5">
-                 <div className="flex justify-between text-[10px] font-mono"><span className="text-zinc-400">Expected Move (1W)</span><span className="text-amber-400">±4.2%</span></div>
-                 <div className="flex justify-between text-[10px] font-mono"><span className="text-zinc-400">Expected Move (1M)</span><span className="text-amber-400">±12.5%</span></div>
-                 <div className="flex justify-between text-[10px] font-mono"><span className="text-zinc-400">Tail Risk Prob</span><span className="text-rose-400">8.4%</span></div>
-                 <div className="flex justify-between text-[10px] font-mono"><span className="text-zinc-400">AI Confidence</span><span className="text-emerald-400">92.1%</span></div>
-               </div>
-             </div>
-           </div>
-
-           <div className="grid grid-cols-2 gap-3">
-             <div className="bg-black/40 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-3 rounded-lg">
-               <span className="text-[9px] uppercase text-zinc-500 font-bold tracking-widest block mb-2">Order Book Depth</span>
-               <div className="space-y-1 mt-2">
-                 <div className="flex justify-between text-[8px] text-zinc-400 mb-1"><span>Bid</span><span>Ask</span></div>
-                 <div className="flex w-full h-1.5 gap-0.5 rounded-full overflow-hidden">
-                   <div className="bg-emerald-500/80 h-full" style={{width: '65%'}}></div>
-                   <div className="bg-rose-500/80 h-full" style={{width: '35%'}}></div>
-                 </div>
-                 <div className="flex justify-between text-[10px] font-mono mt-1"><span className="text-emerald-400">4.2M</span><span className="text-rose-400">2.1M</span></div>
-               </div>
-               <div className="mt-3 space-y-1">
-                 <div className="flex justify-between text-[9px] font-mono text-zinc-400"><span>Spread</span><span>$0.01 (0.002%)</span></div>
-                 <div className="flex justify-between text-[9px] font-mono text-zinc-400"><span>Imbalance</span><span className="text-emerald-400">Bid-Heavy</span></div>
-               </div>
-             </div>
-             <div className="bg-black/40 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-3 rounded-lg flex flex-col">
-               <span className="text-[9px] uppercase text-zinc-500 font-bold tracking-widest block mb-2">Sentiment Histogram</span>
-               <div className="flex-1 flex items-end gap-0.5 mt-2 h-16">
-                  {[2, 4, 3, 6, 8, 12, 18, 14, 9, 5, 3].map((val, i) => (
-                    <div key={i} className={`flex-1 rounded-t-sm ${i > 5 ? 'bg-emerald-500/60' : 'bg-rose-500/60'}`} style={{ height: `${(val / 18) * 100}%` }}></div>
-                  ))}
-               </div>
-               <div className="flex justify-between text-[8px] text-zinc-500 font-mono mt-1">
-                 <span>Bearish</span>
-                 <span>Neutral</span>
-                 <span>Bullish</span>
-               </div>
-             </div>
-           </div>
-
-           <div className="bg-black/40 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-3 rounded-lg text-xs leading-relaxed text-zinc-300">
-             <span className="text-[9px] text-zinc-500 uppercase font-bold tracking-widest block mb-1">AI Synthesis</span>
-             Advanced Deep-Dive reveals extreme compression in implied volatility metrics compared to the historical baseline. A synchronized global liquidity injection (FIIs) suggests an impending regime shift favoring risk-on assets.
-           </div>
+        <div className="relative z-10 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-xs leading-relaxed text-zinc-300">
+          This analysis module is not connected to a validated historical, order-book, sentiment, or institutional-flow dataset yet. VYMX will not display synthetic correlations, predictive probabilities, or fabricated transaction signals as research output.
         </div>
       </div>
     );
@@ -368,7 +206,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
           <div className="flex items-center gap-2">
             <Database className="w-5 h-5 text-indigo-400" />
             <h2 className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400 tracking-wider uppercase shadow-sm">
-              VYMX INTELLIGENCE LIVE
+              VYMX INTELLIGENCE
             </h2>
           </div>
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30">
@@ -376,11 +214,15 @@ export default function VymxIntelligencePanel({ mode }: Props) {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span className="text-[9px] font-mono font-bold text-emerald-400 tracking-widest uppercase">PIPELINE ACTIVE</span>
+            <span className={`text-[9px] font-mono font-bold tracking-widest uppercase ${quoteFeedStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400'}`}>{quoteFeedStatus === 'connected' ? 'QUOTE FEED CONNECTED' : quoteFeedStatus === 'connecting' ? 'CONNECTING' : 'QUOTE FEED UNAVAILABLE'}</span>
           </div>
         </div>
 
-        {/* --- LIVE INDICES TICKER --- */}
+        <div className="relative z-10 mb-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[9px] leading-relaxed text-amber-200/80">
+          Quote tiles are fetched from Yahoo Finance. Sentiment, capital-flow, order-book, dark-pool and algorithmic-risk figures elsewhere in this prototype are illustrative placeholders, not verified live measurements.
+        </div>
+
+        {/* --- PROVIDER-QUOTED MARKET SNAPSHOT --- */}
         <div className="grid grid-cols-2 gap-2 mb-6 relative z-10">
           <div className="bg-zinc-900/60 border border-zinc-800/60 p-2.5 rounded-lg flex flex-col shadow-inner">
              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">NIFTY 50</span>
