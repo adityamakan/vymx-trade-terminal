@@ -8,12 +8,13 @@ import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import RiskDashboard from './RiskDashboard';
 import CryptoStakingRewards from './CryptoStakingRewards';
+import { calculatePortfolioRiskMetrics } from '../utils/financialAnalytics';
 
 interface PortfolioProps {
   virtualBalance: number;
   portfolio: PortfolioItem[];
   transactions: Transaction[];
-  snapshots: { id: string; capturedAt: number; cashBalance: number; positions: { symbol: string; quantity: number; price: number; marketValue: number; quoteCurrency: string }[]; source: string; currencyNormalization: string }[];
+  snapshots: { id: string; capturedAt: number; cashBalance: number; positions: { symbol: string; quantity: number; price: number; marketValue: number; quoteCurrency: string | null; marketValueUSD: number | null }[]; totalEquityUSD: number | null; source: string; currencyNormalization: string }[];
   onSelectAsset: (asset: Asset) => void;
   setView: (view: any) => void;
   assets: Asset[];
@@ -78,6 +79,10 @@ export default function Portfolio({
     downloadAnchor.click();
     document.body.removeChild(downloadAnchor);
   };
+
+  const historicalRisk = useMemo(() => calculatePortfolioRiskMetrics(
+    snapshots.map((snapshot) => ({ capturedAt: snapshot.capturedAt, totalEquityUSD: snapshot.totalEquityUSD }))
+  ), [snapshots]);
 
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
@@ -621,7 +626,7 @@ export default function Portfolio({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-bold text-zinc-100">Portfolio valuation history</h2>
-            <p className="mt-1 text-xs text-zinc-500">Provider-backed snapshots are captured every 15 minutes for signed-in accounts and retained in your private Firestore account.</p>
+            <p className="mt-1 text-xs text-zinc-500">A daily valuation record is refreshed as new 15-minute provider observations arrive. Intraday observations are stored separately. Daily history is retained in your private Firestore account.</p>
           </div>
           <div className="text-right">
             <div className="text-xl font-black font-mono text-white">{snapshots.length}</div>
@@ -642,7 +647,26 @@ export default function Portfolio({
         ) : (
           <p className="mt-3 text-xs text-zinc-500">No persisted observations yet. A snapshot is recorded after a verified market-data update while signed in.</p>
         )}
-        <p className="mt-3 text-[10px] text-amber-300/80">Instrument prices are stored in provider-native quote currencies. Cross-currency portfolio returns, CAGR, volatility, Sharpe, drawdown, VaR and benchmark-relative metrics remain disabled until FX normalization and a consistent valuation methodology are implemented.</p>
+        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+          {[
+            ['Cumulative return', historicalRisk.cumulativeReturnPct == null ? 'N/A' : `${historicalRisk.cumulativeReturnPct.toFixed(2)}%`],
+            ['CAGR', historicalRisk.cagrPct == null ? 'N/A' : `${historicalRisk.cagrPct.toFixed(2)}%`],
+            ['Annualized volatility', historicalRisk.annualizedVolatilityPct == null ? 'N/A' : `${historicalRisk.annualizedVolatilityPct.toFixed(2)}%`],
+            ['Maximum drawdown', historicalRisk.maxDrawdownPct == null ? 'N/A' : `${historicalRisk.maxDrawdownPct.toFixed(2)}%`],
+            ['Sharpe (0% risk-free)', historicalRisk.sharpeAtZeroRiskFree == null ? 'N/A' : historicalRisk.sharpeAtZeroRiskFree.toFixed(2)],
+            ['Sortino (0% target)', historicalRisk.sortinoAtZeroTarget == null ? 'N/A' : historicalRisk.sortinoAtZeroTarget.toFixed(2)],
+            ['Historical VaR 95%', historicalRisk.historicalVaR95Pct == null ? 'N/A' : `${historicalRisk.historicalVaR95Pct.toFixed(2)}%`],
+            ['Historical CVaR 95%', historicalRisk.historicalCVaR95Pct == null ? 'N/A' : `${historicalRisk.historicalCVaR95Pct.toFixed(2)}%`]
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
+              <span className="text-[9px] uppercase tracking-wider text-zinc-500">{label}</span>
+              <p className="mt-1 font-mono text-sm font-bold text-zinc-200">{value}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-[10px] text-zinc-500">Risk metrics use daily USD-normalized valuations and require at least 30 daily return observations. Sharpe assumes a 0% annual risk-free rate; Sortino uses a 0% daily target. VaR/CVaR are empirical historical 95% estimates, not forecasts. FX rates are indicative Yahoo Finance quotes captured at snapshot time.</p>
+        {historicalRisk.unavailableReason && <p className="mt-2 text-[10px] text-amber-300/80">{historicalRisk.unavailableReason}</p>}
+        <p className="mt-2 text-[10px] text-amber-300/80">Benchmark-relative alpha and beta remain unavailable until a benchmark return series is aligned to these portfolio valuation timestamps.</p>
       </section>
 
       {/* 1. Portfolio Header Stats Summary Grid */}
