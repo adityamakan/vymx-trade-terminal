@@ -2,26 +2,34 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // The app stores one ledger document per Firebase user. No user can read
+    // or write another user's portfolio, cash balance or transaction history.
+    match /users/{userId}/ledger/data {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'virtualBalance',
+          'watchlist',
+          'portfolio',
+          'transactions'
+        ])
+        && request.resource.data.virtualBalance is number
+        && request.resource.data.virtualBalance >= 0
+        && request.resource.data.watchlist is list
+        && request.resource.data.watchlist.size() <= 100
+        && request.resource.data.portfolio is list
+        && request.resource.data.portfolio.size() <= 100
+        && request.resource.data.transactions is list
+        && request.resource.data.transactions.size() <= 1000;
+      allow delete: if isOwner(userId);
+    }
+
     match /{document=**} {
       allow read, write: if false;
-    }
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
-
-    match /users/{userId} {
-      allow read: if isSignedIn() && request.auth.uid == userId;
-      allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
-      allow update: if isSignedIn() && request.auth.uid == userId;
-      
-      match /ledger/data {
-        allow read, write: if isSignedIn() && request.auth.uid == userId;
-      }
     }
   }
 }
