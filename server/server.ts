@@ -8,7 +8,8 @@ const app = express();
 const server = createServer(app);
 const PORT = Number(process.env.PORT || 5000);
 const MAX_SYMBOLS = 100;
-const CACHE_TTL_MS = 20_000;
+const CACHE_TTL_MS = 30_000;
+const MAX_CACHE_ENTRIES = 500;
 const DEFAULT_SYMBOLS = ['AAPL', 'MSFT', 'NVDA', '^GSPC', '^IXIC', '^NSEI', '^BSESN', 'BTC-USD', 'GC=F'];
 
 app.disable('x-powered-by');
@@ -52,6 +53,22 @@ type PriceQuote = {
 const quoteCache = new Map<string, { value: PriceQuote; expiresAt: number }>();
 const historyCache = new Map<string, { value: unknown; expiresAt: number }>();
 const financialCache = new Map<string, { value: unknown; expiresAt: number }>();
+
+function setBoundedCache<T>(cache: Map<string, { value: T; expiresAt: number }>, key: string, value: T, ttlMs: number) {
+  const now = Date.now();
+  if (cache.size >= MAX_CACHE_ENTRIES && !cache.has(key)) {
+    for (const [entryKey, entry] of cache) {
+      if (entry.expiresAt <= now) cache.delete(entryKey);
+    }
+    while (cache.size >= MAX_CACHE_ENTRIES) {
+      const oldestKey = cache.keys().next().value;
+      if (oldestKey === undefined) break;
+      cache.delete(oldestKey);
+    }
+  }
+  cache.set(key, { value, expiresAt: now + ttlMs });
+}
+
 const normalizeSymbol = (symbol: string) => SYMBOL_ALIASES[symbol.toUpperCase()] || symbol;
 
 function validateSymbols(input: unknown): string[] {
@@ -99,7 +116,7 @@ async function fetchQuote(symbol: string): Promise<PriceQuote> {
     dayLow: quote?.regularMarketDayLow != null && Number.isFinite(Number(quote.regularMarketDayLow)) ? Number(quote.regularMarketDayLow) * unitScale : null,
     asOf: new Date().toISOString(), source: 'Yahoo Finance'
   };
-  quoteCache.set(symbol, { value: result, expiresAt: now + CACHE_TTL_MS });
+  setBoundedCache(quoteCache, symbol, result, CACHE_TTL_MS);
   return result;
 }
 
@@ -201,7 +218,7 @@ app.get('/api/historical/:symbol', async (req: Request, res: Response) => {
       })),
       source: 'Yahoo Finance', fetchedAt: new Date().toISOString()
     };
-    historyCache.set(cacheKey, { value: payload, expiresAt: Date.now() + 60_000 });
+    setBoundedCache(historyCache, cacheKey, payload, 60_000);
     return res.json(payload);
   } catch (error) {
     return res.status(503).json({ success: false, error: 'Historical data provider unavailable', detail: (error as Error).message });
@@ -220,7 +237,7 @@ app.get('/api/yahoo/financials/:symbol', async (req: Request, res: Response) => 
       'incomeStatementHistory', 'balanceSheetHistory', 'cashflowStatementHistory'];
     const data = await (yahooFinance as any).quoteSummary(normalizeSymbol(symbol), { modules });
     const payload = { success: true, symbol, data, source: 'Yahoo Finance', fetchedAt: new Date().toISOString() };
-    financialCache.set(symbol, { value: payload, expiresAt: Date.now() + 5 * 60_000 });
+    setBoundedCache(financialCache, symbol, payload, 5 * 60_000);
     return res.json(payload);
   } catch (error) {
     return res.status(503).json({ success: false, error: 'Financial data unavailable from provider', detail: (error as Error).message });
@@ -415,7 +432,14 @@ app.get('/api/ai/exchange-latest', async (req: Request, res: Response) => {
 // AI routes share a single server-side Gemini integration. If no key exists,
 // return an explicit unavailable response rather than invented fallback content.
 const aiRequestWindow = new Map<string, number[]>();
+const supportedAiFeatures = new Set([
+  'advisor', 'live-news', 'geopolitics', 'generic-chat', 'chat', 'hedge', 'explain',
+  'quiz', 'narrative', 'exchange-latest', 'market-auras', 'institutional-flows',
+  'economic-calendar', 'vymx-intelligence'
+]);
 app.all('/api/ai/:feature', async (req: Request, res: Response) => {
+  if (!supportedAiFeatures.has(req.params.feature)) return res.status(404).json({ success: false, error: 'AI feature not found' });
+  if (!['GET', 'POST'].includes(req.method)) return res.status(405).json({ success: false, error: 'Method not allowed' });
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (!apiKey && req.params.feature !== 'live-news') return res.status(503).json({
     success: false, code: 'AI_PROVIDER_NOT_CONFIGURED',
@@ -425,6 +449,11 @@ app.all('/api/ai/:feature', async (req: Request, res: Response) => {
   const ip = req.ip || 'unknown';
   const now = Date.now();
   const recent = (aiRequestWindow.get(ip) || []).filter((time) => now - time < 60_000);
+  if (aiRequestWindow.size > 1_000) {
+    for (const [knownIp, timestamps] of aiRequestWindow) {
+      if (!timestamps.some((time) => now - time < 60_000)) aiRequestWindow.delete(knownIp);
+    }
+  }
   if (recent.length >= 15) return res.status(429).json({ success: false, error: 'AI request rate limit exceeded' });
   recent.push(now);
   aiRequestWindow.set(ip, recent);
@@ -587,7 +616,7 @@ const broadcastPrices = async () => {
     broadcastInFlight = false;
   }
 };
-const broadcastTimer = setInterval(() => { void broadcastPrices(); }, 20_000);
+const broadcastTimer = setInterval(() => { void broadcastPrices(); }, 30_000);
 
 const distPath = path.join(__dirname, '../dist');
 app.use(express.static(distPath));
