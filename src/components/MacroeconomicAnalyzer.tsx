@@ -698,7 +698,7 @@ export default function MacroeconomicAnalyzer() {
         </div>
       )}
 
-      {/* TAB 2: LIVE MACROECONOMIC INDICATORS & CENTRAL BANK RADAR */}
+      {/* TAB 2: MARKET PROXY INDICATORS & AI COMMENTARY */}
       {activeTab === 'indicators' && (
         <div className="space-y-6">
 
@@ -717,7 +717,7 @@ export default function MacroeconomicAnalyzer() {
                       Gemini 3.8 Flash
                     </span>
                   </h3>
-                  <p className="text-xs text-zinc-400">Institutional regime diagnosis generated live from current indicator matrices</p>
+                  <p className="text-xs text-zinc-400">AI commentary based on current provider market proxies; not official macroeconomic releases</p>
                 </div>
               </div>
 
@@ -742,7 +742,7 @@ export default function MacroeconomicAnalyzer() {
               </div>
             ) : (
               <div className="bg-zinc-950/70 border border-zinc-800/80 rounded-xl p-4 text-xs text-zinc-400 relative z-10 flex items-center justify-between">
-                <span>Click "Re-synthesize Regime" to generate an updated macroeconomic diagnosis from live telemetry.</span>
+                <span>Click "Re-synthesize Regime" to generate updated commentary from the latest available provider quotes.</span>
                 <button
                   onClick={() => generateMacroSummary()}
                   className="px-3 py-1 bg-indigo-600 text-white rounded-lg text-xs font-bold"
