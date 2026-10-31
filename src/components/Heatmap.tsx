@@ -277,7 +277,6 @@ export default function Heatmap({
           Provider snapshot · no local price simulation
         </div>
       </div>
-      </div>
 
       {/* 2. Top-Bar Banner Ticker tape */}
       <div className="w-full bg-zinc-900/40 rounded-xl border border-zinc-850 p-3 overflow-hidden">
@@ -287,7 +286,7 @@ export default function Heatmap({
             Summary
           </span>
           <span className="text-[10px] uppercase text-zinc-500">
-            Live ticks active
+            Provider snapshot
           </span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
