@@ -175,14 +175,15 @@ app.get('/api/historical/:symbol', async (req: Request, res: Response) => {
       period1: start, period2: end, interval
     });
     const quotes = Array.isArray(chart?.quotes) ? chart.quotes : [];
+    const historyScale = symbol === 'US10Y' ? 0.1 : 1;
     if (!quotes.length) return res.status(404).json({ success: false, error: 'No historical observations returned', symbol });
     const payload = {
       success: true, symbol, providerSymbol: normalizeSymbol(symbol), interval,
       currency: chart.meta?.currency || null,
       exchangeTimezoneName: chart.meta?.exchangeTimezoneName || null,
       quotes: quotes.map((row: any) => ({
-        date: row.date, open: row.open ?? null, high: row.high ?? null,
-        low: row.low ?? null, close: row.close ?? null, adjclose: row.adjclose ?? null,
+        date: row.date, open: row.open == null ? null : row.open * historyScale, high: row.high == null ? null : row.high * historyScale,
+        low: row.low == null ? null : row.low * historyScale, close: row.close == null ? null : row.close * historyScale, adjclose: row.adjclose == null ? null : row.adjclose * historyScale,
         volume: row.volume ?? null
       })),
       source: 'Yahoo Finance', fetchedAt: new Date().toISOString()
@@ -219,7 +220,7 @@ app.get('/api/macro/indicators', async (_req: Request, res: Response) => {
   return res.status(result.returned ? 200 : 503).json({
     success: result.returned > 0, indicators: result.prices, unavailable: result.errors,
     source: 'Yahoo Finance', fetchedAt: new Date().toISOString(),
-    note: 'These are quoted market proxies, not official macroeconomic releases.'
+    note: 'These are quoted market proxies, not official macroeconomic releases. Yahoo ^TNX is quoted in tenths of a percentage point; the UI normalizes it to percent.'
   });
 });
 
