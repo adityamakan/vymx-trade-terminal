@@ -85,7 +85,7 @@ Without optional provider credentials, the corresponding endpoints return explic
 - Phone OTP is not enabled; it must not be simulated in the browser.
 - Guest/demo access is local-only and is never treated as a Firebase identity.
 - A newly authenticated Firebase account starts with an empty simulated portfolio. The app hydrates that account's Firestore ledger before enabling cloud writes, and guest data is not copied into the account.
-- Firestore security rules must be deployed and tested in the Firebase project. Client-side checks are not a replacement for server-side authorization.
+- Firestore security rules are defined in `firestore.rules` and configured in `firebase.json`. Select the correct Firebase project in the Firebase CLI, then deploy with `firebase deploy --only firestore:rules`. Verify the rules in the Firebase Emulator or Rules Playground before production use; client-side checks are not a replacement for server-side authorization.
 
 ## Data integrity and operational notes
 
