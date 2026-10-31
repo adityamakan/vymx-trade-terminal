@@ -413,8 +413,8 @@ export default function App() {
 
 
   // Capture provider-backed portfolio valuation snapshots for authenticated accounts.
-  // Prices remain in each provider's native quote currency; cross-currency aggregation
-  // is deliberately deferred until a verified FX normalization layer is available.
+  // Each observation stores provider quote currency and an indicative FX-to-USD conversion.
+  // Unavailable currency rates leave the aggregate USD valuation null rather than guessed.
   useEffect(() => {
     if (!ledgerHydrated || !db || !auth || !authUser?.uid || authUser.authType === 'guest' || auth.currentUser?.uid !== authUser.uid || isDataOffline) return;
     const uid = authUser.uid;
