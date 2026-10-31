@@ -43,7 +43,7 @@ export function getSecurityLogs(): SecurityEvent[] {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      // Validate integrity of security logs themselves to prevent tampering
+      // Check only for accidental local-data inconsistency; browser storage can be edited by the user.
       const sig = localStorage.getItem('vymx_security_logs_sig');
       if (sig === calculateIntegritySignature(saved)) {
         return parsed;
@@ -86,7 +86,7 @@ export function logSecurityEvent(event: string, status: SecurityEvent['status'],
   return newLog;
 }
 
-// Validate session locally representing the core tamper-prevention check
+// Legacy local-state consistency check only. This does not authenticate a user or prevent tampering; use the configured identity provider as the authority.
 export function validateSession(): boolean {
   const authSaved = localStorage.getItem('vymx_is_authenticated') === 'true';
   const userSaved = localStorage.getItem('vymx_auth_user');
@@ -101,7 +101,7 @@ export function validateSession(): boolean {
     } catch {
       // JSON syntax error or tampering
     }
-    // Signatures do not match -> Clear session as security lock triggered!
+    // A local consistency mismatch is not proof of an attack. Clear only the malformed local state.
     localStorage.removeItem('vymx_is_authenticated');
     localStorage.removeItem('vymx_auth_user');
     localStorage.removeItem('vymx_integrity_signature');
