@@ -38,6 +38,7 @@ export function useWebSocket(options?: UseWebSocketOptions) {
 
   const symbolsRef = useRef(options?.symbols || []);
   symbolsRef.current = options?.symbols || [];
+  const symbolSubscriptionKey = (options?.symbols || []).join('|');
 
   // Stop HTTP fallback polling
   const stopPolling = useCallback(() => {
@@ -100,8 +101,14 @@ export function useWebSocket(options?: UseWebSocketOptions) {
   }, []);
 
   const stopHeartbeat = useCallback(() => {
-    if (pingInterval.current) clearInterval(pingInterval.current);
-    if (pongTimeout.current) clearTimeout(pongTimeout.current);
+    if (pingInterval.current) {
+      clearInterval(pingInterval.current);
+      pingInterval.current = null;
+    }
+    if (pongTimeout.current) {
+      clearTimeout(pongTimeout.current);
+      pongTimeout.current = null;
+    }
   }, []);
 
   const connect = useCallback(() => {
@@ -205,6 +212,14 @@ export function useWebSocket(options?: UseWebSocketOptions) {
       }
     };
   }, [connect, stopHeartbeat, stopPolling]);
+
+  // Keep a live socket subscribed when the caller changes its asset universe.
+  // The initial subscription is still sent by onopen if the socket is connecting.
+  useEffect(() => {
+    if (ws.current?.readyState === WebSocket.OPEN && symbolsRef.current.length > 0) {
+      ws.current.send(JSON.stringify({ type: 'subscribe', symbols: symbolsRef.current }));
+    }
+  }, [symbolSubscriptionKey]);
 
   const sendMessage = useCallback((message: string | object) => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
