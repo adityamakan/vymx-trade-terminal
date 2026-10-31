@@ -301,6 +301,13 @@ app.all('/api/ai/:feature', async (req: Request, res: Response) => {
   } else if (!prompt && Object.keys(body).length) {
     prompt = `Analyze the following user-provided context. Distinguish supplied facts from assumptions, do not invent live prices, breaking news, institutional flows, or economic releases, and state uncertainty clearly. Feature: ${req.params.feature}. Context: ${JSON.stringify(body)}`;
   }
+  const contextParts: string[] = [];
+  if (body.persona) contextParts.push(`Persona: ${String(body.persona).slice(0, 120)}`);
+  if (body.contextData) contextParts.push(`User context: ${JSON.stringify(body.contextData).slice(0, 4_000)}`);
+  if (Array.isArray(body.history) && body.history.length) {
+    contextParts.push(`Recent conversation:\n${JSON.stringify(body.history.slice(-10)).slice(0, 5_000)}`);
+  }
+  if (contextParts.length) prompt = contextParts.join('\n\n') + '\n\nCurrent request:\n' + prompt;
   if (body.systemInstruction) prompt = String(body.systemInstruction).slice(0, 2_000) + '\n\n' + prompt;
   prompt = prompt.slice(0, 12_000);
   if (!prompt) return res.status(503).json({
