@@ -234,14 +234,15 @@ export default function App() {
   }, [getKolkataTimeStr]);
 
   // Establish WebSocket connection globally at /api/prices with auto-reconnect and HTTP long-polling fallback
-  const { isConnected, isConnectionUnstable, sendMessage, latencyMs } = useWebSocket({
+  const { isConnected, isPolling, isConnectionUnstable, sendMessage, latencyMs } = useWebSocket({
     onPriceUpdate: handlePriceUpdate,
     symbols: assets.map((asset) => asset.symbol)
   });
 
   useEffect(() => {
-    setIsDataOffline(!isConnected || isConnectionUnstable || !lastUpdatedTime);
-  }, [isConnected, isConnectionUnstable, lastUpdatedTime]);
+    const noHealthyTransport = (!isConnected && !isPolling) || (isConnectionUnstable && !isPolling);
+    setIsDataOffline(noHealthyTransport || !lastUpdatedTime);
+  }, [isConnected, isPolling, isConnectionUnstable, lastUpdatedTime]);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
