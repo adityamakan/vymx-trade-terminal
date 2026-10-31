@@ -397,7 +397,10 @@ export default function App() {
 
   useEffect(() => {
     const saveToCloud = async () => {
-      if (typeof authUser === 'object' && authUser !== null && authUser.uid) {
+      if (
+        db && auth && auth.currentUser && authUser?.uid &&
+        authUser.authType !== 'guest' && auth.currentUser.uid === authUser.uid
+      ) {
          try {
            const ledgerRef = doc(db, 'users', authUser.uid, 'ledger', 'data');
            await setDoc(ledgerRef, {
