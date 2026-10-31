@@ -41,23 +41,28 @@ export default function VymxIntelligencePanel({ mode }: Props) {
 
   // Real-time data streams
   const [realtimeData, setRealtimeData] = useState<any>({
-    fearGreed: 72,
-    btcHigh: 0,
-    btcPrice: 0,
-    vixPrice: 0,
-    spxPrice: 0,
-    spxChange: 0,
-    niftyPrice: 0,
-    niftyChange: 0,
-    sensexPrice: 0,
-    sensexChange: 0,
-    orderImbalance: 58,
-    smartMoney: 142.5,
-    darkPool: 68,
-    algoRisk: 0.80,
-    capitalInflows: { us: 42.5, jp: 18.2, in: 8.4 },
-    capitalOutflows: { eu: 15.1, cn: 12.8 },
-    sectorMomentum: { tech: 85, fin: 62, util: -15, real: -40 }
+    fearGreed: null,
+    btcHigh: null,
+    btcLow: null,
+    btcPrice: null,
+    vixPrice: null,
+    vixChange: null,
+    spxPrice: null,
+    spxChange: null,
+    niftyPrice: null,
+    niftyChange: null,
+    sensexPrice: null,
+    sensexChange: null,
+    orderImbalance: null,
+    smartMoney: null,
+    darkPool: null,
+    algoRisk: null,
+    capitalInflows: null,
+    capitalOutflows: null,
+    sectors: {},
+    commodities: {},
+    currencies: {},
+    bonds: {}
   });
 
   // Fetch real data from our new pipeline
@@ -195,12 +200,12 @@ export default function VymxIntelligencePanel({ mode }: Props) {
     );
   }
 
-  const formatChange = (val: number) => {
-    const v = val || 0;
-    const sign = v >= 0 ? '+' : '';
-    return sign + v.toFixed(2) + '%';
+  const formatChange = (val: number | null | undefined) => {
+    if (val == null || !Number.isFinite(val)) return '—';
+    const sign = val >= 0 ? '+' : '';
+    return sign + val.toFixed(2) + '%';
   };
-  const colorChange = (val: number) => (val >= 0 ? 'text-emerald-400' : 'text-rose-400');
+  const colorChange = (val: number | null | undefined) => val == null ? 'text-zinc-500' : (val >= 0 ? 'text-emerald-400' : 'text-rose-400');
 
   if (mode === "default") {
     return (
@@ -232,7 +237,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">NIFTY 50</span>
              <div className="flex justify-between items-baseline mt-1">
                 <span className="text-sm font-black text-white font-mono">
-                  {(realtimeData?.niftyPrice || 0).toFixed(2)}
+                  {realtimeData?.niftyPrice == null ? '—' : realtimeData.niftyPrice.toFixed(2)}
                 </span>
                 <span className={`text-[10px] font-bold font-mono ${colorChange(realtimeData?.niftyChange)}`}>
                   {formatChange(realtimeData?.niftyChange)}
@@ -243,7 +248,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">SENSEX</span>
              <div className="flex justify-between items-baseline mt-1">
                 <span className="text-sm font-black text-white font-mono">
-                  {(realtimeData?.sensexPrice || 0).toFixed(2)}
+                  {realtimeData?.sensexPrice == null ? '—' : realtimeData.sensexPrice.toFixed(2)}
                 </span>
                 <span className={`text-[10px] font-bold font-mono ${colorChange(realtimeData?.sensexChange)}`}>
                   {formatChange(realtimeData?.sensexChange)}
@@ -254,7 +259,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">S&P 500</span>
              <div className="flex justify-between items-baseline mt-1">
                 <span className="text-sm font-black text-white font-mono">
-                  {(realtimeData?.spxPrice || 0).toFixed(2)}
+                  {realtimeData?.spxPrice == null ? '—' : realtimeData.spxPrice.toFixed(2)}
                 </span>
                 <span className={`text-[10px] font-bold font-mono ${colorChange(realtimeData?.spxChange)}`}>
                   {formatChange(realtimeData?.spxChange)}
@@ -265,10 +270,10 @@ export default function VymxIntelligencePanel({ mode }: Props) {
              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">BTC / VIX</span>
              <div className="flex justify-between items-baseline mt-1">
                 <span className="text-sm font-black text-white font-mono">
-                  {(realtimeData?.btcPrice || 0).toFixed(0)}
+                  {realtimeData?.btcPrice == null ? '—' : realtimeData.btcPrice.toFixed(0)}
                 </span>
                 <span className="text-[11px] font-black font-mono text-indigo-400">
-                  {((realtimeData?.vixPrice || 0)).toFixed(2)}
+                  {realtimeData?.vixPrice == null ? '—' : realtimeData.vixPrice.toFixed(2)}
                 </span>
              </div>
           </div>
@@ -278,24 +283,24 @@ export default function VymxIntelligencePanel({ mode }: Props) {
           <div className="space-y-2 cursor-pointer hover:bg-zinc-800/30 p-2 -m-2 rounded transition-colors" onClick={() => setDeepDiveTile("Global Fear/Greed Index")}>
             <div className="flex justify-between items-end">
               <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider flex items-center gap-1">
-                Global Fear/Greed Index <ArrowUpRight className="w-3 h-3 text-zinc-600" />
+                Fear / Greed Index (provider not connected) <ArrowUpRight className="w-3 h-3 text-zinc-600" />
               </span>
               <span className="text-2xl font-bold text-emerald-400 leading-none">
-                {realtimeData.fearGreed}
+                {realtimeData.fearGreed == null ? 'N/A' : realtimeData.fearGreed}
               </span>
             </div>
             <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden flex">
               <div
                 className="h-full bg-rose-500 transition-all duration-300"
-                style={{ width: `${100 - realtimeData.fearGreed - 13}%` }}
+                style={{ width: `${realtimeData.fearGreed == null ? 0 : 100 - realtimeData.fearGreed - 13}%` }}
               ></div>
               <div
                 className="h-full bg-amber-500 transition-all duration-300"
-                style={{ width: "13%" }}
+                style={{ width: `${realtimeData.fearGreed == null ? 0 : 13}%` }}
               ></div>
               <div
                 className="h-full bg-emerald-500 transition-all duration-300"
-                style={{ width: `${realtimeData.fearGreed}%` }}
+                style={{ width: `${realtimeData.fearGreed == null ? 0 : realtimeData.fearGreed}%` }}
               ></div>
             </div>
             <div className="flex justify-between text-[10px] text-zinc-500 font-bold uppercase">
@@ -310,7 +315,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
                 Top Bullish Region
               </span>
               <span className="text-sm font-bold text-emerald-400 flex items-center gap-1">
-                <ArrowUpRight className="w-4 h-4" /> North America
+                <ArrowUpRight className="w-4 h-4" /> Not available
               </span>
             </div>
             <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 cursor-pointer hover:border-indigo-500/50 transition-colors" onClick={() => setDeepDiveTile("Top Bearish Region")}>
@@ -318,7 +323,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
                 Top Bearish Region
               </span>
               <span className="text-sm font-bold text-rose-400 flex items-center gap-1">
-                <ArrowDownRight className="w-4 h-4" /> Eastern Europe
+                <ArrowDownRight className="w-4 h-4" /> Not available
               </span>
             </div>
           </div>
@@ -331,30 +336,30 @@ export default function VymxIntelligencePanel({ mode }: Props) {
               <div className="flex justify-between items-center text-xs">
                 <span className="text-zinc-300 font-medium">BTC 24H High</span>
                 <span className="text-emerald-400 font-mono font-bold">
-                  ${realtimeData.btcHigh.toFixed(2)}
+                  ${realtimeData.btcHigh == null ? '—' : realtimeData.btcHigh.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="text-zinc-300 font-medium">BTC 24H Low</span>
                 <span className="text-rose-400 font-mono font-bold">
-                  $62,100.00
+                  {realtimeData?.btcLow == null ? '—' : '$' + realtimeData.btcLow.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between items-center text-xs border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2">
                 <span className="text-zinc-300 font-medium">Order Book Imbalance</span>
-                <span className="text-amber-400 font-mono font-bold">{realtimeData.orderImbalance}% BIDS</span>
+                <span className="text-amber-400 font-mono font-bold">{realtimeData.orderImbalance == null ? 'Not connected' : `${realtimeData.orderImbalance}% BIDS`}</span>
               </div>
               <div className="flex justify-between items-center text-xs border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2 pt-2">
                 <span className="text-zinc-300 font-medium">Smart Money Flow Index</span>
-                <span className="text-emerald-400 font-mono font-bold">{realtimeData.smartMoney.toFixed(1)} (Bullish)</span>
+                <span className="text-emerald-400 font-mono font-bold">{realtimeData.smartMoney == null ? 'Not connected' : realtimeData.smartMoney.toFixed(1)}</span>
               </div>
               <div className="flex justify-between items-center text-xs border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 pb-2 pt-2">
                 <span className="text-zinc-300 font-medium">Dark Pool Activity</span>
-                <span className="text-purple-400 font-mono font-bold">Elevated ({realtimeData.darkPool}%)</span>
+                <span className="text-purple-400 font-mono font-bold">{realtimeData.darkPool == null ? 'Not connected' : `Elevated (${realtimeData.darkPool}%)`}</span>
               </div>
               <div className="flex justify-between items-center text-xs pt-2">
                 <span className="text-zinc-300 font-medium">Algorithmic Risk Premium</span>
-                <span className="text-rose-400 font-mono font-bold">-{realtimeData.algoRisk.toFixed(2)}%</span>
+                <span className="text-rose-400 font-mono font-bold">{realtimeData.algoRisk == null ? 'Not connected' : `-${realtimeData.algoRisk.toFixed(2)}%`}</span>
               </div>
             </div>
           </div>
