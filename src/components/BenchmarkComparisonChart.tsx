@@ -14,8 +14,10 @@ interface BenchmarkComparisonChartProps {
 }
 
 export default function BenchmarkComparisonChart({ asset, timeframe }: BenchmarkComparisonChartProps) {
-  const benchmarkSymbol = asset.country === 'India' ? 'NIFTY50' : '.SPX';
-  const benchmarkName = asset.country === 'India' ? 'NIFTY 50' : 'S&P 500';
+  const benchmarkSymbol = asset.country === 'India'
+    ? (asset.symbol === 'NIFTY50' ? 'SENSEX' : 'NIFTY50')
+    : (asset.symbol === '.SPX' ? '.IXIC' : '.SPX');
+  const benchmarkName = benchmarkSymbol === 'SENSEX' ? 'SENSEX' : benchmarkSymbol === 'NIFTY50' ? 'NIFTY 50' : benchmarkSymbol === '.IXIC' ? 'NASDAQ Composite' : 'S&P 500';
   const { data: assetHistory, loading: assetLoading, error: assetError } = useHistoricalData(asset.symbol, timeframe);
   const { data: benchmarkHistory, loading: benchmarkLoading, error: benchmarkError } = useHistoricalData(benchmarkSymbol, timeframe);
 
