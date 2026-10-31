@@ -83,7 +83,7 @@ export default function TrendPredictionChart({ asset, timeframe }: TrendPredicti
     <div className="w-full h-full bg-zinc-950 p-4">
       <div className="mb-4">
          <h3 className="text-white text-sm font-bold">5-Day Linear Regression Forecast</h3>
-         <p className="text-xs text-zinc-400">Based on recent 30-period momentum</p>
+         <p className="text-xs text-amber-400">Illustrative regression on simulated sample data — not actual historical prices or an investment forecast.</p>
       </div>
       <div className="w-full h-[calc(100%-60px)]">
         <ResponsiveContainer width="100%" height="100%">
