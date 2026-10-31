@@ -16,7 +16,7 @@ import {
   Fingerprint,
   Sparkles
 } from 'lucide-react';
-import { auth, GoogleAuthProvider, signInWithPopup, db } from '../lib/firebase';
+import { auth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, db } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import SecurityLedger from './SecurityLedger';
 import { logSecurityEvent } from '../utils/security';
@@ -305,9 +305,49 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
     setErrorText('Phone verification is unavailable until server-backed Firebase Phone Authentication is configured.');
   };
 
-  // A password typed into this UI must never create a fake authenticated user.
-  const handleEmailLogin = () => {
-    setErrorText('Email/password authentication is not configured. Use Google Identity or Demo Access.');
+  // Email sign-in is delegated to Firebase. A browser-side password never
+  // creates a local or simulated authenticated identity.
+  const handleEmailLogin = async () => {
+    setErrorText('');
+    const email = emailVal.trim().toLowerCase();
+    if (!email || !passwordVal) {
+      setErrorText('Enter both your email address and password.');
+      return;
+    }
+    if (!auth) {
+      setErrorText('Authentication service is unavailable. Please try Google Identity or Demo Access.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const credential = await signInWithEmailAndPassword(auth, email, passwordVal);
+      const user = credential.user;
+      const payload = {
+        uid: user.uid,
+        name: user.displayName || email.split('@')[0] || 'Vymx Trader',
+        email: user.email || email,
+        authType: 'email' as const,
+        avatarUrl: user.photoURL || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&fit=crop&q=80'
+      };
+      logSecurityEvent(`Firebase email authentication validated: ${payload.email}`, 'SUCCESS', 'low');
+      onLoginSuccess(payload);
+    } catch (error: any) {
+      const code = String(error?.code || '');
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
+        setErrorText('The email or password is incorrect.');
+      } else if (code === 'auth/operation-not-allowed') {
+        setErrorText('Email/password sign-in is disabled in Firebase Authentication. Enable the Email/Password provider in your Firebase project.');
+      } else if (code === 'auth/too-many-requests') {
+        setErrorText('Too many unsuccessful attempts. Please wait and try again.');
+      } else if (code === 'auth/invalid-email') {
+        setErrorText('Enter a valid email address.');
+      } else {
+        setErrorText(error?.message || 'Email sign-in failed. Try Google Identity or Demo Access.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -582,7 +622,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
           <div className="bg-zinc-900/20 border border-zinc-900/60 p-3.5 rounded-2xl flex items-start gap-2 text-[10px] leading-relaxed text-zinc-500" id="sandbox-saving-note">
             <Info className="h-4 w-4 text-zinc-500 shrink-0 mt-0.5" />
             <p className="text-left font-sans">
-              Dynamic trade parameters are safely isolated inside your client domain. Client-side authentication states synchronize securely with dynamic ledger hashes.
+              Dynamic trade parameters are safely isolated inside your client domain. Google and enabled Firebase email/password sign-ins are verified by Firebase. Demo access is a local sandbox; phone OTP remains unavailable until a trusted SMS provider is configured.
             </p>
           </div>
 
