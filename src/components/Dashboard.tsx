@@ -821,11 +821,13 @@ export default function Dashboard({
               </div>
 
               <div className="pt-2 border-t border-zinc-900 font-mono text-[9.5px] leading-relaxed text-zinc-500">
-                {sentimentScore >= 55
-                  ? "Advancers currently outnumber decliners in the selected quote universe. This is a descriptive breadth observation, not a trading signal."
+                {verifiedQuoteAssets.length === 0
+                  ? 'No verified provider quotes are available in this universe; market breadth is unavailable.'
+                  : sentimentScore >= 55
+                  ? 'Advancers currently outnumber decliners in the selected quote universe. This is a descriptive breadth observation, not a trading signal.'
                   : sentimentScore <= 45
-                  ? "Decliners currently outnumber advancers in the selected quote universe. This is a descriptive breadth observation, not a hedge recommendation."
-                  : "Advancers and decliners are relatively balanced in the selected quote universe. This proxy does not measure investor sentiment."}
+                  ? 'Decliners currently outnumber advancers in the selected quote universe. This is a descriptive breadth observation, not a hedge recommendation.'
+                  : 'Advancers and decliners are relatively balanced in the selected quote universe. This proxy does not measure investor sentiment.'}
               </div>
             </div>
 
