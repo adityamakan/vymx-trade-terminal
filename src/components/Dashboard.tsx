@@ -398,18 +398,24 @@ export default function Dashboard({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          symbol: article.symbolAffected || 'GLOBAL',
-          name: article.title,
-          type: 'market article',
-          analysisType: 'newsSentiment',
+          prompt: 'Summarize the supplied market-news article in five concise bullet points. Separate facts explicitly present in the article from interpretation. Do not add events, figures or causes that are not in the supplied text.',
+          contextData: {
+            headline: article.title,
+            source: article.source,
+            publishedAt: article.time,
+            providerSummary: article.summary,
+            relatedSymbols: article.symbolAffected || null,
+            sourceUrl: article.url || null
+          },
+          systemInstruction: 'You are a cautious financial news summarizer. Do not invent facts or infer market impact without evidence.'
         }),
       });
 
-      const data = await response.json();
-      if (data.error) {
-        setAiSummary(`Could not formulate AI summary: ${data.error}`);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) {
+        setAiSummary(`Could not formulate AI summary: ${data.error || `HTTP ${response.status}`}`);
       } else {
-        setAiSummary(data.content);
+        setAiSummary(data.answer || data.text || data.reply || 'The AI provider returned an empty summary.');
       }
     } catch (err: any) {
       setAiSummary(`Communication failed. Detail: ${err.message || 'Server offline'}`);
