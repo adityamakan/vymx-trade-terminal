@@ -62,6 +62,7 @@ interface HeatmapProps {
   watchlist: string[];
   toggleWatchlist: (symbol: string) => void;
   assets?: Asset[];
+  isDataOffline?: boolean;
 }
 
 export default function Heatmap({
@@ -69,6 +70,7 @@ export default function Heatmap({
   watchlist,
   toggleWatchlist,
   assets,
+  isDataOffline = false,
   onTradeSubmit,
 }: HeatmapProps) {
   // Live asset prices simulator state
@@ -212,53 +214,36 @@ export default function Heatmap({
     if (metricView === "volatility") {
       return 'N/A';
     }
-    return `${asset.change >= 0 ? "+" : ""}${asset.change.toFixed(2)}%`;
+    const timeframeChange = getTimeframeChange(asset);
+    return timeframeChange == null ? 'N/A' : `${timeframeChange >= 0 ? "+" : ""}${timeframeChange.toFixed(2)}%`;
   };
 
 
-  const getTimeframeChange = (asset: Asset) => {
-    if (heatmapTimeframe === "1D") return asset.change;
-    const history = asset.history[heatmapTimeframe];
-    if (!history || history.length === 0) return asset.change;
-    const startVal = history[0].value;
-    return ((asset.price - startVal) / startVal) * 100;
+  const getTimeframeChange = (asset: Asset): number | null => {
+    // Bundled asset.history contains synthetic demo samples. Only 1D provider
+    // quote changes are valid here until interval-specific candles are wired in.
+    return heatmapTimeframe === "1D" ? asset.change : null;
   };
 
   const getCellMetricColorIntensityStyle = (asset: Asset) => {
-    if (metricView === "volume") {
-      // Return custom purple style for high volume blocks
-      const volWeight =
-        asset.volume > 10000000
-          ? "bg-indigo-950/90 text-indigo-300 border-indigo-500/30"
-          : "bg-zinc-900 text-zinc-400 border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300";
-      return volWeight;
-    }
+    if (metricView === "volume") return asset.volume > 10000000 ? "bg-indigo-950/90 text-indigo-300 border-indigo-500/30" : "bg-zinc-900 text-zinc-400 border-zinc-800/60";
     if (metricView === "range52w") {
       const spread = asset.high52w - asset.low52w;
-      const pct =
-        spread > 0 ? ((asset.price - asset.low52w) / spread) * 100 : 50;
-      if (pct > 80)
-        return "bg-emerald-950/80 text-emerald-300 border-emerald-500/20";
+      if (spread <= 0) return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
+      const pct = ((asset.price - asset.low52w) / spread) * 100;
+      if (pct > 80) return "bg-emerald-950/80 text-emerald-300 border-emerald-500/20";
       if (pct < 20) return "bg-rose-950/80 text-rose-300 border-rose-500/20";
-      return "bg-zinc-900 text-zinc-400 border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300";
+      return "bg-zinc-900 text-zinc-400 border-zinc-800/60";
     }
-    if (metricView === "flowVelocity") {
-      const flow = asset.change;
-      if (flow > 2) return "bg-cyan-950/80 text-cyan-300 border-cyan-500/30";
-      if (flow < -2) return "bg-orange-950/80 text-orange-300 border-orange-500/30";
-      return "bg-zinc-900 text-zinc-400 border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300";
-    }
-    if (metricView === "volatility") {
-      const vol = Math.abs(asset.change);
-      if (vol > 3) return "bg-fuchsia-950/80 text-fuchsia-300 border-fuchsia-500/30";
-      if (vol > 1.5) return "bg-purple-950/60 text-purple-300 border-purple-500/20";
-      return "bg-zinc-900 text-zinc-400 border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300";
-    }
-    return getChangeBgColor(getTimeframeChange(asset), colorScheme);
+    if (metricView === "flowVelocity" || metricView === "volatility") return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
+    const timeframeChange = getTimeframeChange(asset);
+    return timeframeChange == null ? "bg-zinc-900 text-zinc-500 border-zinc-800/60" : getChangeBgColor(timeframeChange, colorScheme);
   };
 
   return (
     <div className="space-y-6 pt-6" id="finova-heatmap-matrix">
+      {isDataOffline && <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-[11px] text-amber-200">Market data is offline. Displayed asset defaults are illustrative only and must not be treated as current quotes.</div>}
+
       {/* 1. Header & Quick Analytics Tape */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-900 pb-5">
         <div>
@@ -269,7 +254,7 @@ export default function Heatmap({
             </h1>
           </div>
           <p className="text-xs text-zinc-400 mt-1 max-w-2xl">
-            Market snapshot visualization using the latest prices supplied by the connected market-data feed. Values update when the parent feed refreshes; no local price simulation is applied.
+            Market snapshot visualization using the latest prices supplied by the connected market-data feed. Interval history, institutional flows and realized volatility remain unavailable until their dedicated provider datasets are connected.
           </p>
         </div>
 
@@ -509,7 +494,7 @@ export default function Heatmap({
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                FII/DII Flow
+                FII/DII Flow · unavailable
               </button>
               <button
                 onClick={() => setMetricView("volatility")}
@@ -519,7 +504,7 @@ export default function Heatmap({
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                Volatility Index
+                Volatility · unavailable
               </button>
             </div>
           </div>
