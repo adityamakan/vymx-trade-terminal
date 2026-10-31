@@ -13,6 +13,7 @@ interface PortfolioProps {
   virtualBalance: number;
   portfolio: PortfolioItem[];
   transactions: Transaction[];
+  snapshots: { id: string; capturedAt: number; cashBalance: number; positions: { symbol: string; quantity: number; price: number; marketValue: number; quoteCurrency: string }[]; source: string; currencyNormalization: string }[];
   onSelectAsset: (asset: Asset) => void;
   setView: (view: any) => void;
   assets: Asset[];
@@ -26,6 +27,7 @@ export default function Portfolio({
   virtualBalance,
   portfolio,
   transactions,
+  snapshots,
   onSelectAsset,
   setView,
   assets,
@@ -613,6 +615,35 @@ export default function Portfolio({
 
   return (
     <div className="py-6 space-y-8">
+
+      {/* Persisted valuation observations — raw quote currencies remain unaggregated. */}
+      <section className="rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-5" aria-label="Portfolio valuation history coverage">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-zinc-100">Portfolio valuation history</h2>
+            <p className="mt-1 text-xs text-zinc-500">Provider-backed snapshots are captured every 15 minutes for signed-in accounts and retained in your private Firestore account.</p>
+          </div>
+          <div className="text-right">
+            <div className="text-xl font-black font-mono text-white">{snapshots.length}</div>
+            <div className="text-[9px] uppercase tracking-wider text-zinc-500">Stored observations</div>
+          </div>
+        </div>
+        {snapshots.length > 0 ? (
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
+              <span className="text-zinc-500">First observation</span>
+              <p className="mt-1 font-mono text-zinc-300">{new Date(snapshots[0].capturedAt).toLocaleString()}</p>
+            </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
+              <span className="text-zinc-500">Latest observation</span>
+              <p className="mt-1 font-mono text-zinc-300">{new Date(snapshots[snapshots.length - 1].capturedAt).toLocaleString()}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-zinc-500">No persisted observations yet. A snapshot is recorded after a verified market-data update while signed in.</p>
+        )}
+        <p className="mt-3 text-[10px] text-amber-300/80">Instrument prices are stored in provider-native quote currencies. Cross-currency portfolio returns, CAGR, volatility, Sharpe, drawdown, VaR and benchmark-relative metrics remain disabled until FX normalization and a consistent valuation methodology are implemented.</p>
+      </section>
 
       {/* 1. Portfolio Header Stats Summary Grid */}
       <section id="portfolio-stats-summary" className="grid grid-cols-1 md:grid-cols-4 gap-4">
