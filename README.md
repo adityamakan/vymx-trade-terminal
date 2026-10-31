@@ -1,48 +1,24 @@
 # VYMX Trade Terminal
 
-A research-oriented multi-asset market dashboard and simulated trading sandbox built with React, TypeScript, Vite, Express, WebSockets and Firebase.
+VYMX is a research-oriented, multi-asset market dashboard and simulated trading sandbox built with React, TypeScript, Vite, Express, WebSockets and Firebase.
 
-> **Data integrity notice:** Market quotes are requested from Yahoo Finance through the server and may be delayed, unavailable, or subject to provider limits. This is an educational/research application, not a broker, exchange, investment adviser, or execution venue. Do not use it to make live trading decisions without independently verifying data.
+> **Data integrity notice:** Market observations are requested from Yahoo Finance and may be delayed, unavailable, incomplete, or subject to provider limits. Sector scores are ETF momentum proxies, not institutional-flow measurements. The application is for education and research; it is not a broker, exchange, investment adviser, or live execution venue. Independently verify all data before making financial decisions.
 
-## Current implementation
+## Current architecture
 
 - React 19 + TypeScript frontend.
-- Express API server and WebSocket price updates.
-- Yahoo Finance quote adapter with a short in-memory cache.
-- Firebase Authentication and Firestore client integration.
-- Gemini-powered AI features when correctly configured.
-- Simulated portfolio and order ledger (no real orders are routed).
+- Express API server with WebSocket market-price broadcasts.
+- Yahoo Finance adapter for quotes, historical candles, financial statements, sector ETF proxies, commodity futures, FX crosses and selected yield proxies.
+- Firebase Authentication for Google and (when enabled in Firebase) existing Email/Password accounts.
+- Firestore ledger sync for verified Firebase users only.
+- Guest/demo access is a local sandbox and is not a verified identity.
+- Gemini-backed analysis is available only when a server-side API key is configured.
+- Portfolio activity is simulated. No real orders are routed.
 
-## Market-data API
+## Requirements and local development
 
-### Health
-`GET /api/health`
-
-Reports API process health. It does **not** certify that every market feed is live.
-
-### Quotes
-`POST /api/prices`
-
-Request:
-```json
-{ "symbols": ["AAPL", "MSFT", "NIFTY50", "BTC"] }
-```
-
-Aliases include `NIFTY50` → `^NSEI`, `SENSEX` → `^BSESN`, `SPX` → `^GSPC`, and `BTC` → `BTC-USD`. The API validates symbols, limits requests to 50 symbols, returns provider metadata and reports partial failures explicitly. A missing quote is not replaced with a fabricated price.
-
-### Snapshot
-`GET /api/market-snapshot`
-
-Returns the available quotes for selected global benchmarks. A provider failure is surfaced as an error/partial result.
-
-### Backtesting
-The legacy macro-backtest route now returns HTTP 501 until a reproducible historical-data strategy engine is connected. The previous generated return series and hard-coded performance metrics were not genuine backtest results and have been removed from the API.
-
-Unknown `/api/*` routes return HTTP 404 rather than a fabricated success response.
-
-## Local development
-
-Requirements: Node.js 20+ and npm.
+- Node.js **22.19.0 or later**
+- npm
 
 ```bash
 git clone https://github.com/adityamakan/vymx-trade-terminal.git
@@ -51,67 +27,85 @@ npm ci
 npm run dev
 ```
 
-The API defaults to port 5000. Configure Firebase and Gemini credentials using your deployment's secret/environment-variable manager. Never commit private API keys or service-account credentials.
+The Express API defaults to port 5000. The Vite frontend is served through the development server. For production:
 
-Build:
 ```bash
 npm run build
+npm start
 ```
+
+Configure Firebase client settings and optional provider secrets through the deployment environment. Never commit private API keys, service-account credentials, or secrets in frontend-exposed `VITE_*` variables.
+
+## Environment variables
+
+| Variable | Purpose | Required |
+| --- | --- | --- |
+| `GEMINI_API_KEY` or `GOOGLE_API_KEY` | Server-side Gemini analysis for supported AI features | Optional |
+| `FRED_API_KEY` | Federal Reserve Economic Data observations | Optional |
+| `FINNHUB_API_KEY` | Provider-sourced market news | Optional |
+| `PORT` | Express server port | Optional; defaults to 5000 |
+
+Without optional provider credentials, the corresponding endpoints return explicit unavailable responses. The server does not substitute fabricated news, institutional flows, or AI answers.
+
+## API reference
+
+### Health and market data
+
+- `GET /api/health` — process health and optional-provider configuration. This does not certify that every upstream quote is available.
+- `POST /api/prices` — validated quote batch. Accepts 1–100 symbols and reports per-symbol failures.
+- `GET /api/market-snapshot` — selected global benchmark quotes.
+- `GET /api/historical/:symbol?start=ISO_DATE&end=ISO_DATE&interval=1d` — provider-sourced OHLCV candles. Intraday ranges are more restrictive: 5m/15m/30m up to 60 days; 1h up to 730 days; daily/weekly/monthly up to five years.
+- `GET /api/yahoo/financials/:symbol` — Yahoo Finance profile, valuation, financial-data and statement modules when returned by the provider.
+- `GET /api/macro/indicators` — cross-asset market proxies. These are not official macroeconomic releases.
+- `GET /api/fred/series/:seriesId` — actual FRED observations when `FRED_API_KEY` is configured.
+- `GET /api/finnhub/news?category=general` — actual Finnhub news when `FINNHUB_API_KEY` is configured.
+
+### Intelligence and research endpoints
+
+- `GET /api/ai/vymx-intelligence` — provider-backed index, crypto, VIX, sector ETF, commodity, FX and US 10Y quote data. Unsupported sentiment, flow, order-book and dark-pool metrics are returned as unavailable.
+- `GET /api/ai/market-auras` — sector ETF momentum scores. Score = `50 + 10 × daily ETF percentage change`, clipped to 0–100. This is a transparent momentum proxy, not a rating or capital-flow estimate.
+- `GET /api/ai/narrative` — rule-based summary of observed market quotes. It is not an AI-generated news or causal explanation.
+- `GET /api/ai/quiz` — static educational market-structure quiz content.
+- `GET /api/ai/exchange-latest?exchange=NSE` — index quote for supported exchanges. Unsupported exchanges return an explicit unavailable response.
+- `POST /api/ai/:feature` — Gemini-generated analysis for supported features when a server-side Gemini key is configured. AI-generated text is commentary, not verified market fact.
+
+### Deliberately disabled or unavailable capabilities
+
+- Macro backtesting returns HTTP 501 until a reproducible engine uses validated historical observations, documented strategy rules, and realistic transaction costs/slippage. The older ZIP's hard-coded return profiles are not used.
+- Live order execution returns HTTP 403. No endpoint submits a real order.
+- Institutional flows, dark-pool activity, order-book depth, smart-money indices, and geopolitical event monitoring require dedicated verified feeds. The UI marks these metrics unavailable rather than fabricating values.
+- The Yahoo screener adapter is not implemented and returns HTTP 501.
+- The world-monitor adapter returns an explicit unavailable response until a verified event source is connected.
+- Globe geopolitical, supply-chain and commodity location markers are illustrative reference/scenario overlays, not live incident, disruption or shipment reports.
+
+## Authentication and ledger isolation
+
+- Google sign-in is verified through Firebase Authentication.
+- Email/Password sign-in uses Firebase Authentication for existing accounts when the Email/Password provider is enabled in the Firebase project. Account registration is not exposed in this interface.
+- Phone OTP is not enabled; it must not be simulated in the browser.
+- Guest/demo access is local-only and is never treated as a Firebase identity.
+- A newly authenticated Firebase account starts with an empty simulated portfolio. The app hydrates that account's Firestore ledger before enabling cloud writes, and guest data is not copied into the account.
+- Firestore security rules must be deployed and tested in the Firebase project. Client-side checks are not a replacement for server-side authorization.
+
+## Data integrity and operational notes
+
+- Yahoo Finance is an unofficial upstream data source. Availability, latency, licensing and rate limits are outside this application's control.
+- Quote responses include source and timestamps and report partial failures rather than fabricating missing prices.
+- In-memory caches are bounded and expire automatically.
+- WebSocket broadcasts are throttled to the quote-cache cadence and protected against overlapping refreshes.
+- API keys are read only from server-side environment variables. Never send provider secrets from the browser in custom headers.
+- The simulated portfolio and cash balance are not brokerage assets or withdrawable funds.
 
 ## Python research scripts
 
-Python scripts are separate utilities and are not currently wired into the Express request path. Install their dependencies with:
+Python scripts are separate utilities and are not wired into the Express request path. Install their dependencies with:
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-Do not treat static scenario profiles or illustrative values as measured historical performance. Any future backtest must disclose data source, sample period, survivorship/look-ahead controls, transaction costs, slippage, rebalance rules and benchmark methodology.
-
-## Security and deployment notes
-
-- Firebase client configuration is not a substitute for Firebase Authentication checks on protected server routes.
-- Firestore rules must be deployed and tested in the Firebase project.
-- Keep secrets in Render/deployment environment settings, never in source control or Vite-exposed `VITE_*` variables.
-- Yahoo Finance is an unofficial data source; availability, licensing, latency and rate limits are outside this application's control.
+Any future backtest must disclose source data, sample period, survivorship/look-ahead controls, transaction costs, slippage, rebalance rules and benchmark methodology.
 
 ## License
 
 See repository license metadata.
-
-
-## API integrations and operational safety
-
-The production server exposes live quote, historical candle, financial-statement, and market-proxy endpoints through Yahoo Finance. Optional integrations are enabled only with server-side environment variables; never place provider secrets in frontend code or send them in request headers.
-
-### Optional server environment variables
-
-| Variable | Purpose | Required |
-| --- | --- | --- |
-| `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) | Server-side Gemini analysis for `/api/ai/:feature` | No; AI routes return an explicit 503 when absent |
-| `FRED_API_KEY` | Federal Reserve Economic Data observations | No; FRED route returns an explicit 503 when absent |
-| `FINNHUB_API_KEY` | Market news feed | No; Finnhub route returns an explicit 503 when absent |
-
-Configure these in the hosting provider's environment settings. Do not commit secrets to GitHub.
-
-### API routes
-
-- `GET /api/health` — process health and optional-provider configuration state.
-- `POST /api/prices` — validated live quote batch; accepts 1–100 symbols and reports partial failures.
-- `GET /api/market-snapshot` — major market snapshot.
-- `GET /api/historical/:symbol?start=ISO_DATE&end=ISO_DATE&interval=1d` — provider-sourced OHLCV history; defaults to one year and limits requests to five years.
-- `GET /api/yahoo/financials/:symbol` — Yahoo Finance profile, valuation, and statement modules when available.
-- `GET /api/macro/indicators` — market proxies for cross-asset monitoring. These are not official macroeconomic releases.
-- `GET /api/fred/series/:seriesId` — real FRED observations when configured.
-- `GET /api/finnhub/news?category=general` — provider-sourced news when configured.
-- `POST /api/ai/:feature` — Gemini-generated analysis when configured; output is AI-generated and must not be treated as verified market fact.
-- `GET/POST /api/ai/live-news` — real Finnhub headlines when `FINNHUB_API_KEY` is configured; this route does not require Gemini.
-
-### Explicitly disabled capabilities
-
-- Macro backtesting remains disabled (HTTP 501) until a reproducible engine uses validated historical observations, transaction costs, and documented strategy rules. The previous ZIP's hard-coded return profiles are not used.
-- Live order execution remains disabled (HTTP 403). No API endpoint in this build submits an order.
-- The world-monitor and Yahoo screener adapters return explicit unavailable/not-implemented responses rather than synthetic geopolitical events or invented screener results.
-- Demo access is an ephemeral local sandbox, not a verified account. Google sign-in uses Firebase. Phone OTP and email/password sign-in remain unavailable until real server-backed identity providers are configured.
-
-Market-data availability, exchange entitlements, and Yahoo Finance rate limits can affect individual symbols. Quote responses include per-symbol failures rather than substituting stale or fabricated prices.
