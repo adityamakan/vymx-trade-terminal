@@ -304,14 +304,8 @@ export default function Portfolio({
 
     const activePositions = portfolio.filter(p => p.quantity > 0).length;
 
-    // Total Return (percentage)
-    const startingBalance = 100000;
-    const netEquity = virtualBalance + portfolio.reduce((acc, p) => {
-      const livePrice = assets.find(a => a.symbol === p.symbol)?.price || p.avgBuyPrice;
-      return acc + (p.quantity * livePrice);
-    }, 0);
-
-    const totalReturnPct = ((netEquity - startingBalance) / startingBalance) * 100;
+    // All-time return requires a recorded initial account balance; none is persisted.
+    const totalReturnPct = null;
 
     return {
       realizedGains,
@@ -680,10 +674,8 @@ export default function Portfolio({
         <div className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-5 flex items-center justify-between shadow-md">
           <div>
             <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Total Return (All-Time)</p>
-            <div className={`text-xl font-black font-mono tracking-tight flex items-center gap-1.5 mt-1.5 ${kpiStats.totalReturnPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {kpiStats.totalReturnPct >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-              <span>{kpiStats.totalReturnPct >= 0 ? '+' : ''}{kpiStats.totalReturnPct.toFixed(2)}%</span>
-            </div>
+            <div className="text-xl font-black font-mono tracking-tight mt-1.5 text-zinc-500">N/A</div>
+            <p className="text-[10px] text-zinc-500">Initial account balance not recorded</p>
           </div>
           <div className="h-10 w-10 rounded-full bg-zinc-800/50 flex items-center justify-center border border-zinc-700/50">
             <Activity className="h-4 w-4 text-zinc-400" />
