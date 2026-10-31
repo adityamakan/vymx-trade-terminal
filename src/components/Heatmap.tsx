@@ -807,33 +807,7 @@ export default function Heatmap({
 
                             <div className="h-12 w-full mt-1 bg-black/10 rounded">
 
-                              <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 100" className="opacity-80">
-                                {(() => {
-                                  const data = asset.history[heatmapTimeframe] || [];
-                                  if (data.length <= 1) return null;
-                                  const min = Math.min(...data.map(d => d.value));
-                                  const max = Math.max(...data.map(d => d.value));
-                                  const range = max - min || 1;
-
-                                  const strokeColor = getTimeframeChange(asset) >= 0 ? "#10b981" : "#f43f5e";
-                                  return (
-                                    <>
-                                                                            <path fill="none" stroke={strokeColor} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.6))" d={`M ${data.map((d, i) => {
-                                        const x = (i / (data.length - 1)) * 100;
-                                        const y = 100 - ((d.value - min) / range) * 100;
-                                        if (i === 0) return `${x},${y}`;
-                                        const prevX = ((i - 1) / (data.length - 1)) * 100;
-                                        const prevY = 100 - ((data[i - 1].value - min) / range) * 100;
-                                        const cp1x = prevX + (x - prevX) / 3;
-                                        const cp1y = prevY;
-                                        const cp2x = x - (x - prevX) / 3;
-                                        const cp2y = y;
-                                        return `C ${cp1x},${cp1y} ${cp2x},${cp2y} ${x},${y}`;
-                                      }).join(' ')}`} />
-                                    </>
-                                  );
-                                })()}
-                              </svg>
+                              <div className="h-full flex items-center justify-center text-[9px] text-zinc-600 font-mono">Historical candle series unavailable</div>
 
                             </div>
 
