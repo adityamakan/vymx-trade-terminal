@@ -859,7 +859,7 @@ export default function MarketGlobe3D() {
                   <div className="flex items-center gap-1.5">
                     {fearGreedValue !== null && fearGreedValue > 70 ? <ThermometerSun className="w-3.5 h-3.5 text-emerald-400" /> : <ThermometerSnowflake className="w-3.5 h-3.5 text-amber-400" />}
                     <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                       <div className={`h-full ${activeExchangeData.fearAndGreed > 70 ? 'bg-emerald-400' : 'bg-amber-400'}`} style={{ width: `${fearGreedValue ?? 0}%` }}></div>
+                       <div className={`h-full ${fearGreedValue !== null && fearGreedValue > 70 ? 'bg-emerald-400' : 'bg-amber-400'}`} style={{ width: `${fearGreedValue ?? 0}%` }}></div>
                     </div>
                     <span className="font-mono font-bold text-zinc-300 text-[10px]">{liveExchangeData ? 'N/A' : activeExchangeData.fearAndGreed}</span>
                   </div>
