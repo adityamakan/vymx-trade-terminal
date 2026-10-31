@@ -98,7 +98,7 @@ export default function Heatmap({
     "1D",
   );
   const [hoveredAsset, setHoveredAsset] = useState<Asset | null>(null);
-  const [, setFreshnessTick] = useState(0);
+  const [freshnessTick, setFreshnessTick] = useState(0);
 
   useEffect(() => {
     const timer = window.setInterval(() => setFreshnessTick((value) => value + 1), 15_000);
@@ -198,7 +198,7 @@ export default function Heatmap({
       : null;
 
     return { total, verified: verifiedAssets.length, gainers, losers, neutral, avgChange };
-  }, [filteredAssets]);
+  }, [filteredAssets, freshnessTick]);
 
   const activeMarketCapTotal = 'Not supplied by quote feed';
 
