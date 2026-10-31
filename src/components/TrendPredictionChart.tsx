@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useHistoricalData } from '../hooks/useHistoricalData';
 import { Asset } from '../types';
 import {
   ComposedChart,
@@ -17,73 +18,71 @@ interface TrendPredictionChartProps {
 }
 
 export default function TrendPredictionChart({ asset, timeframe }: TrendPredictionChartProps) {
+  const { data: history, loading, error } = useHistoricalData(asset.symbol, timeframe);
+
   const chartData = useMemo(() => {
-    // We only take the last 30 data points for linear regression calculation to capture recent trend
-    const history = asset.history[timeframe];
-    if (!history || history.length === 0) return [];
+    if (!history.length) return [];
+    const recentStartIndex = Math.max(0, history.length - 30);
+    const recentHistory = history.slice(recentStartIndex);
+    if (recentHistory.length < 2) {
+      return history.map((point) => ({ date: point.date, actual: point.value, predicted: null as number | null }));
+    }
 
-    const recentHistory = history.slice(-30);
-    if (recentHistory.length < 2) return history.map(d => ({ date: d.date, actual: d.value, predicted: null }));
-
-    // Linear Regression Formula: y = mx + b
+    // Least-squares linear regression over the most recent provider-backed closes.
     let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
     const n = recentHistory.length;
-
-    recentHistory.forEach((point, i) => {
-      sumX += i;
+    recentHistory.forEach((point, index) => {
+      sumX += index;
       sumY += point.value;
-      sumXY += i * point.value;
-      sumXX += i * i;
+      sumXY += index * point.value;
+      sumXX += index * index;
     });
 
-    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const denominator = n * sumXX - sumX * sumX;
+    if (denominator === 0) {
+      return history.map((point) => ({ date: point.date, actual: point.value, predicted: null as number | null }));
+    }
+    const slope = (n * sumXY - sumX * sumY) / denominator;
     const intercept = (sumY - slope * sumX) / n;
 
     const data = history.map((point, index) => {
-      // Find relative index for regression line, only show line for the recent points
-      const recentIdx = history.length - 30;
-      const isRecent = index >= recentIdx;
-
-      let predicted = null;
-      if (isRecent) {
-        const x = index - recentIdx;
-        predicted = slope * x + intercept;
-      }
-
+      const isRecent = index >= recentStartIndex;
+      const x = index - recentStartIndex;
       return {
         date: point.date,
         actual: point.value,
-        predicted: predicted
+        predicted: isRecent ? slope * x + intercept : null as number | null
       };
     });
 
-    // Add 5-day forecast
-    const lastPoint = history[history.length - 1];
-    let lastDate = new Date();
-    // Try to parse the last date, if it's "10:00 AM", we can't easily, but let's just append "+X"
-    for (let i = 1; i <= 5; i++) {
-      const x = (history.length - (history.length - 30)) - 1 + i;
-      const predictedVal = slope * x + intercept;
+    const forecastUnit = timeframe === '1D' ? 'h' : timeframe === '1Y' ? 'w' : 'd';
+    for (let step = 1; step <= 5; step++) {
+      const x = recentHistory.length - 1 + step;
       data.push({
-        date: `Forecast +${i}`,
+        date: `Forecast +${step}${forecastUnit}`,
         actual: null as any,
-        predicted: predictedVal
+        predicted: slope * x + intercept
       });
     }
-
     return data;
-  }, [asset.history[timeframe], timeframe]);
+  }, [history, timeframe]);
 
-  if (!chartData || chartData.length === 0) return null;
+  if (loading) {
+    return <div className="w-full h-full flex items-center justify-center bg-zinc-950 text-xs font-mono text-zinc-500">Loading provider-backed historical closes…</div>;
+  }
+  if (error || chartData.length === 0) {
+    return <div className="w-full h-full flex items-center justify-center bg-zinc-950 px-6 text-center text-xs text-amber-300">Historical regression unavailable: {error || 'no valid observations returned'}.</div>;
+  }
 
-  const minVal = Math.min(...chartData.map(d => Math.min(d.actual || Infinity, d.predicted || Infinity)));
-  const maxVal = Math.max(...chartData.map(d => Math.max(d.actual || -Infinity, d.predicted || -Infinity)));
+  const plottedValues = chartData.flatMap((point) => [point.actual, point.predicted].filter((value): value is number => typeof value === 'number' && Number.isFinite(value)));
+  const minVal = Math.min(...plottedValues);
+  const maxVal = Math.max(...plottedValues);
 
   return (
     <div className="w-full h-full bg-zinc-950 p-4">
       <div className="mb-4">
-         <h3 className="text-white text-sm font-bold">5-Day Linear Regression Forecast</h3>
-         <p className="text-xs text-amber-400">Illustrative regression on simulated sample data — not actual historical prices or an investment forecast.</p>
+         <h3 className="text-white text-sm font-bold">5-Step Linear Regression Extrapolation</h3>
+         <p className="text-xs text-amber-400">Fit to Yahoo Finance historical closes. This statistical extrapolation is not a price target or investment forecast.</p>
       </div>
       <div className="w-full h-[calc(100%-60px)]">
         <ResponsiveContainer width="100%" height="100%">
