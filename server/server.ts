@@ -271,11 +271,41 @@ app.all('/api/ai/:feature', async (req: Request, res: Response) => {
   aiRequestWindow.set(ip, recent);
 
   const body = req.body && typeof req.body === 'object' ? req.body : {};
+  if (req.params.feature === 'live-news') {
+    const newsKey = process.env.FINNHUB_API_KEY;
+    if (!newsKey) return res.status(503).json({ success: false, code: 'NEWS_PROVIDER_NOT_CONFIGURED', error: 'Live news requires a server-side Finnhub API key.' });
+    try {
+      const url = new URL('https://finnhub.io/api/v1/news');
+      url.search = new URLSearchParams({ category: 'general', token: newsKey }).toString();
+      const upstream = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+      if (!upstream.ok) return res.status(502).json({ success: false, error: 'News provider request failed', status: upstream.status });
+      const rows: any[] = await upstream.json();
+      const articles = (Array.isArray(rows) ? rows : []).slice(0, 30).map((row) => ({
+        id: row.id, title: row.headline, source: row.source,
+        time: row.datetime ? new Date(row.datetime * 1000).toISOString() : null,
+        symbolAffected: row.related || null, summary: row.summary || '',
+        url: row.url || null
+      }));
+      return res.json({ success: true, articles, source: 'Finnhub', fetchedAt: new Date().toISOString() });
+    } catch (error) {
+      return res.status(502).json({ success: false, error: 'News provider unavailable', detail: (error as Error).message });
+    }
+  }
+
   const messages = Array.isArray(body.messages) ? body.messages : [];
-  const promptValue = body.prompt || body.message || body.query || body.text ||
+  const explicitPrompt = body.prompt || body.message || body.query || body.text ||
     messages.map((message: any) => String(message?.content || message?.text || '')).filter(Boolean).join('\n');
-  const prompt = String(promptValue || '').trim().slice(0, 12_000);
-  if (!prompt) return res.status(400).json({ success: false, error: 'A prompt, message, query, or messages array is required' });
+  let prompt = String(explicitPrompt || '').trim();
+  if (!prompt && req.params.feature === 'advisor') {
+    prompt = `Act as a cautious multi-asset portfolio research assistant. Use the supplied investor profile only; do not claim access to live market data. Return a JSON object with allocation percentages for stock, crypto, forex, commodity, index, and bond summing to exactly 100, plus recommendedAssets (array), wealthProtectionTip, and macroOutlook. Investor profile: ${JSON.stringify(body)}`;
+  } else if (!prompt && Object.keys(body).length) {
+    prompt = `Analyze the following user-provided context. Distinguish supplied facts from assumptions, do not invent live prices, breaking news, institutional flows, or economic releases, and state uncertainty clearly. Feature: ${req.params.feature}. Context: ${JSON.stringify(body)}`;
+  }
+  prompt = prompt.slice(0, 12_000);
+  if (!prompt) return res.status(503).json({
+    success: false, code: 'FEATURE_DATA_NOT_CONFIGURED',
+    error: `The ${req.params.feature} feature needs a configured data source or a user prompt. No synthetic result is returned.`
+  });
   try {
     const upstream = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
       method: 'POST',
@@ -287,7 +317,26 @@ app.all('/api/ai/:feature', async (req: Request, res: Response) => {
     if (!upstream.ok) return res.status(502).json({ success: false, error: 'Gemini provider request failed', detail: result?.error?.message || 'Upstream error' });
     const answer = (result?.candidates?.[0]?.content?.parts || []).map((part: any) => part.text || '').join('\n').trim();
     if (!answer) return res.status(502).json({ success: false, error: 'AI provider returned an empty response' });
-    return res.json({ success: true, feature: req.params.feature, answer, text: answer, generated: true, source: 'Google Gemini', fetchedAt: new Date().toISOString() });
+    const common = { success: true, feature: req.params.feature, answer, text: answer, content: answer, reply: answer, generated: true, source: 'Google Gemini', fetchedAt: new Date().toISOString() };
+    if (req.params.feature === 'advisor') {
+      const jsonBlock = answer.match(/```json\\s*([\\s\\S]*?)\\s*```/i);
+      const rawObject = jsonBlock?.[1] || answer.match(/\\{[\\s\\S]*\\}/)?.[0];
+      if (!rawObject) return res.status(502).json({ success: false, error: 'AI advisor did not return the required structured allocation' });
+      try {
+        const parsed = JSON.parse(rawObject);
+        const allocation = parsed.allocation || {};
+        const keys = ['stock', 'crypto', 'forex', 'commodity', 'index', 'bond'];
+        const values = keys.map((key) => Number(allocation[key]));
+        if (values.some((value) => !Number.isFinite(value) || value < 0 || value > 100) || values.reduce((sum, value) => sum + value, 0) !== 100) {
+          return res.status(502).json({ success: false, error: 'AI advisor allocation failed validation; percentages must sum to 100' });
+        }
+        const reasoning = answer.replace(/```json[\\s\\S]*?```/gi, '').trim();
+        return res.json({ ...common, result: { ...parsed, allocation, reasoning } });
+      } catch {
+        return res.status(502).json({ success: false, error: 'AI advisor returned invalid structured output' });
+      }
+    }
+    return res.json(common);
   } catch (error) {
     return res.status(502).json({ success: false, error: 'AI provider unavailable', detail: (error as Error).message });
   }
