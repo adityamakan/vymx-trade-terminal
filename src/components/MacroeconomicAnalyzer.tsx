@@ -31,32 +31,23 @@ import {
 import WorldMonitor from './EconomicCalendar';
 import { streamMacroeconomicSummary, streamFinancialChat } from '../lib/gemini';
 
+interface MacroQuote {
+  price: number;
+  change: number;
+  changeAbs: number;
+  currency: string | null;
+  marketState: string | null;
+  asOf: string;
+  source: string;
+}
+
 interface MacroIndicatorsData {
-  centralBanks: Record<string, {
-    rate: number;
-    name: string;
-    stance: string;
-    nextMeeting: string;
-    cutProb: number;
-  }>;
-  yieldCurve: {
-    us10y: number;
-    us2y: number;
-    us30y: number;
-    spread10y2y: number;
-    status: string;
-    leadTimeMonths: number;
-  };
-  macroPressures: {
-    dxy: number;
-    crudeOil: number;
-    gold: number;
-    vix: number;
-    spx: number;
-    globalM2YoY: number;
-    coreCpiUs: number;
-    realInterestRate: number;
-  };
+  success: boolean;
+  indicators: Record<string, MacroQuote>;
+  unavailable: string[];
+  source: string;
+  note: string;
+  fetchedAt: string;
 }
 
 interface BacktestResult {
@@ -121,7 +112,7 @@ interface BacktestResult {
 }
 
 export default function MacroeconomicAnalyzer() {
-  const [activeTab, setActiveTab] = useState<'indicators' | 'backtest' | 'sovereign' | 'ai_strategist'>('backtest');
+  const [activeTab, setActiveTab] = useState<'indicators' | 'backtest' | 'sovereign' | 'ai_strategist'>('indicators');
   const [indicators, setIndicators] = useState<MacroIndicatorsData | null>(null);
   const [isLoadingIndicators, setIsLoadingIndicators] = useState(false);
 
@@ -173,9 +164,13 @@ export default function MacroeconomicAnalyzer() {
       const res = await fetch('/api/macro/indicators');
       if (res.ok) {
         const data = await res.json();
-        setIndicators(data);
-        // Automatically initiate real-time AI macroeconomic summary
-        generateMacroSummary(data);
+        if (data?.success && data.indicators && typeof data.indicators === 'object') {
+          setIndicators(data);
+          // AI commentary is based only on provider-returned market proxies.
+          generateMacroSummary(data);
+        } else {
+          setIndicators(null);
+        }
       }
     } catch (err) {
       console.error('Failed to load macro indicators', err);
@@ -246,7 +241,6 @@ export default function MacroeconomicAnalyzer() {
 
   useEffect(() => {
     fetchIndicators();
-    executeBacktest();
   }, []);
 
   // Format Recharts wealth and drawdown data
@@ -273,16 +267,16 @@ export default function MacroeconomicAnalyzer() {
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Python Econometric Core Active
+              Market Proxy Feed
             </span>
-            <span className="text-xs text-zinc-500 font-mono">NumPy · SciPy · Statsmodels · Pandas · yFinance</span>
+            <span className="text-xs text-zinc-500 font-mono">Yahoo Finance · Optional FRED</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
             <Globe className="w-7 h-7 text-indigo-400" />
             VYMXTRADER Macroeconomic Analyzer
           </h1>
           <p className="text-sm text-zinc-400">
-            Institutional-grade macroeconomic regime viewer, central bank policy radar, and proven econometric backtesting.
+            Cross-asset market monitoring using provider-sourced quotes. Official macro releases and econometric backtests are shown only when verified data sources are connected.
           </p>
         </div>
 
@@ -297,7 +291,7 @@ export default function MacroeconomicAnalyzer() {
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            Econometric Backtesting
+            Backtesting (Disabled)
           </button>
           <button
             onClick={() => setActiveTab('indicators')}
@@ -338,6 +332,9 @@ export default function MacroeconomicAnalyzer() {
       {/* TAB 1: ECONOMETRIC REGIME BACKTESTING */}
       {activeTab === 'backtest' && (
         <div className="space-y-6">
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-200">
+            Backtesting is disabled. The current deployment does not yet have a validated historical dataset, reproducible strategy engine, or transaction-cost model. No synthetic performance figures are displayed.
+          </div>
 
           {/* Controls Bar: Regime + Strategy Selection */}
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5 backdrop-blur-sm">
@@ -395,7 +392,7 @@ export default function MacroeconomicAnalyzer() {
               <div className="flex items-end">
                 <button
                   onClick={executeBacktest}
-                  disabled={isRunningBacktest}
+                  disabled={true}
                   className="w-full h-[38px] bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50"
                 >
                   {isRunningBacktest ? (
@@ -406,7 +403,7 @@ export default function MacroeconomicAnalyzer() {
                   ) : (
                     <>
                       <Cpu className="w-4 h-4" />
-                      Run Python Econometric Backtest
+                      Backtest unavailable — verified engine pending
                     </>
                   )}
                 </button>
@@ -743,91 +740,43 @@ export default function MacroeconomicAnalyzer() {
             )}
           </div>
 
-          {/* Yield Curve Inversion Radar */}
-          {indicators?.yieldCurve && (
-            <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          {/* Provider-sourced cross-asset market proxies */}
+          {indicators?.indicators && (
+            <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <span className="text-xs font-mono text-indigo-400 uppercase tracking-wider">US Treasury Yield Curve Radar</span>
-                  <h3 className="text-lg font-bold text-white mt-0.5">
-                    10Y-2Y Spread: {indicators.yieldCurve.spread10y2y > 0 ? '+' : ''}{indicators.yieldCurve.spread10y2y}%
-                  </h3>
+                  <span className="text-xs font-mono text-indigo-400 uppercase tracking-wider">Cross-Asset Market Telemetry</span>
+                  <h3 className="text-lg font-bold text-white mt-0.5">Live market proxies</h3>
                 </div>
-                <div className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono border ${
-                  indicators.yieldCurve.spread10y2y < 0
-                    ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                    : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                }`}>
-                  {indicators.yieldCurve.status}
-                </div>
+                <span className="text-[10px] text-zinc-500 font-mono">{indicators.source} · {indicators.fetchedAt ? new Date(indicators.fetchedAt).toLocaleTimeString() : ''}</span>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center font-mono">
-                <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
-                  <span className="text-xs text-zinc-500 block">US 2Y Yield (Short-End)</span>
-                  <span className="text-xl font-bold text-zinc-100">{indicators.yieldCurve.us2y}%</span>
-                </div>
-                <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
-                  <span className="text-xs text-zinc-500 block">US 10Y Benchmark</span>
-                  <span className="text-xl font-bold text-zinc-100">{indicators.yieldCurve.us10y}%</span>
-                </div>
-                <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
-                  <span className="text-xs text-zinc-500 block">US 30Y Long-End</span>
-                  <span className="text-xl font-bold text-zinc-100">{indicators.yieldCurve.us30y}%</span>
-                </div>
-                <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
-                  <span className="text-xs text-zinc-500 block">Recession Lead Time</span>
-                  <span className="text-xl font-bold text-amber-400">~{indicators.yieldCurve.leadTimeMonths} Months</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Central Banks Policy Matrix */}
-          {indicators?.centralBanks && (
-            <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5">
-              <h3 className="text-base font-bold text-white mb-4">G6 Central Bank Policy Rates & Stances</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.entries(indicators.centralBanks).map(([code, bank]) => (
-                  <div key={code} className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 flex flex-col justify-between">
-                    <div>
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs font-bold text-white uppercase">{bank.name}</span>
-                        <span className="text-lg font-black text-indigo-400 font-mono">{bank.rate}%</span>
-                      </div>
-                      <span className="inline-block text-[11px] px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 mb-3">
-                        {bank.stance}
+              <p className="text-xs text-zinc-400">{indicators.note}</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {Object.entries(indicators.indicators).map(([symbol, quote]) => {
+                  const labels: Record<string, string> = {
+                    '^GSPC': 'S&P 500', '^VIX': 'VIX Volatility', '^TNX': 'US 10Y Treasury Yield',
+                    'DX-Y.NYB': 'US Dollar Index', 'GC=F': 'Gold Futures', 'CL=F': 'WTI Crude Oil',
+                    'BTC-USD': 'Bitcoin', 'EURUSD=X': 'EUR / USD', 'INR=X': 'USD / INR'
+                  };
+                  return (
+                    <div key={symbol} className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 font-mono">
+                      <span className="text-[10px] text-zinc-500 block uppercase tracking-wider">{labels[symbol] || symbol}</span>
+                      <span className="text-xl font-bold text-white block mt-1">{quote.price.toLocaleString(undefined, { maximumFractionDigits: 4 })}{symbol === '^TNX' ? '%' : ''}</span>
+                      <span className={`text-xs font-semibold ${quote.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {quote.change >= 0 ? '+' : ''}{quote.change.toFixed(2)}%
                       </span>
                     </div>
-                    <div className="border-t border-zinc-850 pt-2 flex justify-between text-xs font-mono text-zinc-500">
-                      <span>Next Meeting: {bank.nextMeeting}</span>
-                      <span className="text-emerald-400 font-semibold">{bank.cutProb}% Cut Prob</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+              {indicators.unavailable?.length > 0 && (
+                <p className="text-[10px] text-amber-400">Unavailable symbols: {indicators.unavailable.join(', ')}</p>
+              )}
             </div>
           )}
-
-          {/* Cross-Asset Macro Pressures */}
-          {indicators?.macroPressures && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 font-mono">
-                <span className="text-xs text-zinc-500 block">US Dollar Index (DXY)</span>
-                <span className="text-xl font-bold text-white">{indicators.macroPressures.dxy}</span>
-              </div>
-              <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 font-mono">
-                <span className="text-xs text-zinc-500 block">WTI Crude Oil ($/bbl)</span>
-                <span className="text-xl font-bold text-amber-400">${indicators.macroPressures.crudeOil}</span>
-              </div>
-              <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 font-mono">
-                <span className="text-xs text-zinc-500 block">Gold Spot ($/oz)</span>
-                <span className="text-xl font-bold text-yellow-400">${indicators.macroPressures.gold}</span>
-              </div>
-              <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 font-mono">
-                <span className="text-xs text-zinc-500 block">Real Fed Interest Rate</span>
-                <span className="text-xl font-bold text-emerald-400">+{indicators.macroPressures.realInterestRate}%</span>
-              </div>
+          {!indicators && !isLoadingIndicators && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-200">
+              Market proxy data is temporarily unavailable. No estimated or hard-coded macro readings are substituted.
             </div>
           )}
 
