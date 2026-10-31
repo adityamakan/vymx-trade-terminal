@@ -425,7 +425,13 @@ export default function Dashboard({
       transition={{ duration: 0.4, staggerChildren: 0.1 }}
       className="space-y-8 py-6"
     >
-      {/* Real-time Ticker */}
+      {isDataOffline && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-[11px] leading-relaxed text-amber-200">
+          The market quote feed is offline or has not delivered a verified update yet. Static asset values are sample defaults and must not be treated as current prices. Provider-backed history panels show unavailable until candles load.
+        </div>
+      )}
+
+      {/* Market ticker — values are live only while the provider connection is healthy */}
       <MarketTicker />
 
       {/* 0. Central Intelligence Globe Hero */}
@@ -445,37 +451,37 @@ export default function Dashboard({
                  <div className="h-2 w-2 rounded-full bg-red-500"></div>
                </div>
                <div className="flex flex-col">
-                 <div className="text-xs font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-white to-zinc-400 font-mono uppercase tracking-[0.2em] shadow-sm">Global Telemetry Hub</div>
-                 <div className="text-[10px] text-zinc-400 font-mono mt-0.5 uppercase tracking-wider">Synchronized 3D Node Intelligence</div>
+                 <div className="text-xs font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-white to-zinc-400 font-mono uppercase tracking-[0.2em] shadow-sm">Market Data Hub</div>
+                 <div className="text-[10px] text-zinc-400 font-mono mt-0.5 uppercase tracking-wider">Exchange and reference-location map</div>
                </div>
             </div>
 
             {/* System Diagnostic Overlay */}
             <div className="hidden lg:flex flex-col gap-1.5 bg-zinc-950/70 p-3 rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 backdrop-blur-md">
                <div className="flex items-center justify-between gap-6">
-                  <span className="text-[9px] font-mono text-zinc-500 uppercase">Neural Pipeline</span>
-                  <span className="text-[9px] font-mono text-emerald-400 font-bold">OPTIMAL</span>
+                  <span className="text-[9px] font-mono text-zinc-500 uppercase">Market quote feed</span>
+                  <span className={`text-[9px] font-mono font-bold ${isDataOffline ? 'text-amber-400' : 'text-emerald-400'}`}>{isDataOffline ? 'OFFLINE / SAMPLE DATA' : 'CONNECTED'}</span>
                </div>
                <div className="flex items-center justify-between gap-6">
-                  <span className="text-[9px] font-mono text-zinc-500 uppercase">Data Resonance</span>
-                  <span className="text-[9px] font-mono text-indigo-400 font-bold">99.98%</span>
+                  <span className="text-[9px] font-mono text-zinc-500 uppercase">Historical candle source</span>
+                  <span className="text-[9px] font-mono text-indigo-400 font-bold">{isDataOffline ? 'WAITING' : 'PROVIDER DATA'}</span>
                </div>
                <div className="w-full h-0.5 bg-zinc-800 rounded-full mt-1 overflow-hidden">
-                  <div className="w-[95%] h-full bg-indigo-500 shadow-[0_0_5px_#6366f1]"></div>
+                  <div className={`h-full ${isDataOffline ? 'w-0' : 'w-full'} bg-indigo-500 shadow-[0_0_5px_#6366f1] transition-all`}></div>
                </div>
             </div>
           </div>
 
           <div className="hidden md:flex items-center gap-4 bg-zinc-950/80 p-3 rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 backdrop-blur-md shadow-2xl transition-transform duration-500 group-hover:scale-105">
              <div className="flex flex-col text-right">
-               <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Macro Risk Engine</span>
-               <span className="text-2xl font-black text-amber-500 font-mono tracking-tighter leading-none">6.4<span className="text-xs text-zinc-500 ml-1">/10.0</span></span>
+               <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Macro risk score (not connected)</span>
+               <span className="text-2xl font-black text-amber-500 font-mono tracking-tighter leading-none">N/A<span className="text-xs text-zinc-500 ml-1">/10.0</span></span>
              </div>
              <div className="h-8 w-px bg-zinc-800"></div>
              <div className="flex flex-col text-left justify-end">
-                <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Vector Shift (48H)</span>
+                <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Geopolitical event feed</span>
                 <span className="text-emerald-400 text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1 w-fit">
-                  <ArrowUpRight className="w-3 h-3" /> NORMALIZED
+                  <ArrowUpRight className="w-3 h-3" /> NOT CONNECTED
                 </span>
              </div>
           </div>
@@ -1243,7 +1249,7 @@ export default function Dashboard({
           <div className="rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-6 shadow-xl space-y-6">
             <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
               <h2 className="text-sm font-semibold tracking-tight text-white">Global Markets Discovery</h2>
-              <span className="text-zinc-500 text-[11px] font-sans font-medium">Real-time mock feed</span>
+              <span className="text-zinc-500 text-[11px] font-sans font-medium">{isDataOffline ? 'SANDBOX SAMPLE — NOT LIVE' : 'Provider quote snapshot'}</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
