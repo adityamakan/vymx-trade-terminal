@@ -293,10 +293,19 @@ app.get('/api/finnhub/news', async (req: Request, res: Response) => {
 // Quote-backed intelligence endpoint. It returns only observations supplied by
 // Yahoo Finance; sentiment, order-book depth and institutional flows are not inferred.
 app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
-  const symbols = ['^GSPC', '^NSEI', '^BSESN', 'BTC-USD', '^VIX'];
+  const symbols = [
+    '^GSPC', '^NSEI', '^BSESN', 'BTC-USD', '^VIX',
+    'XLK', 'XLF', 'XLV', 'XLE', 'XLY', 'XLB', 'XLI',
+    'GC=F', 'CL=F', 'BZ=F', 'SI=F', 'HG=F', 'NG=F',
+    'EURUSD=X', 'JPY=X', 'GBPUSD=X', 'INR=X', 'AUDUSD=X', 'CAD=X', '^TNX'
+  ];
   const result = await getPrices(symbols);
   if (!result.returned) return res.status(503).json({ success: false, error: 'Market quote providers are temporarily unavailable', unavailable: result.errors });
   const quote = (symbol: string) => result.prices[symbol];
+  const metric = (symbol: string) => {
+    const item = quote(symbol);
+    return item ? { price: item.price, change: item.change, currency: item.currency } : null;
+  };
   const spx = quote('^GSPC');
   const nifty = quote('^NSEI');
   const sensex = quote('^BSESN');
@@ -314,9 +323,26 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
       sensexPrice: sensex?.price ?? null, sensexChange: sensex?.change ?? null,
       btcPrice: btc?.price ?? null, btcHigh: btc?.dayHigh ?? null, btcLow: btc?.dayLow ?? null,
       vixPrice: vix?.price ?? null, vixChange: vix?.change ?? null,
+      sectors: {
+        tech: metric('XLK'), financial: metric('XLF'), healthcare: metric('XLV'),
+        energy: metric('XLE'), consumerDiscretionary: metric('XLY'),
+        materials: metric('XLB'), industrials: metric('XLI')
+      },
+      commodities: {
+        gold: metric('GC=F'), crudeOil: metric('CL=F'), brentOil: metric('BZ=F'),
+        silver: metric('SI=F'), copper: metric('HG=F'), naturalGas: metric('NG=F')
+      },
+      currencies: {
+        eurUsd: metric('EURUSD=X'), usdJpy: metric('JPY=X'), gbpUsd: metric('GBPUSD=X'),
+        usdInr: metric('INR=X'), audUsd: metric('AUDUSD=X'), usdCad: metric('CAD=X')
+      },
+      bonds: { us10y: metric('^TNX'), us2y: null, us30y: null },
+      // These are deliberately null until an appropriate provider is connected.
+      fearGreed: null, orderImbalance: null, smartMoney: null, darkPool: null, algoRisk: null,
+      capitalInflows: null, capitalOutflows: null,
       quoteSource: 'Yahoo Finance', quoteAsOf: new Date().toISOString()
     },
-    note: 'Only listed market quotes are provider-backed. Sentiment, order-book, dark-pool and institutional-flow metrics require separate verified data sources.'
+    note: 'Prices, ETF proxies, commodity futures, FX crosses and the US 10Y proxy are provider-backed. Fear/greed, institutional flows, order-book depth, dark-pool activity, algorithmic risk and unsupported Treasury tenors are not supplied by this feed.'
   });
 });
 
