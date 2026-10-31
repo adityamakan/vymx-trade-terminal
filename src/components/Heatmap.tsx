@@ -98,6 +98,18 @@ export default function Heatmap({
     "1D",
   );
   const [hoveredAsset, setHoveredAsset] = useState<Asset | null>(null);
+  const [, setFreshnessTick] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setFreshnessTick((value) => value + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const hasFreshQuote = (asset: Asset) => {
+    if (!asset.quoteAsOf) return false;
+    const timestamp = Date.parse(asset.quoteAsOf);
+    return Number.isFinite(timestamp) && timestamp <= Date.now() + 60_000 && Date.now() - timestamp <= 120_000;
+  };
   const [flashUpdateSym, setFlashUpdateSym] = useState<{
     [key: string]: "up" | "down" | null;
   }>({});
@@ -176,7 +188,7 @@ export default function Heatmap({
 
   // Helper stats calculations
   const summaryStats = useMemo(() => {
-    const verifiedAssets = filteredAssets.filter((asset) => Boolean(asset.quoteAsOf));
+    const verifiedAssets = filteredAssets.filter(hasFreshQuote);
     const total = filteredAssets.length;
     const gainers = verifiedAssets.filter((a) => a.change > 0.05).length;
     const losers = verifiedAssets.filter((a) => a.change < -0.05).length;
@@ -192,7 +204,7 @@ export default function Heatmap({
 
   // Compute cell display value according to metric setting
   const getCellMetricDisplay = (asset: Asset) => {
-    if (!asset.quoteAsOf) return 'N/A';
+    if (!hasFreshQuote(asset)) return 'N/A';
     if (metricView === "volume") {
       return asset.volumeDisplay || 'N/A';
     }
@@ -216,11 +228,11 @@ export default function Heatmap({
   const getTimeframeChange = (asset: Asset): number | null => {
     // Bundled asset.history contains synthetic demo samples. Only 1D provider
     // quote changes are valid here until interval-specific candles are wired in.
-    return asset.quoteAsOf && heatmapTimeframe === "1D" ? asset.change : null;
+    return hasFreshQuote(asset) && heatmapTimeframe === "1D" ? asset.change : null;
   };
 
   const getCellMetricColorIntensityStyle = (asset: Asset) => {
-    if (!asset.quoteAsOf) return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
+    if (!hasFreshQuote(asset)) return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
     if (metricView === "volume") return asset.volume > 10000000 ? "bg-indigo-950/90 text-indigo-300 border-indigo-500/30" : "bg-zinc-900 text-zinc-400 border-zinc-800/60";
     if (metricView === "range52w") {
       const spread = asset.high52w - asset.low52w;
