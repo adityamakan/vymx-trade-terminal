@@ -416,6 +416,10 @@ export default function MacroeconomicAnalyzer() {
                     </>
                   )}
                 </button>
+                <p className="mt-2 text-[10px] leading-relaxed text-amber-300/80">
+                  Disabled by design: no reproducible historical backtest engine is connected. Synthetic return profiles are not presented as empirical results.
+                </p>
+                {backtestError && <p className="mt-1 text-[10px] text-rose-300">{backtestError}</p>}
               </div>
 
             </div>
