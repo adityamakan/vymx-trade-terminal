@@ -34,9 +34,12 @@ interface PortfolioSnapshot {
   id: string;
   capturedAt: number;
   cashBalance: number;
-  positions: { symbol: string; quantity: number; price: number; marketValue: number; quoteCurrency: string }[];
+  positions: { symbol: string; quantity: number; price: number; marketValue: number; quoteCurrency: string | null; marketValueUSD: number | null }[];
+  baseCurrency: 'USD';
+  fxRates: Record<string, number>;
+  totalEquityUSD: number | null;
   source: 'provider-quote-snapshot';
-  currencyNormalization: 'not-applied';
+  currencyNormalization: 'provider-fx-to-usd' | 'incomplete';
 }
 
 export default function App() {
@@ -244,6 +247,7 @@ export default function App() {
 
         return {
           ...asset,
+          currency: typeof newPriceData.currency === 'string' ? newPriceData.currency.toUpperCase() : asset.currency ?? null,
           price: (newPriceData.price !== undefined && !isNaN(newPriceData.price)) ? newPriceData.price : asset.price,
           change: (newPriceData.change !== undefined && !isNaN(newPriceData.change)) ? newPriceData.change : asset.change,
           changeAbs: (newPriceData.changeAbs !== undefined && !isNaN(newPriceData.changeAbs)) ? newPriceData.changeAbs : asset.changeAbs,
@@ -422,19 +426,43 @@ export default function App() {
         .filter((position) => position.quantity > 0)
         .map((position) => {
           const quote = current.assets.find((asset) => asset.symbol === position.symbol);
+          const currency = typeof quote?.currency === 'string' && /^[A-Z]{3}$/.test(quote.currency) ? quote.currency : null;
           return quote && Number.isFinite(quote.price) && quote.price > 0
-            ? { symbol: position.symbol, quantity: position.quantity, price: quote.price, marketValue: position.quantity * quote.price, quoteCurrency: 'provider-native' }
+            ? { symbol: position.symbol, quantity: position.quantity, price: quote.price, marketValue: position.quantity * quote.price, quoteCurrency: currency }
             : null;
         })
         .filter((position): position is NonNullable<typeof position> => position !== null);
+      const currencies = [...new Set(validPositions.map((position) => position.quoteCurrency).filter((currency): currency is string => Boolean(currency)))];
+      let fxRates: Record<string, number> = { USD: 1 };
+      try {
+        if (currencies.length) {
+          const fxResponse = await fetch(`/api/fx/rates?base=USD&currencies=${encodeURIComponent(currencies.join(','))}`, { signal: AbortSignal.timeout(12_000) });
+          if (fxResponse.ok) {
+            const fxPayload = await fxResponse.json();
+            if (fxPayload?.success && fxPayload.rates && typeof fxPayload.rates === 'object') fxRates = fxPayload.rates;
+          }
+        }
+      } catch (error) {
+        console.warn('FX conversion unavailable for this portfolio snapshot:', error);
+      }
+      const normalizedPositions = validPositions.map((position) => ({
+        ...position,
+        marketValueUSD: position.quoteCurrency && Number.isFinite(fxRates[position.quoteCurrency])
+          ? position.marketValue * fxRates[position.quoteCurrency]
+          : null
+      }));
+      const fxComplete = normalizedPositions.every((position) => position.marketValueUSD != null);
       const capturedAt = Date.now();
       const snapshot: PortfolioSnapshot = {
         id: String(bucket),
         capturedAt,
         cashBalance: current.virtualBalance,
-        positions: validPositions,
+        positions: normalizedPositions,
+        baseCurrency: 'USD',
+        fxRates,
+        totalEquityUSD: fxComplete ? current.virtualBalance + normalizedPositions.reduce((sum, position) => sum + (position.marketValueUSD || 0), 0) : null,
         source: 'provider-quote-snapshot',
-        currencyNormalization: 'not-applied'
+        currencyNormalization: fxComplete ? 'provider-fx-to-usd' : 'incomplete'
       };
       try {
         await setDoc(doc(db, 'users', uid, 'portfolioSnapshots', String(bucket)), snapshot);
