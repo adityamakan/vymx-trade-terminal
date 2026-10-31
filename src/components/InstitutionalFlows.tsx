@@ -154,9 +154,9 @@ const GEOPOLITICAL_EVENTS = [
 
 export default function InstitutionalFlows({ formatCurrency }: { formatCurrency: (v: number) => string }) {
   const [activeTab, setActiveTab] = useState<'overview' | 'deals' | 'sectors' | 'geopolitics'>('overview');
-  const [liveDeals, setLiveDeals] = useState<BlockDeal[]>(LIVE_DEALS);
-  const [sectorFlows, setSectorFlows] = useState(SECTOR_FLOWS);
-  const [monthlyTrends, setMonthlyTrends] = useState(MONTHLY_TRENDS);
+  const [liveDeals, setLiveDeals] = useState<BlockDeal[]>([]);
+  const [sectorFlows, setSectorFlows] = useState<any[]>([]);
+  const [monthlyTrends, setMonthlyTrends] = useState<any[]>([]);
   const [tickerIndex, setTickerIndex] = useState(0);
   const [selectedDeal, setSelectedDeal] = useState<BlockDeal | null>(null);
   const [isLoadingLive, setIsLoadingLive] = useState(false);
@@ -195,6 +195,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
   // Simulate live incoming deals or fetch real ones
   useEffect(() => {
     // We will just rotate the live ticker for now
+    if (liveDeals.length === 0) return;
     const interval = setInterval(() => {
       setTickerIndex((prev) => (prev + 1) % liveDeals.length);
     }, 4000);
@@ -276,10 +277,10 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
   const filteredDeals = liveDeals.filter(deal => {
     if (assetClassFilter !== 'All' && deal.assetClass !== assetClassFilter) return false;
 
-    // Simulate date range filtering based on id/index for demonstration since we only have a few hardcoded deals
-    if (dateRangeFilter === '1D') return parseInt(deal.id) <= 3;
-    if (dateRangeFilter === '1W') return parseInt(deal.id) <= 4;
-    return true; // 1M
+    const timestamp = new Date(deal.date).getTime();
+    if (!Number.isFinite(timestamp)) return false;
+    const rangeMs = dateRangeFilter === '1D' ? 24 * 60 * 60 * 1000 : dateRangeFilter === '1W' ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+    return Date.now() - timestamp <= rangeMs;
   });
 
   const displayedSectors = highlightTopInflows
@@ -295,7 +296,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
             Institutional Smart Money Flows
           </h1>
           <p className="text-zinc-400 text-sm mt-1 max-w-2xl">
-            Track advanced capital movement from Foreign (FII) and Domestic (DII) institutional investors globally. Monitor exact entry points, sector allocations, and strategic rationales in absolute detail.
+            Institutional-flow panels display provider-sourced observations only. Connect a verified transaction and capital-flow feed to populate block deals, sector allocations, and geopolitical flow attribution.
           </p>
         </div>
 
@@ -312,31 +313,21 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
       {/* Live Ticker */}
       <div className="bg-zinc-900 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 rounded-lg p-3 flex items-center gap-3 overflow-hidden shadow-inner">
         <div className="flex items-center gap-2 px-3 py-1 bg-rose-500/10 text-rose-400 text-[10px] font-bold rounded border border-rose-500/20 uppercase tracking-wider shrink-0">
-          <Zap className="h-3 w-3 animate-pulse" /> Live Feed
+          <Zap className="h-3 w-3 animate-pulse" /> Feed Status
         </div>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={tickerIndex}
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -20, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="text-xs font-mono truncate text-zinc-300 flex-1 flex items-center gap-2"
-          >
-            <span className={liveDeals[tickerIndex].type === 'FII' ? 'text-indigo-400' : 'text-emerald-400 font-bold'}>
-              [{liveDeals[tickerIndex].type}]
-            </span>
-            <span>{liveDeals[tickerIndex].investor}</span>
-            <span className="text-zinc-500">→</span>
-            <span className={liveDeals[tickerIndex].sentiment === 'Bullish' ? 'text-emerald-400' : 'text-rose-400'}>
-              {liveDeals[tickerIndex].sentiment === 'Bullish' ? 'BOUGHT' : 'SOLD'}
-            </span>
-            <span className="font-bold text-white">{liveDeals[tickerIndex].targetCompany}</span>
-            <span className="text-zinc-500 border-l border-zinc-700 pl-2 ml-1">
-              @ {liveDeals[tickerIndex].currency} {liveDeals[tickerIndex].pricePerShare.toLocaleString()}
-            </span>
-          </motion.div>
-        </AnimatePresence>
+        {liveDeals.length > 0 ? (
+          <AnimatePresence mode="wait">
+            <motion.div key={tickerIndex} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -20, opacity: 0 }} transition={{ duration: 0.3 }} className="text-xs font-mono truncate text-zinc-300 flex-1 flex items-center gap-2">
+              <span className={liveDeals[tickerIndex]?.type === 'FII' ? 'text-indigo-400' : 'text-emerald-400 font-bold'}>[{liveDeals[tickerIndex]?.type}]</span>
+              <span>{liveDeals[tickerIndex]?.investor}</span><span className="text-zinc-500">→</span>
+              <span className={liveDeals[tickerIndex]?.sentiment === 'Bullish' ? 'text-emerald-400' : 'text-rose-400'}>{liveDeals[tickerIndex]?.sentiment === 'Bullish' ? 'BOUGHT' : 'SOLD'}</span>
+              <span className="font-bold text-white">{liveDeals[tickerIndex]?.targetCompany}</span>
+              <span className="text-zinc-500 border-l border-zinc-700 pl-2 ml-1">@ {liveDeals[tickerIndex]?.currency} {liveDeals[tickerIndex]?.pricePerShare?.toLocaleString()}</span>
+            </motion.div>
+          </AnimatePresence>
+        ) : (
+          <span className="text-xs text-zinc-500 font-mono">No verified institutional transaction feed is connected. No sample trades are presented as live data.</span>
+        )}
       </div>
 
       {/* Navigation Tabs & Global Filters */}
@@ -574,6 +565,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
           <div className="bg-zinc-950 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 rounded-xl p-6">
             <h3 className="text-lg font-bold text-white mb-6">Net Sectoral Allocations (In ₹ Crores)</h3>
             <div className="space-y-6">
+              {displayedSectors.length === 0 && <p className="text-sm text-zinc-500">Sector flow data unavailable — no verified FII/DII feed is connected.</p>}
               {displayedSectors.map((sector) => (
                 <div key={sector.sector} className="space-y-2">
                   <div className="flex justify-between items-center text-sm font-semibold">
@@ -604,13 +596,11 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
               ))}
             </div>
 
-            <div className="mt-8 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-lg flex gap-3 items-start">
-               <ShieldCheck className="w-5 h-5 text-indigo-400 shrink-0" />
+            <div className="mt-8 p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg flex gap-3 items-start">
+               <ShieldCheck className="w-5 h-5 text-zinc-500 shrink-0" />
                <div>
-                 <h4 className="text-sm font-bold text-indigo-300">Sectoral Rotation Insights</h4>
-                 <p className="text-xs text-indigo-200/70 mt-1 leading-relaxed">
-                   Current capital flow indicates a strong rotation from defensive IT into domestic cyclicals and Infrastructure, heavily led by DII purchasing power absorbing FII sell-offs. Financial Services remains the primary anchor for both foreign and domestic funds.
-                 </p>
+                 <h4 className="text-sm font-bold text-zinc-300">Sectoral Rotation Insights</h4>
+                 <p className="text-xs text-zinc-400 mt-1 leading-relaxed">Rotation analysis will appear when verified FII/DII sector-flow observations are available. No inferred or placeholder flow narrative is shown.</p>
                </div>
             </div>
           </div>
@@ -621,7 +611,8 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
             <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
               <Globe2 className="w-5 h-5 text-indigo-400" /> Geopolitical Impact Timeline
             </h3>
-            <div className="relative border-l border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 ml-4 space-y-8 pb-4">
+            <div className="relative ml-4 space-y-8 pb-4">
+              {GEOPOLITICAL_EVENTS.length === 0 && <p className="text-sm text-zinc-500">Geopolitical-to-capital-flow attribution is unavailable until verified event and flow datasets are connected.</p>}
               {GEOPOLITICAL_EVENTS.map((evt) => (
                 <div key={evt.id} className="relative pl-6">
                   <span className={`absolute -left-1.5 top-1.5 h-3 w-3 rounded-full ${evt.severity === 'High' ? 'bg-rose-500' : 'bg-amber-500'} border-4 border-zinc-950`} />
