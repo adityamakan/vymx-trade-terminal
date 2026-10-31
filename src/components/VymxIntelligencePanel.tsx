@@ -235,10 +235,10 @@ export default function VymxIntelligencePanel({ mode }: Props) {
               VYMX INTELLIGENCE
             </h2>
           </div>
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30">
+          <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border ${quoteFeedStatus === 'connected' ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30'}`}>
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${quoteFeedStatus === 'connected' ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${quoteFeedStatus === 'connected' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
             </span>
             <span className={`text-[9px] font-mono font-bold tracking-widest uppercase ${quoteFeedStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400'}`}>{quoteFeedStatus === 'connected' ? 'QUOTE FEED CONNECTED' : quoteFeedStatus === 'partial' ? 'QUOTE FEED PARTIAL' : quoteFeedStatus === 'connecting' ? 'CONNECTING' : 'QUOTE FEED UNAVAILABLE'}</span>
           </div>
