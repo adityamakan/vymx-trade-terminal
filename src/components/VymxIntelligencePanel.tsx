@@ -427,7 +427,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
               <span className="text-xs font-bold text-zinc-300">{name}</span>
               <div className="flex gap-3">
                 <span className="text-xs font-mono font-bold text-white">{(data as any)?.price == null ? '—' : '$' + (data as any).price.toFixed(2)}</span>
-                <span className={`text-xs font-mono font-bold ${((data as any)?.change || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <span className={`text-xs font-mono font-bold ${(data as any)?.change == null ? 'text-zinc-500' : (data as any).change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {(data as any)?.change == null ? '—' : `${(data as any).change >= 0 ? '+' : ''}${(data as any).change.toFixed(2)}%`}
                 </span>
               </div>
@@ -453,7 +453,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
              <span className="text-[10px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">VIX Volatility Index</span>
              <div className="flex justify-between items-end">
                <span className="text-2xl font-bold text-rose-400 font-mono">{realtimeData?.vixPrice == null ? '—' : realtimeData.vixPrice.toFixed(2)}</span>
-               <span className={`text-sm font-mono font-bold ${(realtimeData?.vixChange || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+               <span className={`text-sm font-mono font-bold ${colorChange(realtimeData?.vixChange)}`}>
                   {realtimeData?.vixChange == null ? '—' : `${realtimeData.vixChange >= 0 ? '+' : ''}${realtimeData.vixChange.toFixed(2)}%`}
                 </span>
              </div>
@@ -549,7 +549,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
               <span className="text-xs font-bold text-zinc-300">{name}</span>
               <div className="flex gap-3">
                 <span className="text-xs font-mono font-bold text-white">{(data as any)?.price == null ? '—' : '$' + (data as any).price.toFixed(2)}</span>
-                <span className={`text-xs font-mono font-bold ${((data as any)?.change || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <span className={`text-xs font-mono font-bold ${(data as any)?.change == null ? 'text-zinc-500' : (data as any).change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {(data as any)?.change == null ? '—' : `${(data as any).change >= 0 ? '+' : ''}${(data as any).change.toFixed(2)}%`}
                 </span>
               </div>
@@ -584,7 +584,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
               <span className="text-xs font-bold text-zinc-300">{name}</span>
               <div className="flex gap-3">
                 <span className="text-xs font-mono font-bold text-white">{(data as any)?.price == null ? '—' : (data as any).price.toFixed(4)}</span>
-                <span className={`text-xs font-mono font-bold ${((data as any)?.change || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <span className={`text-xs font-mono font-bold ${(data as any)?.change == null ? 'text-zinc-500' : (data as any).change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {(data as any)?.change == null ? '—' : `${(data as any).change >= 0 ? '+' : ''}${(data as any).change.toFixed(2)}%`}
                 </span>
               </div>
@@ -615,7 +615,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
               <span className="text-xs font-bold text-zinc-300">{name}</span>
               <div className="flex gap-3">
                 <span className="text-xs font-mono font-bold text-white">{(data as any)?.price == null ? '—' : (data as any).price.toFixed(3) + '%'}</span>
-                <span className={`text-xs font-mono font-bold ${((data as any)?.change || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <span className={`text-xs font-mono font-bold ${(data as any)?.change == null ? 'text-zinc-500' : (data as any).change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {(data as any)?.change == null ? '—' : `${(data as any).change >= 0 ? '+' : ''}${(data as any).change.toFixed(2)}%`}
                 </span>
               </div>
@@ -644,8 +644,8 @@ export default function VymxIntelligencePanel({ mode }: Props) {
              </div>
              <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner text-center">
                 <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">S&P 500 Daily</span>
-                <span className={`text-lg font-bold ${(realtimeData?.spxChange || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'} font-mono`}>
-                  {(realtimeData?.spxChange || 0) >= 0 ? '+' : ''}{(realtimeData?.spxChange || 0).toFixed(2)}%
+                <span className={`text-lg font-bold ${colorChange(realtimeData?.spxChange)} font-mono`}>
+                  {formatChange(realtimeData?.spxChange)}
                 </span>
              </div>
           </div>
