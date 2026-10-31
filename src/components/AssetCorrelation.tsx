@@ -11,7 +11,8 @@ interface AssetCorrelationProps {
 export default function AssetCorrelation({ asset, allAssets }: AssetCorrelationProps) {
   const defaultBenchmark = useMemo(() => {
     if (asset.type === 'crypto') return asset.symbol === 'BTC' ? 'ETH' : 'BTC';
-    return asset.country === 'India' ? 'NIFTY50' : '.SPX';
+    if (asset.country === 'India') return asset.symbol === 'NIFTY50' ? 'SENSEX' : 'NIFTY50';
+    return asset.symbol === '.SPX' ? 'AAPL' : '.SPX';
   }, [asset.type, asset.country, asset.symbol]);
   const [compareSymbol, setCompareSymbol] = useState(defaultBenchmark);
   useEffect(() => { setCompareSymbol(defaultBenchmark); }, [defaultBenchmark]);
