@@ -341,167 +341,36 @@ export default function AssetDetails({
 
           <AssetCorrelation asset={asset} allAssets={assets} />
 
-          {/* Deterministic quote-momentum heuristic — not AI */}
-          <div className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/60 backdrop-blur-lg p-5 shadow-lg space-y-4 relative overflow-hidden">
+          {/* Provider quote and historical trend snapshot */}
+          <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/60 backdrop-blur-lg p-5 shadow-lg space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
               <div className="flex items-center gap-2">
                 <div className="h-5 w-5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
-                  <Sparkles className="h-3 w-3 animate-pulse" />
+                  <TrendingUp className="h-3 w-3" />
                 </div>
-                <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-widest font-sans">Quote-Momentum Heuristic</h3>
+                <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-widest font-sans">Quote & Trend Snapshot</h3>
               </div>
-
-              <button
-                onClick={() => {
-                  const btn = document.getElementById('btn-re-analyze');
-                  if (btn) btn.click();
-                }}
-                className="inline-flex items-center gap-1 text-[10px] text-zinc-500 hover:text-white transition font-mono"
-              >
-                <RefreshCw className="h-3 w-3" /> Quick Refresh
-              </button>
+              <span className={`text-[9px] font-mono font-bold rounded px-2 py-1 border ${isDataOffline ? 'text-amber-300 border-amber-500/30 bg-amber-500/10' : 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10'}`}>
+                {isDataOffline ? 'QUOTE FEED OFFLINE' : 'PROVIDER QUOTE'}
+              </span>
             </div>
-
-            {/* Qualitative analysis rendering */}
-            {(() => {
-              const [isScanning, setIsScanning] = useState(false);
-              const [currentAssetSymbol, setCurrentAssetSymbol] = useState(asset.symbol);
-
-              // Track symbol change to trigger brief re-scan
-              useEffect(() => {
-                if (asset.symbol !== currentAssetSymbol) {
-                  setCurrentAssetSymbol(asset.symbol);
-                  setIsScanning(true);
-                  const t = setTimeout(() => setIsScanning(false), 700);
-                  return () => clearTimeout(t);
-                }
-              }, [asset.symbol]);
-
-              // Generate Qualitative summary from metrics
-              const analysis = React.useMemo(() => {
-                const isUp = asset.change >= 0;
-                const pe = asset.peRatio;
-                let recommendation: 'STRONG BUY' | 'ACCUMULATE' | 'HOLD' | 'REDUCE' | 'UNDER REVIEW' = 'HOLD';
-                let sentimentScore = 52;
-                let keyThemes: string[] = [];
-                let summary = '';
-
-                if (asset.type === 'crypto') {
-                  sentimentScore = isUp ? 78 : 41;
-                  recommendation = isUp ? 'ACCUMULATE' : 'HOLD';
-                  keyThemes = isUp
-                    ? ['On-chain Wallet Accumulation', 'Meme & Layer2 Narrative Heat', 'DeFi Liquidity Pools Inflows']
-                    : ['Macro Sentiment De-Risking', 'Derivatives Open-Interest Over-leveraging', 'Halving Post-Cycle Soft Floor'];
-                  summary = `${asset.name} (${asset.symbol}) is showing a 24-hour displacement of ${asset.change.toFixed(2)}% to settle at ${formatCurrency(asset.price, asset.type)}. Lacking physical P/E ratios, blockchain activity indices and stablecoin buying metrics act as key drivers. Baseline support is establishing nicely near the 52-week low bounds of ${low52Value == null ? 'N/A' : formatCurrency(low52Value, asset.type)}.`;
-                } else if (asset.type === 'stock') {
-                  if (isUp) {
-                    if (pe && pe < 18) {
-                      recommendation = 'STRONG BUY';
-                      sentimentScore = 89;
-                      keyThemes = ['Undervalued P/E Multiples', 'Institutional Buying Core Support', 'Robust Capital Allocations'];
-                      summary = `${asset.name} is demonstrating exceptional capital resilience with a strong 24h change of ${asset.change.toFixed(2)}%. Trading at a highly attractive P/E valuation of ${pe}, it represents excellent defensive coverage. Indicators point toward heavy volume accumulation above the initial ${openValue == null ? 'N/A' : formatCurrency(openValue, asset.type)} floor.`;
-                    } else {
-                      recommendation = 'ACCUMULATE';
-                      sentimentScore = 76;
-                      keyThemes = ['Momentum Extension', 'Sector Headwinds Alleviation', 'High Capex Efficiency'];
-                      summary = `${asset.name} is extending upward trajectories near ${formatCurrency(asset.price, asset.type)}. While its P/E multiple of ${pe || 'N/A'} indicates premium growth valuation expectations, the solid volume velocity suggests strong support structures from core asset baskets.`;
-                    }
-                  } else {
-                    if (pe && pe > 32) {
-                      recommendation = 'REDUCE';
-                      sentimentScore = 31;
-                      keyThemes = ['Premium P/E Multiple Compress', 'Technical Trend Support Break', 'Post-Earnings Capital Shift'];
-                      summary = `${asset.name} is undergoing a minor consolidation pattern, dropping ${asset.change.toFixed(2)}%. The premium P/E valuation profile (${pe}) introduces intermediate valuation headwinds. Momentum shifts lean negative until consolidated baselines stabilize around ${low52Value == null ? 'N/A' : formatCurrency(low52Value, asset.type)}.`;
-                    } else {
-                      recommendation = 'UNDER REVIEW';
-                      sentimentScore = 47;
-                      keyThemes = ['Dynamic Support Reinforcement', 'Range-Bound Distribution', 'Volatility Squeeze Pattern'];
-                      summary = `${asset.name} is consolidating with a 24-hour movement of ${asset.change.toFixed(2)}%. Fundamental balance sheets are steady, but macro rates introduce a range-bound profile. Watch for breakout triggers above the 52-week peak high of ${high52Value == null ? 'N/A' : formatCurrency(high52Value, asset.type)}.`;
-                    }
-                  }
-                } else {
-                  sentimentScore = isUp ? 68 : 45;
-                  recommendation = isUp ? 'ACCUMULATE' : 'UNDER REVIEW';
-                  keyThemes = isUp
-                    ? ['Sovereign Arbitrage Flows', 'Hedged Alternative Inbound', 'Global Trade Spread Widening']
-                    : ['Capital Outflows to High Yields', 'Safehaven Assets Rotation', 'Demand Curve Readjustments'];
-                  summary = `${asset.symbol} is responding dynamically to micro-rate revisions, currently priced at ${formatCurrency(asset.price, asset.type)}. Dynamic resistance stands near ${high52Value == null ? 'N/A' : formatCurrency(high52Value, asset.type)}, guiding risk managers to maintain neutral exposure matrices.`;
-                }
-
-                let recommendationColor = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
-                if (recommendation === 'STRONG BUY') recommendationColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25';
-                if (recommendation === 'ACCUMULATE') recommendationColor = 'text-teal-400 bg-teal-500/15 border-teal-500/20';
-                if (recommendation === 'REDUCE') recommendationColor = 'text-rose-450 bg-rose-500/10 border-rose-550/20';
-
-                return { recommendation, recommendationColor, sentimentScore, keyThemes, summary };
-              }, [asset.symbol, asset.change, asset.price, asset.type]);
-
-              return (
-                <div className="space-y-4 relative min-h-[140px]">
-                  {isScanning && (
-                    <div className="absolute inset-0 bg-zinc-950/95 z-20 rounded-xl flex flex-col items-center justify-center space-y-2">
-                      <RefreshCw className="h-5 w-5 animate-spin text-indigo-400" />
-                      <span className="text-[10px] font-mono text-zinc-400">Scanning asset indicators...</span>
-                    </div>
-                  )}
-
-                  {/* Top Stats: Gauge & Recommendation Badge */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-zinc-900/20 rounded-xl border border-zinc-900 p-3.5">
-                    <div className="flex items-center gap-3">
-                      {/* Sentiment meter visual block */}
-                      <div className="relative h-12 w-12 rounded-full border-2 border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex items-center justify-center bg-zinc-950">
-                        <span className="text-xs font-black font-mono text-indigo-300">{analysis.sentimentScore}</span>
-                        <div className="absolute inset-0.5 rounded-full border border-dashed border-indigo-500/30 animate-spin" style={{ animationDuration: '6s' }} />
-                      </div>
-                      <div>
-                        <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider font-mono">Performance Core Score</h4>
-                        <p className="text-xs font-bold text-zinc-200 mt-0.5">
-                          {analysis.sentimentScore > 75 ? 'Strongly Bullish' : analysis.sentimentScore > 55 ? 'Moderately Bullish' : analysis.sentimentScore > 40 ? 'Neutral Momentum' : 'Bearish Tension'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end">
-                      <div className={`px-2.5 py-1 rounded-lg border text-[10px] font-extrabold tracking-widest uppercase font-mono ${analysis.recommendationColor}`}>
-                        {analysis.recommendation}
-                      </div>
-                      <span className="text-[9px] text-zinc-500 mt-1 font-mono">Dynamic Performance Signal</span>
-                    </div>
-                  </div>
-
-                  {/* Summary qualitative text block */}
-                  <div className="bg-zinc-900/5 border border-zinc-900/80 rounded-xl p-4">
-                    <p className="text-xs text-zinc-300 leading-relaxed italic">
-                      "{analysis.summary}"
-                    </p>
-                  </div>
-
-                  {/* Dynamic Indicators checklist */}
-                  <div className="space-y-2 pt-1">
-                    <h5 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono">Contributing Valuation Insights</h5>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      {analysis.keyThemes.map((theme, i) => (
-                        <div key={i} className="flex items-center gap-2 rounded-lg bg-zinc-900/30 border border-zinc-900 px-3 py-2 text-[10px] text-zinc-300 font-medium">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
-                          <span className="truncate">{theme}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Hidden trigger click button for ref helper usage */}
-                  <button
-                    id="btn-re-analyze"
-                    onClick={() => {
-                      setIsScanning(true);
-                      const t = setTimeout(() => setIsScanning(false), 900);
-                      return () => clearTimeout(t);
-                    }}
-                    className="hidden"
-                  />
-                </div>
-              );
-            })()}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-xl border border-zinc-900 bg-zinc-950/50 p-3">
+                <p className="text-[9px] uppercase tracking-widest text-zinc-500">Provider-reported change</p>
+                <p className="mt-1 text-lg font-black font-mono text-zinc-100">{isDataOffline ? 'N/A' : `${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}%`}</p>
+              </div>
+              <div className="rounded-xl border border-zinc-900 bg-zinc-950/50 p-3">
+                <p className="text-[9px] uppercase tracking-widest text-zinc-500">6M moving-average crossover</p>
+                <p className="mt-1 text-sm font-bold text-zinc-100">{historyLoading ? 'Loading…' : historyError ? 'Unavailable' : trendSentiment}</p>
+              </div>
+              <div className="rounded-xl border border-zinc-900 bg-zinc-950/50 p-3">
+                <p className="text-[9px] uppercase tracking-widest text-zinc-500">Analysis coverage</p>
+                <p className="mt-1 text-sm font-bold text-zinc-100">Quotes + daily closes only</p>
+              </div>
+            </div>
+            <p className="text-[10px] leading-relaxed text-zinc-500">
+              This panel reports observable quote movement and a moving-average crossover from provider-backed historical closes. It does not produce buy/sell recommendations or infer institutional flows, valuation quality or future returns.
+            </p>
           </div>
 
           {/* Quick Metrics grid stats panel */}
