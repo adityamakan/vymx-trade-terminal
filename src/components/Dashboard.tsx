@@ -221,7 +221,7 @@ export default function Dashboard({
   }, [verifiedQuoteAssets, advCount, decCount]);
 
   const sectorStats = useMemo(() => {
-    const sectorsMap: { [sec: string]: { sumChange: number; count: number } = {};
+    const sectorsMap: { [sec: string]: { sumChange: number; count: number } } = {};
     verifiedQuoteAssets.forEach(a => {
       const sectorName = a.sector || 'Other';
       if (!sectorsMap[sectorName]) {
