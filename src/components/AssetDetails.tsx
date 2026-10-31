@@ -18,6 +18,7 @@ interface AssetDetailsProps {
   formatCurrency: (val: number, type?: string, assetCountry?: string) => string;
   currencyMode: 'AUTO' | 'USD' | 'INR';
   isStrictHours?: boolean;
+  isDataOffline: boolean;
   assets: Asset[];
 }
 
@@ -39,6 +40,7 @@ export default function AssetDetails({
   formatCurrency: formatCurrencyProp,
   currencyMode,
   isStrictHours = false,
+  isDataOffline,
   assets,
 }: AssetDetailsProps) {
   const [timeframe, setTimeframe] = useState<'1D' | '1W' | '1M' | '1Y'>('1D');
@@ -207,6 +209,26 @@ export default function AssetDetails({
     if (verifiedHistory.length < 20) return 'UNAVAILABLE';
     return detectMACrossover(verifiedHistory.map((point) => point.value), 5, 20);
   }, [verifiedHistory]);
+
+  const getRawValue = (value: any): number | null => {
+    const raw = value && typeof value === 'object' && 'raw' in value ? value.raw : value;
+    return typeof raw === 'number' && Number.isFinite(raw) ? raw : null;
+  };
+  const providerPrice = fundamentalsData?.price || {};
+  const providerSummary = fundamentalsData?.summaryDetail || {};
+  const providerStats = fundamentalsData?.defaultKeyStatistics || {};
+  const marketCapValue = getRawValue(providerPrice.marketCap) ?? getRawValue(providerSummary.marketCap);
+  const peValue = getRawValue(providerSummary.trailingPE) ?? getRawValue(providerStats.trailingPE);
+  const volumeValue = getRawValue(providerPrice.regularMarketVolume) ?? getRawValue(providerSummary.volume);
+  const high52Value = getRawValue(providerSummary.fiftyTwoWeekHigh) ?? getRawValue(providerStats.fiftyTwoWeekHigh);
+  const low52Value = getRawValue(providerSummary.fiftyTwoWeekLow) ?? getRawValue(providerStats.fiftyTwoWeekLow);
+  const openValue = getRawValue(providerPrice.regularMarketOpen);
+  const formatCompactCurrency = (value: number | null) => value == null ? 'N/A' : new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: asset.country === 'India' ? 'INR' : 'USD', notation: 'compact', maximumFractionDigits: 2
+  }).format(value);
+  const formatCompactNumber = (value: number | null) => value == null ? 'N/A' : new Intl.NumberFormat('en-US', {
+    notation: 'compact', maximumFractionDigits: 2
+  }).format(value);
 
   return (
     <motion.div
