@@ -623,7 +623,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
           <div className="bg-zinc-900/20 border border-zinc-900/60 p-3.5 rounded-2xl flex items-start gap-2 text-[10px] leading-relaxed text-zinc-500" id="sandbox-saving-note">
             <Info className="h-4 w-4 text-zinc-500 shrink-0 mt-0.5" />
             <p className="text-left font-sans">
-              Dynamic trade parameters are safely isolated inside your client domain. Google and enabled Firebase email/password sign-ins are verified by Firebase. Demo access is a local sandbox; phone OTP remains unavailable until a trusted SMS provider is configured.
+              Firebase validates persistent sign-ins and Firestore rules protect account data. Google and enabled Firebase email/password sign-ins are verified by Firebase. Demo access is local-only and does not sync; phone OTP remains unavailable until a trusted SMS provider is configured.
             </p>
           </div>
 
