@@ -238,7 +238,7 @@ app.get('/api/fred/series/:seriesId', async (req: Request, res: Response) => {
 // Optional news provider. Credentials are read exclusively from server env.
 app.get('/api/finnhub/news', async (req: Request, res: Response) => {
   const apiKey = process.env.FINNHUB_API_KEY;
-  if (!apiKey) return res.status(503).json({ success: false, code: 'PROVIDER_NOT_CONFIGURED', error: 'Finnhub integration is not configured' });
+  if (!apiKey && req.params.feature !== 'live-news') return res.status(503).json({ success: false, code: 'PROVIDER_NOT_CONFIGURED', error: 'Finnhub integration is not configured' });
   const category = String(req.query.category || 'general');
   if (!/^[A-Za-z_-]{1,24}$/.test(category)) return res.status(400).json({ success: false, error: 'Invalid news category' });
   try {
