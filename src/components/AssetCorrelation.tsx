@@ -12,7 +12,7 @@ export default function AssetCorrelation({ asset, allAssets }: AssetCorrelationP
   const defaultBenchmark = useMemo(() => {
     if (asset.type === 'crypto') return asset.symbol === 'BTC' ? 'ETH' : 'BTC';
     if (asset.country === 'India') return asset.symbol === 'NIFTY50' ? 'SENSEX' : 'NIFTY50';
-    return asset.symbol === '.SPX' ? 'AAPL' : '.SPX';
+    return asset.symbol === '.SPX' ? '.IXIC' : '.SPX';
   }, [asset.type, asset.country, asset.symbol]);
   const [compareSymbol, setCompareSymbol] = useState(defaultBenchmark);
   useEffect(() => { setCompareSymbol(defaultBenchmark); }, [defaultBenchmark]);
