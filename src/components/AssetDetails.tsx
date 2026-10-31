@@ -77,7 +77,7 @@ export default function AssetDetails({
       setIsDataLoading(true);
       setDataError('');
       try {
-        const response = await fetch(`/api/yahoo/financials/${asset.symbol}`);
+        const response = await fetch(`/api/yahoo/financials/${encodeURIComponent(asset.symbol)}`);
         const data = await response.json();
         if (data.error) {
           setDataError(data.error);
@@ -105,22 +105,26 @@ export default function AssetDetails({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          symbol: asset.symbol,
-          name: asset.name,
-          type: asset.type,
-          price: asset.price,
-          change: asset.change,
-          analysisType: tab,
+          prompt: `Provide an educational ${tab} explanation for this asset using only the supplied context. Clearly state missing data and do not invent valuation, earnings, flows or price targets.`,
+          contextData: {
+            symbol: asset.symbol,
+            name: asset.name,
+            assetType: asset.type,
+            latestPrice: isDataOffline ? null : asset.price,
+            latestChangePercent: isDataOffline ? null : asset.change,
+            fundamentals: fundamentalsData || null
+          },
+          systemInstruction: 'Be evidence-led. Separate provider observations from interpretation and state when data is unavailable.'
         }),
       });
 
-      const data = await response.json();
-      if (data.error) {
-        setDataError(data.error);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) {
+        setDataError(data.error || `HTTP ${response.status}`);
       } else {
         setAiInsights((prev) => ({
           ...prev,
-          [tab as AiTabType]: data.content,
+          [tab as AiTabType]: data.content || data.answer || 'The AI provider returned an empty response.',
         }));
       }
     } catch (err: any) {
