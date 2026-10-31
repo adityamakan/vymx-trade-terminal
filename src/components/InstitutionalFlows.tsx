@@ -95,10 +95,10 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
         startY: 50,
         head: [['Metric', 'Value']],
         body: [
-          ['Net FII Flow (MTD)', '+$2.45B'],
-          ['Net DII Flow (MTD)', '+$4.12B'],
-          ['DII Buffering', 'Strong'],
-          ['FII Momentum', 'Neutral']
+          ['Net FII Flow (MTD)', 'Not connected'],
+          ['Net DII Flow (MTD)', 'Not connected'],
+          ['DII Buffering', 'Not computed'],
+          ['FII Momentum', 'Not computed']
         ],
         theme: 'grid',
         headStyles: { fillColor: [79, 70, 229] },
@@ -111,7 +111,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
       autoTable(doc, {
         startY: finalY + 20,
         head: [['Sector', 'FII', 'DII', 'Net']],
-        body: sectorFlows.map(s => [s.sector, s.fii.toString(), s.dii.toString(), s.net.toString()]),
+        body: sectorFlows.length ? sectorFlows.map(s => [s.sector, s.fii.toString(), s.dii.toString(), s.net.toString()]) : [['Not available', '—', '—', 'No verified feed']],
         theme: 'grid',
         headStyles: { fillColor: [79, 70, 229] },
       });
@@ -124,14 +124,14 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
       autoTable(doc, {
         startY: 30,
         head: [['Type', 'Investor', 'Asset', 'Sector', 'Amount', 'Sentiment']],
-        body: liveDeals.map(d => [
+        body: liveDeals.length ? liveDeals.map(d => [
           d.type,
           d.investor,
           d.targetCompany,
           d.targetSector,
           `${d.currency} ${(d.amount/1000000).toFixed(1)}M`,
           d.sentiment
-        ]),
+        ]) : [['Not available', '—', '—', '—', '—', 'No verified deal feed']],
         theme: 'grid',
         headStyles: { fillColor: [79, 70, 229] },
       });
@@ -164,7 +164,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
         <div>
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-3">
             <Network className="h-8 w-8 text-indigo-500" />
-            Institutional Smart Money Flows
+            Institutional Flow Data Coverage
           </h1>
           <p className="text-zinc-400 text-sm mt-1 max-w-2xl">
             Institutional-flow panels display provider-sourced observations only. Connect a verified transaction and capital-flow feed to populate block deals, sector allocations, and geopolitical flow attribution.
@@ -277,10 +277,8 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                     </h3>
                     <span className="text-xs bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded font-mono border border-indigo-500/30">Foreign</span>
                   </div>
-                  <div className="text-3xl font-black text-indigo-400 tracking-tight">+$2.45B</div>
-                  <div className="flex items-center gap-2 mt-2 text-emerald-400 text-sm font-semibold">
-                    <TrendingUp className="w-4 h-4" /> +12.4% vs Last Month
-                  </div>
+                  <div className="text-2xl font-black text-zinc-500 tracking-tight">Not connected</div>
+                  <div className="mt-2 text-xs text-zinc-500">No verified FII transaction feed</div>
                </div>
 
                {/* DII Net flow card */}
@@ -292,10 +290,8 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                     </h3>
                     <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-mono border border-emerald-500/30">Domestic</span>
                   </div>
-                  <div className="text-3xl font-black text-emerald-400 tracking-tight">+$4.12B</div>
-                  <div className="flex items-center gap-2 mt-2 text-emerald-400 text-sm font-semibold">
-                    <TrendingUp className="w-4 h-4" /> +5.2% vs Last Month
-                  </div>
+                  <div className="text-2xl font-black text-zinc-500 tracking-tight">Not connected</div>
+                  <div className="mt-2 text-xs text-zinc-500">No verified DII transaction feed</div>
                </div>
 
                {/* Combined Index Impact */}
@@ -309,19 +305,19 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                      <div className="space-y-1">
                        <div className="flex justify-between text-xs font-semibold">
                          <span className="text-zinc-300">DII Buffering</span>
-                         <span className="text-emerald-400">Strong</span>
+                         <span className="text-zinc-500">Not computed</span>
                        </div>
                        <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
-                         <div className="h-full bg-emerald-500 w-[85%]" />
+                         <div className="h-full bg-zinc-700 w-0" />
                        </div>
                      </div>
                      <div className="space-y-1">
                        <div className="flex justify-between text-xs font-semibold">
                          <span className="text-zinc-300">FII Momentum</span>
-                         <span className="text-amber-400">Neutral</span>
+                         <span className="text-zinc-500">Not computed</span>
                        </div>
                        <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
-                         <div className="h-full bg-amber-500 w-[45%]" />
+                         <div className="h-full bg-zinc-700 w-0" />
                        </div>
                      </div>
                   </div>
