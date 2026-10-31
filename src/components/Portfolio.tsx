@@ -261,19 +261,6 @@ export default function Portfolio({
     }
   };
 
-  // Historical account valuations are not persisted, so time-series risk metrics are intentionally unavailable.
-  const performanceHistory: { dayIndex: number; date: string; balance: number; holdingsVal: number; cashVal: number }[] = [];
-  const quantStats = {
-    sharpe: null as number | null,
-    maxDrawdown: null as number | null,
-    volatility: null as number | null,
-    totalReturnPct: null as number | null,
-    portfolioBeta: null as number | null,
-    diversificationScore: null as number | null,
-    varValue: null as number | null,
-    alpha: null as number | null
-  };
-
   // Compute Key Performance Indicators (KPIs)
   const kpiStats = useMemo(() => {
     let realizedGains = 0;
@@ -651,7 +638,7 @@ export default function Portfolio({
           {[
             ['Cumulative return', historicalRisk.cumulativeReturnPct == null ? 'N/A' : `${historicalRisk.cumulativeReturnPct.toFixed(2)}%`],
             ['CAGR', historicalRisk.cagrPct == null ? 'N/A' : `${historicalRisk.cagrPct.toFixed(2)}%`],
-            ['Annualized volatility', historicalRisk.annualizedVolatilityPct == null ? 'N/A' : `${historicalRisk.annualizedVolatilityPct.toFixed(2)}%`],
+            ['Annualized volatility (252d)', historicalRisk.annualizedVolatilityPct == null ? 'N/A' : `${historicalRisk.annualizedVolatilityPct.toFixed(2)}%`],
             ['Maximum drawdown', historicalRisk.maxDrawdownPct == null ? 'N/A' : `${historicalRisk.maxDrawdownPct.toFixed(2)}%`],
             ['Sharpe (0% risk-free)', historicalRisk.sharpeAtZeroRiskFree == null ? 'N/A' : historicalRisk.sharpeAtZeroRiskFree.toFixed(2)],
             ['Sortino (0% target)', historicalRisk.sortinoAtZeroTarget == null ? 'N/A' : historicalRisk.sortinoAtZeroTarget.toFixed(2)],
@@ -664,7 +651,7 @@ export default function Portfolio({
             </div>
           ))}
         </div>
-        <p className="mt-3 text-[10px] text-zinc-500">Risk metrics use daily USD-normalized valuations and require at least 30 daily return observations. Sharpe assumes a 0% annual risk-free rate; Sortino uses a 0% daily target. VaR/CVaR are empirical historical 95% estimates, not forecasts. FX rates are indicative Yahoo Finance quotes captured at snapshot time.</p>
+        <p className="mt-3 text-[10px] text-zinc-500">Risk metrics use daily USD-normalized valuations, a conventional 252-trading-day annualization factor, and require at least 30 daily return observations. Sharpe assumes a 0% annual risk-free rate; Sortino uses a 0% daily target. VaR/CVaR are empirical historical 95% estimates, not forecasts. FX rates are indicative Yahoo Finance quotes captured at snapshot time.</p>
         {historicalRisk.unavailableReason && <p className="mt-2 text-[10px] text-amber-300/80">{historicalRisk.unavailableReason}</p>}
         <p className="mt-2 text-[10px] text-amber-300/80">Benchmark-relative alpha and beta remain unavailable until a benchmark return series is aligned to these portfolio valuation timestamps.</p>
       </section>
@@ -772,7 +759,7 @@ export default function Portfolio({
           <h3 className="text-sm font-bold uppercase tracking-wider">Historical performance analytics</h3>
         </div>
         <p className="mt-3 text-sm text-zinc-400">A historical account-equity time series is not yet available. This terminal will not reconstruct or fabricate past balances from today's holdings. Sharpe ratio, realised volatility, drawdown, VaR, beta and alpha require dated portfolio and benchmark observations.</p>
-        <p className="mt-2 text-xs text-zinc-500">Current holdings valuation and transaction ledger remain available below. Historical analytics will populate once portfolio valuation snapshots are recorded.</p>
+        <p className="mt-2 text-xs text-zinc-500">Current holdings valuation and transaction ledger remain available below. Historical risk analytics require sufficient daily USD-normalized observations; metrics remain unavailable until the minimum sample is reached.</p>
       </section>
 
       {/* Grid: Allocation Chart & Holdings Table */}
