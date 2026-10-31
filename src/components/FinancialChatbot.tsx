@@ -39,7 +39,7 @@ const TypingMessage = ({ content, isNew }: { content: string, isNew?: boolean })
 export default function FinancialChatbot({ activeAsset, portfolio, userId }: FinancialChatbotProps) {
   const storageKey = `vymx_chatbot_history_${userId || 'guest'}`;
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant', text: string, isNew?: boolean }[]>(() => {
-    const saved = localStorage.getItem(storageKey);
+    const saved = sessionStorage.getItem(storageKey);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -121,7 +121,7 @@ export default function FinancialChatbot({ activeAsset, portfolio, userId }: Fin
   useEffect(() => {
     activeStorageKeyRef.current = storageKey;
     setIsLoading(false);
-    const saved = localStorage.getItem(storageKey);
+    const saved = sessionStorage.getItem(storageKey);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -138,7 +138,7 @@ export default function FinancialChatbot({ activeAsset, portfolio, userId }: Fin
 
   useEffect(() => {
     if (loadedStorageKey !== storageKey) return;
-    localStorage.setItem(storageKey, JSON.stringify(messages));
+    sessionStorage.setItem(storageKey, JSON.stringify(messages));
   }, [messages, storageKey, loadedStorageKey]);
 
   useEffect(() => {
