@@ -653,7 +653,7 @@ export default function Dashboard({
               </span>
             </div>
             <p className="text-[9.5px] text-zinc-500 leading-normal border-t border-zinc-900/50 pt-2 font-mono">
-              Liquidity pools and commodity futures trade continuous on weekdays in IST.
+              Exchange hours are approximate and do not account for every market holiday or contract-specific session.
             </p>
           </div>
 
@@ -715,9 +715,9 @@ export default function Dashboard({
             </div>
 
             <div className="flex justify-between items-center text-[9px] font-mono font-bold uppercase tracking-widest px-1">
-              <span className="text-red-500">Extreme Fear</span>
+              <span className="text-red-500">More decliners</span>
               <span className="text-zinc-500">Neutral</span>
-              <span className="text-green-500">Extreme Greed</span>
+              <span className="text-green-500">More advancers</span>
             </div>
 
             {/* Sentiment assessment label */}
@@ -736,14 +736,14 @@ export default function Dashboard({
                     : 'bg-red-500/10 text-red-500 border border-red-500/20'
                 }`}>
                   {sentimentScore >= 75
-                    ? '🚀 Extreme Greed'
+                    ? 'Strongly positive breadth'
                     : sentimentScore >= 55
-                    ? '📈 Greed (Bullish)'
+                    ? 'Positive breadth'
                     : sentimentScore >= 45
-                    ? '⚖️ Neutral'
+                    ? 'Balanced breadth'
                     : sentimentScore >= 25
-                    ? '📉 Fear (Bearish)'
-                    : '🔥 Extreme Fear'}
+                    ? 'Negative breadth'
+                    : 'Strongly negative breadth'}
                 </span>
               </p>
             </div>
@@ -1242,7 +1242,7 @@ export default function Dashboard({
             </div>
             <p className="text-xs text-zinc-400 leading-relaxed">
               Welcome to the **Vymx Trade MVP**. Trade safely with an initial **$100,000 in Virtual USD**.
-              Search any asset to open the financial visual chart and prompt the server-side **Gemini API** for an immediate, professional analysis of market operations.
+              Search any asset to open its chart and request server-side Gemini commentary when a Gemini API key is configured. Analysis is unavailable when the provider is not configured.
             </p>
           </div>
         </div>
