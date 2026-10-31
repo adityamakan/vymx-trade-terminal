@@ -205,7 +205,11 @@ export default function Dashboard({
   };
 
   // --- MARKET BREADTH FROM PER-ASSET VERIFIED PROVIDER QUOTES ONLY ---
-  const verifiedQuoteAssets = useMemo(() => assets.filter((asset) => Boolean(asset.quoteAsOf)), [assets]);
+  const verifiedQuoteAssets = useMemo(() => assets.filter((asset) => {
+    if (!asset.quoteAsOf) return false;
+    const timestamp = Date.parse(asset.quoteAsOf);
+    return Number.isFinite(timestamp) && timestamp <= Date.now() + 60_000 && Date.now() - timestamp <= 120_000;
+  }), [assets, timeTick]);
   const advCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change > 0).length, [verifiedQuoteAssets]);
   const decCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change < 0).length, [verifiedQuoteAssets]);
   const flatCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change === 0).length, [verifiedQuoteAssets]);
