@@ -89,6 +89,13 @@ Without optional provider credentials, the corresponding endpoints return explic
 
 ## Data integrity and operational notes
 
+- The exchange globe uses static geographic reference points. Index values are fetched separately; exchange sentiment, fear/greed, volume, gainers and news remain unavailable unless a provider explicitly supplies them.
+- The heatmap does not derive FII/DII flows from price changes. Its flow and volatility selectors remain unavailable until actual transaction-flow and realized/implied-volatility datasets are connected. Synthetic bundled price-history arrays are not used as historical heatmap candles.
+- The trading research chat is a local browser session with optional Gemini replies. There is no connected multi-user community service, online-user count, or shared message persistence.
+- The health endpoint reports API process health, uptime, memory and provider-key configuration. It does not probe provider availability or claim that quotes are fresh.
+- Portfolio CAGR is withheld until at least 30 calendar days are observed. Historical risk metrics require at least 30 daily return observations. Portfolio returns are not cash-flow-adjusted time-weighted returns; external contributions/withdrawals must be recorded and adjusted before interpreting performance as investment returns.
+- Intraday portfolio snapshots currently have no automatic Firestore retention policy. Configure a Firestore TTL policy or implement a reviewed retention job before sustained production use; do not assume old intraday records are automatically deleted.
+
 - Yahoo Finance is an unofficial upstream data source. Availability, latency, licensing and rate limits are outside this application's control.
 - Quote responses include source and timestamps and report partial failures rather than fabricating missing prices.
 - Historical analysis panels request OHLCV candles from the server-side Yahoo Finance adapter; identical symbol/range requests are deduplicated and cached briefly in the browser and server.
