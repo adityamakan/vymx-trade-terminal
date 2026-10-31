@@ -94,7 +94,7 @@ Without optional provider credentials, the corresponding endpoints return explic
 - The trading research chat is a local browser session with optional Gemini replies. There is no connected multi-user community service, online-user count, or shared message persistence.
 - The health endpoint reports API process health, uptime, memory and provider-key configuration. It does not probe provider availability or claim that quotes are fresh.
 - Portfolio CAGR is withheld until at least 30 calendar days are observed. Historical risk metrics require at least 30 daily return observations. Portfolio returns are not cash-flow-adjusted time-weighted returns; external contributions/withdrawals must be recorded and adjusted before interpreting performance as investment returns.
-- Intraday portfolio snapshots currently have no automatic Firestore retention policy. Configure a Firestore TTL policy or implement a reviewed retention job before sustained production use; do not assume old intraday records are automatically deleted.
+- New intraday portfolio snapshots carry a 90-day `expiresAt` timestamp. Enable a Firestore TTL policy on the `expiresAt` field for the `portfolioIntradaySnapshots` collection group in the Firebase/Google Cloud console; TTL deletion is asynchronous and existing documents without this field are not expired by the policy. Deploy `firestore.rules` before enabling snapshot writes.
 
 - Yahoo Finance is an unofficial upstream data source. Availability, latency, licensing and rate limits are outside this application's control.
 - Quote responses include source and timestamps and report partial failures rather than fabricating missing prices.
