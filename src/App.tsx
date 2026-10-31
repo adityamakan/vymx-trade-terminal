@@ -19,7 +19,7 @@ import InstitutionalFlows from './components/InstitutionalFlows';
 import { Geopolitics } from './components/Geopolitics';
 import CommandCenter from './components/CommandCenter';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { compressData, decompressData } from './utils/storage';
+
 import { Asset, PortfolioItem, Transaction, PriceAlert } from './types';
 import { assets } from './data';
 import { Layers, GraduationCap, Globe, BarChart3, TrendingUp, AlertTriangle } from 'lucide-react';
@@ -308,22 +308,11 @@ export default function App() {
 
   // --- STATE PERSISTENCE & HYDRATION ---
 
-  // 1. Watchlist (Default indices & high-liquidity stock symbols)
-  const [watchlist, setWatchlist] = useState<string[]>(() => {
-    const saved = localStorage.getItem('finova_watchlist');
-    return saved ? JSON.parse(saved) : ['AAPL', 'BTC', 'SOL', 'GC=F'];
-  });
-
-  // 2. Virtual USD Cash Capital
-  const [virtualBalance, setVirtualBalance] = useState<number>(() => {
-    const saved = localStorage.getItem('finova_balance');
-    return saved ? parseFloat(saved) : 100000;
-  });
-
-  const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>(() => {
-    const saved = localStorage.getItem('finova_price_alerts');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Local guest/demo state is intentionally ephemeral. Persistent accounts
+  // hydrate their own ledger from Firestore after Firebase identity validation.
+  const [watchlist, setWatchlist] = useState<string[]>(['AAPL', 'BTC', 'SOL', 'GC=F']);
+  const [virtualBalance, setVirtualBalance] = useState<number>(100000);
+  const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>([]);
 
 
   const addToast = (message: string, type: 'info' | 'success' | 'alert' = 'info') => {
@@ -335,10 +324,6 @@ export default function App() {
       toast.info(message);
     }
   };
-
-  useEffect(() => {
-    localStorage.setItem('finova_price_alerts', JSON.stringify(priceAlerts));
-  }, [priceAlerts]);
 
   // Alert check monitor
   useEffect(() => {
@@ -367,66 +352,14 @@ export default function App() {
     });
   }, [liveAssets]);
 
-  // 3. Investment Portfolios ledger (Prepopulate with AAPL & BTC to make the dashboard feel alive and interactive instantly!)
-  const [portfolio, setPortfolio] = useState<PortfolioItem[]>(() => {
-    const saved = localStorage.getItem('finova_portfolio');
-    const defaultPortfolio = [
-      { symbol: 'AAPL', name: 'Apple Inc.', type: 'stock', avgBuyPrice: 175.50, quantity: 20 },
-      { symbol: 'BTC', name: 'Bitcoin', type: 'crypto', avgBuyPrice: 62450.00, quantity: 0.5 },
-    ] as PortfolioItem[];
-    if (saved) return decompressData<PortfolioItem[]>(saved, defaultPortfolio);
-    return defaultPortfolio;
-  });
-
-  // 4. Settled Transactions History
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem('finova_transactions');
-    const defaultTransactions = [
-      {
-        id: 'tx-seed-1',
-        symbol: 'AAPL',
-        name: 'Apple Inc.',
-        type: 'BUY',
-        quantity: 20,
-        price: 175.50,
-        total: 3510.00,
-        date: new Date(Date.now() - 48 * 60 * 60 * 1000).toLocaleString(),
-      },
-      {
-        id: 'tx-seed-2',
-        symbol: 'BTC',
-        name: 'Bitcoin',
-        type: 'BUY',
-        quantity: 0.5,
-        price: 62455.00,
-        total: 31227.50,
-        date: new Date(Date.now() - 24 * 60 * 60 * 1000).toLocaleString(),
-      },
-    ] as Transaction[];
-    if (saved) return decompressData<Transaction[]>(saved, defaultTransactions);
-    return defaultTransactions;
-  });
+  // Demo mode starts with no positions or transaction history. Firebase
+  // accounts load their own persisted portfolio after authentication.
+  const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const updateTransactionNote = (id: string, note: string) => {
     setTransactions(prev => prev.map(t => t.id === id ? { ...t, note } : t));
   };
-
-  // Keep localStorage sync'd
-  useEffect(() => {
-    localStorage.setItem('finova_watchlist', JSON.stringify(watchlist));
-  }, [watchlist]);
-
-  useEffect(() => {
-    localStorage.setItem('finova_balance', virtualBalance.toString());
-  }, [virtualBalance]);
-
-  useEffect(() => {
-    localStorage.setItem('finova_portfolio', compressData(portfolio));
-  }, [portfolio]);
-
-  useEffect(() => {
-    localStorage.setItem('finova_transactions', compressData(transactions));
-  }, [transactions]);
 
   useEffect(() => {
     const saveToCloud = async () => {
