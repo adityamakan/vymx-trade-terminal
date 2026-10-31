@@ -301,6 +301,115 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
   });
 });
 
+// Provider-backed sector momentum proxies. Scores are a transparent transform of
+// the ETF's daily percentage move, not analyst ratings or institutional flow data.
+app.get('/api/ai/market-auras', async (_req: Request, res: Response) => {
+  const proxies = [
+    { sector: 'Technology', symbol: 'XLK' },
+    { sector: 'Financials', symbol: 'XLF' },
+    { sector: 'Healthcare', symbol: 'XLV' },
+    { sector: 'Energy', symbol: 'XLE' },
+    { sector: 'Consumer Discretionary', symbol: 'XLY' },
+    { sector: 'Industrials', symbol: 'XLI' },
+    { sector: 'Materials', symbol: 'XLB' },
+    { sector: 'Utilities', symbol: 'XLU' },
+    { sector: 'Real Estate', symbol: 'XLRE' },
+    { sector: 'Communication Services', symbol: 'XLC' }
+  ];
+  const result = await getPrices(proxies.map((item) => item.symbol));
+  const auras = proxies.flatMap((item) => {
+    const quote = result.prices[item.symbol];
+    if (!quote) return [];
+    const score = Math.max(0, Math.min(100, Math.round(50 + quote.change * 10)));
+    return [{
+      sector: item.sector,
+      score,
+      trend: quote.change > 0.25 ? 'Bullish' : quote.change < -0.25 ? 'Bearish' : 'Neutral',
+      dailyChangePercent: quote.change,
+      proxy: item.symbol,
+      source: 'Yahoo Finance'
+    }];
+  });
+  if (!auras.length) return res.status(503).json({ success: false, error: 'Sector ETF quotes are temporarily unavailable', unavailable: result.errors });
+  return res.json(auras);
+});
+
+// A concise, rule-based market snapshot. It describes observed quotes only;
+// it does not infer causes, events, sentiment or future returns.
+app.get('/api/ai/narrative', async (_req: Request, res: Response) => {
+  const symbols = ['^GSPC', '^NSEI', 'BTC-USD', '^VIX', 'GC=F'];
+  const result = await getPrices(symbols);
+  if (!result.returned) return res.status(503).json({ success: false, error: 'Market snapshot unavailable', unavailable: result.errors });
+  const describe = (label: string, symbol: string) => {
+    const quote = result.prices[symbol];
+    if (!quote) return `${label}: unavailable`;
+    const direction = quote.change > 0 ? 'up' : quote.change < 0 ? 'down' : 'unchanged';
+    return `${label}: ${quote.price.toLocaleString('en-US', { maximumFractionDigits: 2 })}, ${direction} ${Math.abs(quote.change).toFixed(2)}% on the provider's quoted change`;
+  };
+  const text = [
+    'Provider market snapshot — observed quotes, not a causal news analysis.',
+    describe('S&P 500', '^GSPC'),
+    describe('NIFTY 50', '^NSEI'),
+    describe('Bitcoin (USD)', 'BTC-USD'),
+    describe('VIX', '^VIX'),
+    describe('Gold futures', 'GC=F'),
+    'This feed does not include verified institutional positioning, geopolitical event attribution, or a forward return forecast.'
+  ].join(' ');
+  return res.json({ success: true, text, generated: false, source: 'Yahoo Finance', fetchedAt: new Date().toISOString(), unavailable: result.errors });
+});
+
+// Static educational quiz content; it is not presented as a live market signal.
+app.get('/api/ai/quiz', (_req: Request, res: Response) => {
+  return res.json({
+    success: true,
+    generated: false,
+    scenarioTitle: 'Understanding volatility indices',
+    scenarioText: 'The VIX rises sharply while the S&P 500 falls during the same session. Which interpretation is the most defensible from these observations alone?',
+    options: [
+      { label: 'Risk aversion may be increasing', correct: true, reason: 'A rising VIX alongside a falling equity index is commonly associated with higher expected near-term volatility and risk aversion. It does not establish the cause or predict the next move.' },
+      { label: 'A recession is now certain', correct: false, reason: 'A volatility index is not a recession probability and cannot establish that outcome.' },
+      { label: 'Institutional investors are definitely selling', correct: false, reason: 'Index and volatility quotes do not reveal investor identity or actual institutional flows.' }
+    ],
+    source: 'VYMX educational content'
+  });
+});
+
+// Exchange index proxies. Some exchanges do not have a supported public quote
+// symbol in this adapter; those are explicitly returned as unavailable.
+app.get('/api/ai/exchange-latest', async (req: Request, res: Response) => {
+  const exchange = String(req.query.exchange || '').toUpperCase();
+  const indexMap: Record<string, { symbol: string; name: string }> = {
+    NYSE: { symbol: '^GSPC', name: 'S&P 500 (US market proxy)' },
+    NSE: { symbol: '^NSEI', name: 'NIFTY 50' },
+    LSE: { symbol: '^FTSE', name: 'FTSE 100' },
+    TSE: { symbol: '^N225', name: 'Nikkei 225' },
+    HKEX: { symbol: '^HSI', name: 'Hang Seng Index' },
+    SGX: { symbol: '^STI', name: 'Straits Times Index' },
+    ASX: { symbol: '^AXJO', name: 'S&P/ASX 200' },
+    B3: { symbol: '^BVSP', name: 'Ibovespa' },
+    JSE: { symbol: '^JTOPI', name: 'FTSE/JSE Top 40' }
+  };
+  const index = indexMap[exchange];
+  if (!index) return res.status(503).json({ success: false, code: 'EXCHANGE_FEED_NOT_CONFIGURED', error: `No verified index quote mapping is configured for ${exchange || 'this exchange'}.` });
+  const result = await getPrices([index.symbol]);
+  const quote = result.prices[index.symbol];
+  if (!quote) return res.status(503).json({ success: false, error: 'Exchange index quote unavailable', unavailable: result.errors });
+  const change = `${quote.change >= 0 ? '+' : ''}${quote.change.toFixed(2)}%`;
+  return res.json({
+    success: true,
+    exchange,
+    indices: [{ name: index.name, value: quote.price, change }],
+    sentiment: 'Not calculated from quote data',
+    fearAndGreed: null,
+    volume: 'Not supplied by this feed',
+    topSector: 'Not supplied by this feed',
+    gainers: [],
+    news: 'This endpoint currently provides an index quote only. No verified exchange-specific news or event feed is connected.',
+    source: 'Yahoo Finance',
+    fetchedAt: quote.asOf
+  });
+});
+
 // AI routes share a single server-side Gemini integration. If no key exists,
 // return an explicit unavailable response rather than invented fallback content.
 const aiRequestWindow = new Map<string, number[]>();
