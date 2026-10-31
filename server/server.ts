@@ -22,8 +22,13 @@ app.use('/api', (_req, res, next) => {
 const SYMBOL_ALIASES: Record<string, string> = {
   NIFTY50: '^NSEI', NIFTY: '^NSEI', SENSEX: '^BSESN', BANKNIFTY: '^NSEBANK',
   BTC: 'BTC-USD', ETH: 'ETH-USD', SPX: '^GSPC', '.SPX': '^GSPC',
+  '.IXIC': '^IXIC', '.DJI': '^DJI', '.FTSE': '^FTSE', '.N225': '^N225',
   SANDP500: '^GSPC', NASDAQ: '^IXIC', UK100: '^FTSE', FTSE: '^FTSE',
-  DAX: '^GDAXI', CAC: '^FCHI', COPPER: 'HG=F',
+  DAX: '^GDAXI', CAC: '^FCHI', COPPER: 'HG=F', TSMC: 'TSM',
+  RELIANCE: 'RELIANCE.NS', TCS: 'TCS.NS', HDFCBANK: 'HDFCBANK.NS', INFY: 'INFY.NS',
+  ICICIBANK: 'ICICIBANK.NS', BHARTIARTL: 'BHARTIARTL.NS', SBIN: 'SBIN.NS', LT: 'LT.NS',
+  ITC: 'ITC.NS', HINDUNILVR: 'HINDUNILVR.NS', TATASTEEL: 'TATASTEEL.NS',
+  ZOMATO: 'ZOMATO.NS', BAJFINANCE: 'BAJFINANCE.NS', MARUTI: 'MARUTI.NS', US10Y: '^TNX',
   'EUR/USD': 'EURUSD=X', 'USD/INR': 'INR=X', 'USD/JPY': 'JPY=X',
   'GBP/USD': 'GBPUSD=X', 'USD/CAD': 'CAD=X', 'AUD/USD': 'AUDUSD=X'
 };
@@ -65,12 +70,14 @@ async function fetchQuote(symbol: string): Promise<PriceQuote> {
 
   const providerSymbol = normalizeSymbol(symbol);
   const quote: any = await yahooFinance.quote(providerSymbol);
-  const price = Number(quote?.regularMarketPrice);
+  const unitScale = symbol === 'US10Y' ? 0.1 : 1;
+  const rawPrice = Number(quote?.regularMarketPrice);
+  const price = rawPrice * unitScale;
   if (!Number.isFinite(price) || price <= 0) throw new Error(`Provider returned no valid price for ${symbol}`);
 
-  const previousClose = Number(quote?.regularMarketPreviousClose);
+  const previousClose = Number(quote?.regularMarketPreviousClose) * unitScale;
   const changeAbs = Number.isFinite(Number(quote?.regularMarketChange))
-    ? Number(quote.regularMarketChange)
+    ? Number(quote.regularMarketChange) * unitScale
     : (Number.isFinite(previousClose) ? price - previousClose : 0);
   const change = Number.isFinite(Number(quote?.regularMarketChangePercent))
     ? Number(quote.regularMarketChangePercent)
@@ -78,8 +85,8 @@ async function fetchQuote(symbol: string): Promise<PriceQuote> {
 
   const result: PriceQuote = {
     price, change, changeAbs,
-    low52w: Number.isFinite(Number(quote?.fiftyTwoWeekLow)) ? Number(quote.fiftyTwoWeekLow) : null,
-    high52w: Number.isFinite(Number(quote?.fiftyTwoWeekHigh)) ? Number(quote.fiftyTwoWeekHigh) : null,
+    low52w: Number.isFinite(Number(quote?.fiftyTwoWeekLow)) ? Number(quote.fiftyTwoWeekLow) * unitScale : null,
+    high52w: Number.isFinite(Number(quote?.fiftyTwoWeekHigh)) ? Number(quote.fiftyTwoWeekHigh) * unitScale : null,
     prevClose: Number.isFinite(previousClose) && previousClose > 0 ? previousClose : null,
     currency: typeof quote?.currency === 'string' ? quote.currency : null,
     marketState: typeof quote?.marketState === 'string' ? quote.marketState : null,
