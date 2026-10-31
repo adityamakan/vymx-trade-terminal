@@ -21,9 +21,8 @@ function AssetCube({ asset, position, onSelectAsset }: { asset: Asset; position:
   const [hovered, setHovered] = useState(false);
   const meshRef = useRef<THREE.Mesh>(null);
 
-  // Height based on relative weighting (mocking market cap/volume representation)
-  // Let's make height between 0.2 and 3
-  const height = Math.max(0.2, Math.min(3, (asset.marketCap || 100) / 500));
+  // Market-cap data is not part of the live quote contract; use neutral geometry.
+  const height = 0.8;
   const color = getChangeColor(asset.change);
 
   const targetScale = hovered ? 1.05 : 1;
@@ -80,9 +79,9 @@ function AssetCube({ asset, position, onSelectAsset }: { asset: Asset; position:
 }
 
 export default function Heatmap3D({ assets, onSelectAsset }: Heatmap3DProps) {
-  // Sort assets by market cap and only take top 100 to avoid clutter and performance issues
+  // Sort by absolute provider-reported daily move; no stale market-cap ranking is implied.
   const displayAssets = useMemo(() => {
-    return [...assets].sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0)).slice(0, 64);
+    return [...assets].sort((a, b) => Math.abs(b.change) - Math.abs(a.change)).slice(0, 64);
   }, [assets]);
 
   // Create a grid layout constraint
