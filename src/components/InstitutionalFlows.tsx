@@ -562,35 +562,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                    "{selectedDeal.rationale}"
                  </p>
 
-                 {/* 100x Density AI Analysis Panel */}
-                 <div className="mt-4 pt-4 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <div>
-                     <span className="block text-[9px] uppercase text-zinc-500 font-mono mb-2">Liquidity Absorption Map</span>
-                     <div className="flex gap-1 h-8 items-end">
-                       {Array.from({length: 20}).map((_, i) => (
-                         <div key={i} className={`flex-1 rounded-sm ${i > 12 ? 'bg-emerald-500/80' : 'bg-zinc-700/50'}`} style={{ height: `${15 + Math.round(30 + Math.sin(i * 0.4) * 25 + ((i * 7) % 25))}%` }}></div>
-                       ))}
-                     </div>
-                   </div>
-                   <div className="grid grid-cols-2 gap-2">
-                     <div className="bg-black/40 rounded border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2">
-                       <span className="block text-[8px] uppercase text-zinc-500 font-mono">Counterparty Risk</span>
-                       <span className="text-[10px] font-mono font-bold text-emerald-400">Low (0.12%)</span>
-                     </div>
-                     <div className="bg-black/40 rounded border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2">
-                       <span className="block text-[8px] uppercase text-zinc-500 font-mono">Market Impact</span>
-                       <span className="text-[10px] font-mono font-bold text-amber-400">+1.24% Slip</span>
-                     </div>
-                     <div className="bg-black/40 rounded border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2">
-                       <span className="block text-[8px] uppercase text-zinc-500 font-mono">Dark Pool Vol</span>
-                       <span className="text-[10px] font-mono font-bold text-indigo-400">42%</span>
-                     </div>
-                     <div className="bg-black/40 rounded border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2">
-                       <span className="block text-[8px] uppercase text-zinc-500 font-mono">Algorithm</span>
-                       <span className="text-[10px] font-mono font-bold text-zinc-300">TWAP</span>
-                     </div>
-                   </div>
-                 </div>
+                 <p className="mt-4 pt-4 border-t border-zinc-800 text-xs text-zinc-500">Liquidity absorption, counterparty risk, market impact, dark-pool volume and execution-algorithm analytics are not available from the connected data source. No estimates are displayed.</p>
                </div>
 
                <div className="flex gap-3 relative z-10">
