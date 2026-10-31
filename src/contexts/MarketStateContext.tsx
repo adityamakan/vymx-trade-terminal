@@ -17,8 +17,8 @@ interface MarketStateContextType {
 }
 
 const defaultWeatherState: GlobalWeatherState = {
-  status: 'volatile',
-  summary: 'A massive inflationary front is moving across the Atlantic, expect turbulence in European tech equities.'
+  status: 'neutral',
+  summary: 'No verified market-regime assessment is currently available. Connect sourced market indicators before displaying a regime narrative.'
 };
 
 const MarketStateContext = createContext<MarketStateContextType>({
