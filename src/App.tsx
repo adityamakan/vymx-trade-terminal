@@ -465,10 +465,13 @@ export default function App() {
         currencyNormalization: fxComplete ? 'provider-fx-to-usd' : 'incomplete'
       };
       try {
-        await setDoc(doc(db, 'users', uid, 'portfolioSnapshots', String(bucket)), snapshot);
+        const dailyId = new Date(capturedAt).toISOString().slice(0, 10);
+        const dailySnapshot = { ...snapshot, id: dailyId };
+        await setDoc(doc(db, 'users', uid, 'portfolioSnapshots', dailyId), dailySnapshot);
+        await setDoc(doc(db, 'users', uid, 'portfolioIntradaySnapshots', String(bucket)), { ...snapshot, id: String(bucket) });
         if (auth.currentUser?.uid !== uid) return;
         lastSnapshotBucketRef.current = bucket;
-        setPortfolioSnapshots((previous) => [...previous.filter((item) => item.id !== snapshot.id), snapshot].sort((a, b) => a.capturedAt - b.capturedAt).slice(-500));
+        setPortfolioSnapshots((previous) => [...previous.filter((item) => item.id !== dailyId), dailySnapshot].sort((a, b) => a.capturedAt - b.capturedAt).slice(-500));
       } catch (error) {
         console.warn('Portfolio snapshot was not persisted:', error);
       }
