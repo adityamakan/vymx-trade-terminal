@@ -9,6 +9,7 @@ export interface Asset {
   type: 'stock' | 'crypto' | 'forex' | 'commodity' | 'index' | 'bond';
   price: number;
   currency?: string | null; // Provider-reported quote currency; null until verified.
+  quoteAsOf?: string | null; // Timestamp of the latest verified provider quote; null for bundled demo defaults.
   change: number; // percentage change, e.g. 1.25 or -0.84
   changeAbs: number; // absolute change, e.g. 5.12 or -1.20
   marketCap: number; // in Millions for smaller or Billions for larger, let's double specify standard
