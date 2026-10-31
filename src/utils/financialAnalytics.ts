@@ -85,7 +85,9 @@ export function calculatePortfolioRiskMetrics(
   const cumulativeReturn = last.totalEquityUSD! / first.totalEquityUSD! - 1;
   const elapsedDays = (last.capturedAt - first.capturedAt) / DAY_MS;
   base.cumulativeReturnPct = cumulativeReturn * 100;
-  if (elapsedDays >= 1) base.cagrPct = ((last.totalEquityUSD! / first.totalEquityUSD!) ** (365.25 / elapsedDays) - 1) * 100;
+  // Annualizing a very short sample produces unstable, misleading CAGR values.
+  // Keep CAGR unavailable until at least 30 elapsed calendar days are observed.
+  if (elapsedDays >= 30) base.cagrPct = ((last.totalEquityUSD! / first.totalEquityUSD!) ** (365.25 / elapsedDays) - 1) * 100;
 
   const returns: number[] = [];
   for (let index = 1; index < points.length; index += 1) {
