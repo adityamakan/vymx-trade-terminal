@@ -272,9 +272,9 @@ export default function MacroeconomicAnalyzer() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800 pb-5">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Market Proxy Feed
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${indicators ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-300 border-amber-500/20'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${indicators ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+              {indicators ? 'PROVIDER PROXIES RECEIVED' : isLoadingIndicators ? 'CONNECTING' : 'PROXY FEED UNAVAILABLE'}
             </span>
             <span className="text-xs text-zinc-500 font-mono">Yahoo Finance · Optional FRED</span>
           </div>
@@ -285,6 +285,8 @@ export default function MacroeconomicAnalyzer() {
           <p className="text-sm text-zinc-400">
             Cross-asset market monitoring using provider-sourced quotes. Official macro releases and econometric backtests are shown only when verified data sources are connected.
           </p>
+          <p className="text-[10px] text-zinc-500 mt-2">Yahoo Finance quotes are market proxies, not official CPI, GDP, employment or central-bank policy releases. Missing observations are shown as unavailable.</p>
+          {indicatorError && <p className="text-[10px] text-amber-300 mt-2">{indicatorError}</p>}
         </div>
 
         {/* Top-level View Switcher */}
