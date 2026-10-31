@@ -228,7 +228,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
         </div>
 
         <div className="relative z-10 mb-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[9px] leading-relaxed text-amber-200/80">
-          Quote tiles are fetched from Yahoo Finance. Sentiment, capital-flow, order-book, dark-pool and algorithmic-risk figures elsewhere in this prototype are illustrative placeholders, not verified live measurements.
+          Index, crypto, VIX, sector ETF, commodity, FX and US 10Y quotes are fetched from Yahoo Finance. Sentiment, regional-flow, order-book, dark-pool and institutional-flow datasets are not connected and are shown as unavailable.
         </div>
 
         {/* --- PROVIDER-QUOTED MARKET SNAPSHOT --- */}
@@ -377,26 +377,26 @@ export default function VymxIntelligencePanel({ mode }: Props) {
         <div className="flex items-center gap-2 mb-5 relative z-10">
           <Network className="w-5 h-5 text-blue-400" />
           <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 tracking-widest uppercase">
-            Live Capital Flows
+            Capital Flows — provider not connected
           </span>
         </div>
         <div className="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
           <div className="grid grid-cols-2 gap-3">
              <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
                 <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">US Inflows (SPX)</span>
-                <span className="text-lg font-bold text-emerald-400 font-mono">+${(realtimeData?.capitalInflows?.us || 0).toFixed(1)}B</span>
+                <span className="text-lg font-bold text-emerald-400 font-mono">{realtimeData?.capitalInflows?.us == null ? 'Not connected' : `+$${realtimeData.capitalInflows.us.toFixed(1)}B`}</span>
              </div>
              <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
                 <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">EU Outflows (EUR)</span>
-                <span className="text-lg font-bold text-rose-400 font-mono">-${Math.abs(realtimeData?.capitalOutflows?.eu || 0).toFixed(1)}B</span>
+                <span className="text-lg font-bold text-rose-400 font-mono">{realtimeData?.capitalOutflows?.eu == null ? 'Not connected' : `-$${Math.abs(realtimeData.capitalOutflows.eu).toFixed(1)}B`}</span>
              </div>
              <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
                 <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">Asia Inflows (NIFTY)</span>
-                <span className="text-lg font-bold text-emerald-400 font-mono">+${(realtimeData?.capitalInflows?.in || 0).toFixed(1)}B</span>
+                <span className="text-lg font-bold text-emerald-400 font-mono">{realtimeData?.capitalInflows?.in == null ? 'Not connected' : `+$${realtimeData.capitalInflows.in.toFixed(1)}B`}</span>
              </div>
              <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
                 <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">Dark Pool Liq</span>
-                <span className="text-lg font-bold text-purple-400 font-mono">${(realtimeData?.darkPool || 0).toFixed(0)}B</span>
+                <span className="text-lg font-bold text-purple-400 font-mono">{realtimeData?.darkPool == null ? 'Not connected' : `$${realtimeData.darkPool.toFixed(0)}B`}</span>
              </div>
           </div>
         </div>
@@ -412,7 +412,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
         <div className="flex items-center gap-2 mb-5 relative z-10">
           <Layers className="w-5 h-5 text-purple-400" />
           <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-fuchsia-400 tracking-widest uppercase">
-            Live Sector Rotation
+            Sector ETF Momentum (provider quotes)
           </span>
         </div>
         <div className="space-y-2 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
@@ -426,9 +426,9 @@ export default function VymxIntelligencePanel({ mode }: Props) {
             <div key={name} className="flex justify-between items-center bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
               <span className="text-xs font-bold text-zinc-300">{name}</span>
               <div className="flex gap-3">
-                <span className="text-xs font-mono font-bold text-white">${((data as any)?.price || 0).toFixed(2)}</span>
+                <span className="text-xs font-mono font-bold text-white">{(data as any)?.price == null ? '—' : '$' + (data as any).price.toFixed(2)}</span>
                 <span className={`text-xs font-mono font-bold ${((data as any)?.change || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {((data as any)?.change || 0) >= 0 ? '+' : ''}{((data as any)?.change || 0).toFixed(2)}%
+                  {(data as any)?.change == null ? '—' : `${(data as any).change >= 0 ? '+' : ''}${(data as any).change.toFixed(2)}%`}
                 </span>
               </div>
             </div>
@@ -445,23 +445,23 @@ export default function VymxIntelligencePanel({ mode }: Props) {
         <div className="flex items-center gap-2 mb-5 relative z-10">
           <ShieldAlert className="w-5 h-5 text-rose-400" />
           <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-red-400 tracking-widest uppercase">
-            Live Geo Risk
+            Volatility & Commodity Proxies
           </span>
         </div>
         <div className="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
           <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
              <span className="text-[10px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">VIX Volatility Index</span>
              <div className="flex justify-between items-end">
-               <span className="text-2xl font-bold text-rose-400 font-mono">{(realtimeData?.vixPrice || 0).toFixed(2)}</span>
+               <span className="text-2xl font-bold text-rose-400 font-mono">{realtimeData?.vixPrice == null ? '—' : realtimeData.vixPrice.toFixed(2)}</span>
                <span className={`text-sm font-mono font-bold ${(realtimeData?.vixChange || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {(realtimeData?.vixChange || 0) >= 0 ? '+' : ''}{(realtimeData?.vixChange || 0).toFixed(2)}%
+                  {realtimeData?.vixChange == null ? '—' : `${realtimeData.vixChange >= 0 ? '+' : ''}${realtimeData.vixChange.toFixed(2)}%`}
                 </span>
              </div>
           </div>
           <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
              <span className="text-[10px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">Crude Oil Shock Risk</span>
              <div className="flex justify-between items-end">
-               <span className="text-lg font-bold text-amber-400 font-mono">${(realtimeData?.commodities?.crudeOil?.price || 0).toFixed(2)}</span>
+               <span className="text-lg font-bold text-amber-400 font-mono">{realtimeData?.commodities?.crudeOil?.price == null ? '—' : '$' + realtimeData.commodities.crudeOil.price.toFixed(2)}</span>
              </div>
           </div>
         </div>
@@ -476,20 +476,20 @@ export default function VymxIntelligencePanel({ mode }: Props) {
         <div className="flex items-center gap-2 mb-5 relative z-10">
           <Ship className="w-5 h-5 text-teal-400" />
           <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400 tracking-widest uppercase">
-            Live Supply Chain
+            Sector ETF Proxies — not supply-chain telemetry
           </span>
         </div>
         <div className="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
           <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
              <span className="text-[10px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">Industrial Materials (XLB)</span>
              <div className="flex justify-between items-end">
-               <span className="text-xl font-bold text-emerald-400 font-mono">${(realtimeData?.sectors?.materials?.price || 0).toFixed(2)}</span>
+               <span className="text-xl font-bold text-emerald-400 font-mono">{realtimeData?.sectors?.materials?.price == null ? '—' : '$' + realtimeData.sectors.materials.price.toFixed(2)}</span>
              </div>
           </div>
           <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
              <span className="text-[10px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">Logistics & Industrials (XLI)</span>
              <div className="flex justify-between items-end">
-               <span className="text-xl font-bold text-emerald-400 font-mono">${(realtimeData?.sectors?.industrials?.price || 0).toFixed(2)}</span>
+               <span className="text-xl font-bold text-emerald-400 font-mono">{realtimeData?.sectors?.industrials?.price == null ? '—' : '$' + realtimeData.sectors.industrials.price.toFixed(2)}</span>
              </div>
           </div>
         </div>
@@ -504,20 +504,20 @@ export default function VymxIntelligencePanel({ mode }: Props) {
         <div className="flex items-center gap-2 mb-5 relative z-10">
           <BarChart3 className="w-5 h-5 text-indigo-400" />
           <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-blue-400 tracking-widest uppercase">
-            Live Earnings / Volatility
+            Market Volatility Proxies
           </span>
         </div>
         <div className="space-y-4 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
           <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
              <span className="text-[10px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">Implied Market Volatility (VIX)</span>
              <div className="flex justify-between items-end">
-               <span className="text-xl font-bold text-indigo-400 font-mono">{(realtimeData?.vixPrice || 0).toFixed(2)}</span>
+               <span className="text-xl font-bold text-indigo-400 font-mono">{realtimeData?.vixPrice == null ? '—' : realtimeData.vixPrice.toFixed(2)}</span>
              </div>
           </div>
           <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
              <span className="text-[10px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">Tech Sector Value (XLK)</span>
              <div className="flex justify-between items-end">
-               <span className="text-xl font-bold text-emerald-400 font-mono">${(realtimeData?.sectors?.tech?.price || 0).toFixed(2)}</span>
+               <span className="text-xl font-bold text-emerald-400 font-mono">{realtimeData?.sectors?.tech?.price == null ? '—' : '$' + realtimeData.sectors.tech.price.toFixed(2)}</span>
              </div>
           </div>
         </div>
@@ -533,7 +533,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
         <div className="flex items-center gap-2 mb-5 relative z-10">
           <Database className="w-5 h-5 text-amber-400" />
           <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400 tracking-widest uppercase">
-            Live Commodities
+            Commodity Futures Quotes
           </span>
         </div>
         <div className="space-y-2 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
@@ -548,9 +548,9 @@ export default function VymxIntelligencePanel({ mode }: Props) {
             <div key={name} className="flex justify-between items-center bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
               <span className="text-xs font-bold text-zinc-300">{name}</span>
               <div className="flex gap-3">
-                <span className="text-xs font-mono font-bold text-white">${((data as any)?.price || 0).toFixed(2)}</span>
+                <span className="text-xs font-mono font-bold text-white">{(data as any)?.price == null ? '—' : '$' + (data as any).price.toFixed(2)}</span>
                 <span className={`text-xs font-mono font-bold ${((data as any)?.change || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {((data as any)?.change || 0) >= 0 ? '+' : ''}{((data as any)?.change || 0).toFixed(2)}%
+                  {(data as any)?.change == null ? '—' : `${(data as any).change >= 0 ? '+' : ''}${(data as any).change.toFixed(2)}%`}
                 </span>
               </div>
             </div>
@@ -568,7 +568,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
         <div className="flex items-center gap-2 mb-5 relative z-10">
           <Coins className="w-5 h-5 text-emerald-400" />
           <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400 tracking-widest uppercase">
-            Live Forex Crosses
+            FX Cross Quotes
           </span>
         </div>
         <div className="space-y-2 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
@@ -583,9 +583,9 @@ export default function VymxIntelligencePanel({ mode }: Props) {
             <div key={name} className="flex justify-between items-center bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
               <span className="text-xs font-bold text-zinc-300">{name}</span>
               <div className="flex gap-3">
-                <span className="text-xs font-mono font-bold text-white">{((data as any)?.price || 0).toFixed(4)}</span>
+                <span className="text-xs font-mono font-bold text-white">{(data as any)?.price == null ? '—' : (data as any).price.toFixed(4)}</span>
                 <span className={`text-xs font-mono font-bold ${((data as any)?.change || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {((data as any)?.change || 0) >= 0 ? '+' : ''}{((data as any)?.change || 0).toFixed(2)}%
+                  {(data as any)?.change == null ? '—' : `${(data as any).change >= 0 ? '+' : ''}${(data as any).change.toFixed(2)}%`}
                 </span>
               </div>
             </div>
@@ -602,7 +602,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
         <div className="flex items-center gap-2 mb-5 relative z-10">
           <Target className="w-5 h-5 text-cyan-400" />
           <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-widest uppercase">
-            US Treasuries & Yields
+            US Treasury Yield Proxies
           </span>
         </div>
         <div className="space-y-2 relative z-10 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
@@ -614,9 +614,9 @@ export default function VymxIntelligencePanel({ mode }: Props) {
             <div key={name} className="flex justify-between items-center bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner">
               <span className="text-xs font-bold text-zinc-300">{name}</span>
               <div className="flex gap-3">
-                <span className="text-xs font-mono font-bold text-white">{((data as any)?.price || 0).toFixed(3)}%</span>
+                <span className="text-xs font-mono font-bold text-white">{(data as any)?.price == null ? '—' : (data as any).price.toFixed(3) + '%'}</span>
                 <span className={`text-xs font-mono font-bold ${((data as any)?.change || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {((data as any)?.change || 0) >= 0 ? '+' : ''}{((data as any)?.change || 0).toFixed(2)}%
+                  {(data as any)?.change == null ? '—' : `${(data as any).change >= 0 ? '+' : ''}${(data as any).change.toFixed(2)}%`}
                 </span>
               </div>
             </div>
@@ -640,7 +640,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
           <div className="grid grid-cols-2 gap-3">
              <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner text-center">
                 <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">SPX / VIX Divergence</span>
-                <span className="text-lg font-bold text-rose-400 font-mono">-0.78</span>
+                <span className="text-lg font-bold text-rose-400 font-mono">Not computed</span>
              </div>
              <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/60 shadow-inner text-center">
                 <span className="text-[9px] text-zinc-500 block mb-1 uppercase tracking-wider font-bold">S&P 500 Daily</span>
@@ -668,9 +668,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
         </span>
       </div>
       <p className="text-sm text-zinc-400 leading-relaxed bg-zinc-950/50 p-4 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
-        Advanced Vymx Intelligence telemetry is actively monitoring live global
-        nodes for this vector. Select specific nodes on the globe to drill down
-        into high-frequency details.
+        This analysis view does not yet have a verified data adapter. Connect a suitable provider before treating any output as live telemetry.
       </p>
       {renderAdvancedInsights()}
       {advancedBtn}
