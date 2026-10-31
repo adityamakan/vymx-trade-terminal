@@ -49,10 +49,11 @@ export default function FinancialChatbot({ activeAsset, portfolio, userId }: Fin
       }
     }
     return [
-      { role: 'assistant', text: 'Hello! I am your advanced AI Financial Chatbot. You can ask me any question regarding finance, markets, trading strategies, or your current portfolio.', isNew: false }
+      { role: 'assistant', text: 'Hello! I can help you explore finance, markets and portfolio concepts. AI-generated replies require the server-side provider to be configured.', isNew: false }
     ];
   });
 
+  const [loadedStorageKey, setLoadedStorageKey] = useState(storageKey);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [persona, setPersona] = useState('Technical Analyst');
@@ -116,8 +117,25 @@ export default function FinancialChatbot({ activeAsset, portfolio, userId }: Fin
   };
 
   useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setMessages(Array.isArray(parsed) ? parsed.map((message: any) => ({ ...message, isNew: false })) : []);
+      } catch {
+        setMessages([]);
+      }
+    } else {
+      setMessages([{ role: 'assistant', text: 'Hello! I can help you explore finance, markets and portfolio concepts. AI-generated replies require the server-side provider to be configured.', isNew: false }]);
+    }
+    setInput('');
+    setLoadedStorageKey(storageKey);
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (loadedStorageKey !== storageKey) return;
     localStorage.setItem(storageKey, JSON.stringify(messages));
-  }, [messages, storageKey]);
+  }, [messages, storageKey, loadedStorageKey]);
 
   useEffect(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
