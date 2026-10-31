@@ -74,7 +74,7 @@ export function useHistoricalData(symbol: string, range: HistoricalRange = '6M')
           const date = quote?.date ? new Date(quote.date) : null;
           if (!Number.isFinite(value) || value <= 0 || !date || !Number.isFinite(date.getTime())) return [];
           return [{
-            date: date.toISOString().slice(0, 10),
+            date: date.toISOString(),
             value,
             volume: quote?.volume == null || !Number.isFinite(Number(quote.volume)) ? null : Number(quote.volume)
           }];
