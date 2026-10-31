@@ -6,6 +6,7 @@ import TradingViewChart from './TradingViewChart';
 import TradingChat from './TradingChat';
 import { Asset, PortfolioItem } from '../types';
 import { getAssetMarketStatus, detectMACrossover } from '../utils/market';
+import { useHistoricalData } from '../hooks/useHistoricalData';
 
 interface AssetDetailsProps {
   asset: Asset;
@@ -41,6 +42,7 @@ export default function AssetDetails({
   assets,
 }: AssetDetailsProps) {
   const [timeframe, setTimeframe] = useState<'1D' | '1W' | '1M' | '1Y'>('1D');
+  const { data: verifiedHistory, loading: historyLoading, error: historyError } = useHistoricalData(asset.symbol, '6M');
   const [quantity, setQuantity] = useState<number>(1);
   const [tradeType, setTradeType] = useState<'BUY' | 'SELL'>('BUY');
   const [tradeMessage, setTradeMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -202,12 +204,9 @@ export default function AssetDetails({
   const marketStatus = getAssetMarketStatus(asset.symbol, asset.type, asset.country, isStrictHours);
 
   const trendSentiment = React.useMemo(() => {
-    // Collect prices from history
-    const hist = asset.history['6M'] || asset.history['1M'] || asset.history['1D'];
-    if (!hist) return 'NEUTRAL';
-    const prices = hist.map((p) => p.value);
-    return detectMACrossover(prices, 5, 20);
-  }, [asset.history]);
+    if (verifiedHistory.length < 20) return 'UNAVAILABLE';
+    return detectMACrossover(verifiedHistory.map((point) => point.value), 5, 20);
+  }, [verifiedHistory]);
 
   return (
     <motion.div
@@ -228,7 +227,7 @@ export default function AssetDetails({
             <div className="flex items-center gap-2 pt-2">
               <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-zinc-200 to-zinc-500 tracking-tight drop-shadow-sm">{asset.name}</h1>
               <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 text-zinc-400">{asset.symbol}</span>
-              {trendSentiment !== 'NEUTRAL' && (
+              {(trendSentiment === 'BULLISH' || trendSentiment === 'BEARISH') && (
                 <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border font-mono ${
                   trendSentiment === 'BULLISH'
                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
@@ -303,17 +302,20 @@ export default function AssetDetails({
             setTimeframe={setTimeframe}
             formatCurrency={formatCurrency}
           />
+          <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2 text-[10px] text-zinc-500">
+            Historical trend signal: {historyLoading ? 'loading Yahoo Finance daily candles…' : historyError ? 'unavailable — ' + historyError : 'calculated from provider-backed six-month daily closes.'}
+          </div>
 
           <AssetCorrelation asset={asset} allAssets={assets} />
 
-          {/* AI Qualitative Performance Analysis (Mock-driven Summary) */}
+          {/* Deterministic quote-momentum heuristic — not AI */}
           <div className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/60 backdrop-blur-lg p-5 shadow-lg space-y-4 relative overflow-hidden">
             <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
               <div className="flex items-center gap-2">
                 <div className="h-5 w-5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
                   <Sparkles className="h-3 w-3 animate-pulse" />
                 </div>
-                <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-widest font-sans">AI Performance Analysis</h3>
+                <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-widest font-sans">Quote-Momentum Heuristic</h3>
               </div>
 
               <button
@@ -472,6 +474,7 @@ export default function AssetDetails({
           {/* Quick Metrics grid stats panel */}
           <div className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/60 backdrop-blur-lg p-5 shadow-lg space-y-4">
             <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-900 pb-2">Trading metrics & stats</h3>
+            <p className="text-[9px] text-amber-300/80">Bundled RSI, MACD and volatility placeholders below are illustrative only. Use provider-backed financial statements and the embedded TradingView chart for current market information.</p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-xs">
               <div className="space-y-1">
