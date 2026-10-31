@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Star, Sparkles, RefreshCw, AlertCircle, ShoppingBag, TrendingUp, TrendingDown, Clock, ShieldAlert, CheckCircle2, Share2, Check } from 'lucide-react';
 import Markdown from 'react-markdown';
@@ -58,6 +58,7 @@ export default function AssetDetails({
   const [hedgeSuggestions, setHedgeSuggestions] = useState<{name: string, symbol: string, reason: string}[] | null>(null);
   const [isGeneratingHedge, setIsGeneratingHedge] = useState(false);
   const [copied, setCopied] = useState(false);
+  const lastFetchedSymbolRef = useRef(asset.symbol);
 
   const handleShareInsights = () => {
     const text = `Asset Insight: ${asset.name} (${asset.symbol})\n` +
@@ -168,9 +169,12 @@ export default function AssetDetails({
     }
   };
 
-  // Run initial fetch when asset or active tab changes
+  // Force a fresh provider request when the selected asset changes; cache
+  // only within the same symbol so one asset's fundamentals never leak to another.
   useEffect(() => {
-    fetchTabData(activeTab);
+    const symbolChanged = lastFetchedSymbolRef.current !== asset.symbol;
+    lastFetchedSymbolRef.current = asset.symbol;
+    fetchTabData(activeTab, symbolChanged);
   }, [asset.symbol, activeTab]);
 
   // Clear messages when asset changes
