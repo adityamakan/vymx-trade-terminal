@@ -39,14 +39,9 @@ export default function App() {
   const [isStrictHours, setIsStrictHours] = useState<boolean>(true);
 
   // --- INSTITUTIONAL USER AUTHENTICATION STATES & SECURE SYNC ---
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('vymx_is_authenticated') === 'true';
-  });
-
-  const [authUser, setAuthUser] = useState<{ uid?: string; email?: string; name?: string; authType?: string } | null>(() => {
-    const savedUser = localStorage.getItem('vymx_auth_user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  // Firebase is the authentication source of truth. Never trust a localStorage flag.
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [authUser, setAuthUser] = useState<{ uid?: string; email?: string; name?: string; authType?: string } | null>(null);
 
   useEffect(() => {
     if (!auth) return;
@@ -59,7 +54,8 @@ export default function App() {
           email: user.email || '',
           authType: 'google'
         });
-        localStorage.setItem('vymx_is_authenticated', 'true');
+        localStorage.removeItem('vymx_is_authenticated');
+        localStorage.setItem('vymx_auth_user', JSON.stringify({ uid: user.uid, name: user.displayName || 'Vymx Trader', email: user.email || '', authType: 'google' }));
 
         try {
           if (db) {
@@ -80,6 +76,7 @@ export default function App() {
         setIsAuthenticated(false);
         setAuthUser(null);
         localStorage.removeItem('vymx_is_authenticated');
+        localStorage.removeItem('vymx_auth_user');
       }
     });
 
@@ -87,7 +84,7 @@ export default function App() {
   }, []);
 
   const handleLoginSuccess = (userPayload: any) => {
-    setIsAuthenticated(true);
+    // UI state is optimistic only; onAuthStateChanged will reconcile with Firebase.
     setAuthUser(userPayload);
   };
 
