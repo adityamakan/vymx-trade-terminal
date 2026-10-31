@@ -218,7 +218,8 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-white tracking-tight">TradingView Live Community Chat</h2>
+              <h2 className="text-sm font-bold text-white tracking-tight">Simulated Trading Community Chat</h2>
+          <p className="mt-1 text-[9px] text-amber-300">Demo room: automated trader messages are simulated and are not posts from real users.</p>
               <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
             <p className="text-[11px] text-zinc-500">Discuss active setups & trade alerts with real-time AI strategist insights.</p>
