@@ -31,38 +31,9 @@ export default function RiskDashboard({ portfolio, assets }: RiskDashboardProps)
     return { sectorData: chartData, totalValue: total };
   }, [portfolio, assets]);
 
-  // Asset Correlation Matrix (Simulated representation for UI depth)
-  // We'll calculate a mock correlation score based on sector similarity and some random noise seeded by symbols
-  const correlationData = useMemo(() => {
-    const heldAssets = portfolio.map(p => {
-        const a = assets.find(x => x.symbol === p.symbol);
-        return { symbol: p.symbol, sector: a?.sector || 'Other' };
-    });
-
-    if (heldAssets.length < 2) return null;
-
-    const matrix: any[] = [];
-    for (let i = 0; i < heldAssets.length; i++) {
-        const row: any = { symbol: heldAssets[i].symbol };
-        for (let j = 0; j < heldAssets.length; j++) {
-            if (i === j) {
-                row[heldAssets[j].symbol] = 1.0;
-            } else {
-                // Mock correlation logic
-                const sameSector = heldAssets[i].sector === heldAssets[j].sector;
-                const charCodeSum = heldAssets[i].symbol.charCodeAt(0) + heldAssets[j].symbol.charCodeAt(0);
-                const noise = (charCodeSum % 40) / 100;
-                let corr = sameSector ? 0.6 + noise : 0.1 + noise;
-                // Cap between -1 and 1
-                if (corr > 0.99) corr = 0.99;
-
-                row[heldAssets[j].symbol] = Number(corr.toFixed(2));
-            }
-        }
-        matrix.push(row);
-    }
-    return matrix;
-  }, [portfolio, assets]);
+  // Correlation is intentionally unavailable until aligned provider-backed
+  // historical return series are supplied to this component.
+  const correlationData: Array<Record<string, number | string>> | null = null;
 
   const COLORS = [
     '#34d399', '#60a5fa', '#818cf8', '#a78bfa',
@@ -163,46 +134,11 @@ export default function RiskDashboard({ portfolio, assets }: RiskDashboardProps)
           </div>
         </div>
 
-        {correlationData && portfolio.length > 1 ? (
-          <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr>
-                  <th className="p-2 border-b border-zinc-800/60 text-zinc-500 font-mono text-[9px] uppercase">Asset</th>
-                  {correlationData.map((col: any) => (
-                    <th key={`th-${col.symbol}`} className="p-2 border-b border-zinc-800/60 text-zinc-300 font-mono font-bold text-center">
-                      {col.symbol}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {correlationData.map((row: any, i: number) => (
-                  <tr key={`tr-${row.symbol}`} className="hover:bg-zinc-800/20 transition-colors">
-                    <td className="p-2 border-b border-zinc-800/30 text-zinc-300 font-mono font-bold border-r">
-                      {row.symbol}
-                    </td>
-                    {correlationData.map((col: any, j: number) => {
-                      const val = row[col.symbol];
-                      return (
-                        <td key={`td-${row.symbol}-${col.symbol}`} className="p-2 border-b border-zinc-800/30 text-center">
-                          <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold ${getCorrelationColor(val)}`}>
-                            {val.toFixed(2)}
-                          </span>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-xs text-zinc-500 font-mono text-center max-w-[250px] mx-auto space-y-2">
-            <Target className="h-8 w-8 text-zinc-700" />
-            <p>Add at least two assets to your portfolio to generate correlation risk analytics.</p>
-          </div>
-        )}
+        <div className="flex-1 flex flex-col items-center justify-center text-xs text-zinc-500 font-mono text-center max-w-[300px] mx-auto space-y-2 py-8">
+          <Target className="h-8 w-8 text-zinc-700" />
+          <p>Correlation is unavailable until validated historical returns for each holding can be aligned.</p>
+          <p className="text-[10px] text-zinc-600">No sector-based or synthetic correlation values are displayed.</p>
+        </div>
       </div>
     </section>
   );
