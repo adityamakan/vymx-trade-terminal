@@ -408,6 +408,10 @@ export default function App() {
     quantity: number,
     price: number
   ): { success: boolean; message: string } => {
+    if (isDataOffline) {
+      return { success: false, message: 'Market quote feed unavailable. Simulated orders are disabled until a verified provider quote is received.' };
+    }
+
     // Validation Wrapper: Ensure price and quantity are valid numbers
     if (price === null || price === undefined || isNaN(price) || !isFinite(price) || price < 0) {
       console.error(`[Data Integrity Error] Trade Submit Failed: Invalid price detected for ${symbol} - Price: ${price}`);
