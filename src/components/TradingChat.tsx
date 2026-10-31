@@ -34,15 +34,6 @@ interface TradingChatProps {
   formatCurrency: (val: number, type: string, country?: string) => string;
 }
 
-const SIMULATED_TRADERS = [
-  { username: 'NiftyScalper', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&fit=crop&q=60', badge: 'PRO', sentiment: 'bullish' as const },
-  { username: 'MumbTrader99', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&fit=crop&q=60', badge: 'MEMBER', sentiment: 'neutral' as const },
-  { username: 'BullRunRider', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&fit=crop&q=60', badge: 'MARKET WHALE', sentiment: 'bullish' as const },
-  { username: 'HedgeMaster_IN', avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=80&fit=crop&q=60', badge: 'PRO OPTION', sentiment: 'bearish' as const },
-  { username: 'CryptoGuru_Nifty', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&fit=crop&q=60', badge: 'MOD', sentiment: 'bullish' as const },
-  { username: 'OptionSeller_Delhi', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&fit=crop&q=60', badge: 'ARBITRAGE', sentiment: 'bearish' as const }
-];
-
 const CHANNELS = [
   { id: 'general', name: 'Global Lounge', desc: 'General market discussions' },
   { id: 'stocks', name: 'Indian Equities (NSE/BSE)', desc: 'Reliance, TCS, HDFC & Nifty' },
@@ -50,50 +41,9 @@ const CHANNELS = [
   { id: 'forex', name: 'Commodity & FX', desc: 'Gold, Crude oil & USD/INR' }
 ];
 
-const INITIAL_MESSAGES: ChatMessage[] = [
-  {
-    id: 'm1',
-    username: 'NiftyScalper',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&fit=crop&q=60',
-    badge: 'PRO',
-    sentiment: 'bullish',
-    message: 'Nifty index finding massive bidding interest at 50-EMA. RELIANCE holding 2950 levels keeps the trend super dominant.',
-    timestamp: '05:10 AM',
-    channel: 'stocks'
-  },
-  {
-    id: 'm2',
-    username: 'HedgeMaster_IN',
-    avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=80&fit=crop&q=60',
-    badge: 'PRO OPTION',
-    sentiment: 'bearish',
-    message: 'Watch out for USD/INR breakout above 83.80, if that squeezes, IT stocks will fly but financial margins might see pressure!',
-    timestamp: '05:11 AM',
-    channel: 'forex'
-  },
-  {
-    id: 'm3',
-    username: 'BullRunRider',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&fit=crop&q=60',
-    badge: 'MARKET WHALE',
-    sentiment: 'bullish',
-    message: 'Bitcoin consolidation look extremely identical to the macro consolidation before the grand breakout. Target remains $82k. Long and holding.',
-    timestamp: '05:12 AM',
-    channel: 'crypto'
-  },
-  {
-    id: 'm4',
-    username: 'MumbTrader99',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&fit=crop&q=60',
-    message: 'Is Tata Consultancy Services (TCS) a buy here at these multiples with results around the corner? Comment down below.',
-    timestamp: '05:13 AM',
-    channel: 'stocks'
-  }
-];
-
 export default function TradingChat({ activeAsset, currencyMode, formatCurrency }: TradingChatProps) {
   const [activeChannel, setActiveChannel] = useState('general');
-  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
 
@@ -103,46 +53,6 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeChannel]);
-
-  // Periodic simulated live messages to make chat active and dynamic
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Pick a random trader
-      const trader = SIMULATED_TRADERS[Math.floor(Math.random() * SIMULATED_TRADERS.length)];
-      // Pick a random channel
-      const channels = ['general', 'stocks', 'crypto', 'forex'];
-      const targetChan = channels[Math.floor(Math.random() * channels.length)];
-
-      const assetTicker = activeAsset ? activeAsset.symbol : 'NIFTY50';
-      const phrases = [
-        `Highly monitoring ${assetTicker} order sweep profiles on the 5-minute chart right now.`,
-        `The buy block orders incoming for ${assetTicker} are showing heavy institutional interest.`,
-        `Volume spike on ${assetTicker}! High probability of a breakout squeeze above today's point of control.`,
-        `RSI diverging on the 1-hour time frame. Expect intermediate-term consolidation before next volatility expansion.`,
-        `Are we buying the breakout or waiting for the backtest of key support blocks?`,
-        `Rupee fluctuations turning key forex pairs highly volatile. Staying defensive with gold and blue chips.`
-      ];
-
-      const textMessage = phrases[Math.floor(Math.random() * phrases.length)];
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-      const newMsg: ChatMessage = {
-        id: `m-${Date.now()}-${Math.random().toString(36).substring(2)}`,
-        username: trader.username,
-        avatar: trader.avatar,
-        badge: trader.badge,
-        sentiment: trader.sentiment,
-        message: textMessage,
-        timestamp: timeStr,
-        channel: targetChan
-      };
-
-      setMessages((prev) => [...prev, newMsg]);
-    }, 14000); // add one every 14 seconds to feel natural without cluttering
-
-    return () => clearInterval(interval);
-  }, [activeAsset]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,10 +68,9 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
     // Append User Message
     const userMsg: ChatMessage = {
       id: `u-${Date.now()}-${Math.random().toString(36).substring(2)}`,
-      username: 'Aditya (You)',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&fit=crop&q=60',
-      badge: 'STATION LEADER',
-      sentiment: 'bullish',
+      username: 'You (local session)',
+      avatar: '',
+      badge: 'LOCAL ONLY',
       message: userText,
       timestamp: timeStr,
       channel: activeChannel
@@ -181,12 +90,15 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
       });
 
       const data = await response.json();
+      if (!response.ok || data?.success !== true || typeof data.reply !== 'string' || !data.reply.trim()) {
+        throw new Error(data?.error || 'AI response unavailable. Check the configured server-side AI provider.');
+      }
 
       const aiMsg: ChatMessage = {
         id: `ai-${Date.now()}-${Math.random().toString(36).substring(2)}`,
         username: 'Vymx AI Guru',
         avatar: '/logo-ai.png',
-        badge: 'CERTIFIED STRATEGIST',
+        badge: 'AI-GENERATED',
         sentiment: 'neutral',
         message: data.reply,
         timestamp: timeStr,
@@ -197,7 +109,7 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {
       console.error('Failed to get chat response:', err);
-      const errorMsg: ChatMessage = { id: `e-${Date.now()}-${Math.random().toString(36).substring(2)}`, message: "I apologize, but I am currently experiencing connection issues. Please check your network or try again later.", username: 'Vymx AI', avatar: 'https://ui-avatars.com/api/?name=AI&background=6366f1&color=fff', timestamp: new Date().toISOString(), channel: 'general', isAi: true, badge: 'System' };
+      const errorMsg: ChatMessage = { id: `e-${Date.now()}-${Math.random().toString(36).substring(2)}`, message: err instanceof Error ? err.message : 'AI response unavailable.', username: 'VYMX system', avatar: '', timestamp: new Date().toISOString(), channel: activeChannel, isAi: true, badge: 'UNAVAILABLE' };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setIsSending(false);
@@ -218,18 +130,17 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-white tracking-tight">Simulated Trading Community Chat</h2>
-          <p className="mt-1 text-[9px] text-amber-300">Demo room: automated trader messages are simulated and are not posts from real users.</p>
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <h2 className="text-sm font-bold text-white tracking-tight">Trading Research Chat</h2>
+              <span className="text-[9px] text-amber-300">Community feed not connected · messages are not shared or persisted</span>
             </div>
-            <p className="text-[11px] text-zinc-500">Discuss active setups & trade alerts with real-time AI strategist insights.</p>
+            <p className="text-[11px] text-zinc-500">Ask the configured AI research assistant about the selected instrument. AI output is not a verified market signal.</p>
           </div>
         </div>
 
         {/* Active Traders stats */}
         <div className="flex items-center gap-1.5 bg-zinc-900/60 px-2.5 py-1 rounded-lg border border-zinc-850 text-[10px] text-zinc-400 font-mono">
           <Users className="h-3.5 w-3.5 text-zinc-500" />
-          <span>4,192 traders online</span>
+          <span>Community users: unavailable</span>
         </div>
       </div>
 
@@ -286,6 +197,13 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
 
           {/* Messages stream timeline */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {filteredMessages.length === 0 && !isSending && (
+              <div className="h-full min-h-40 flex flex-col items-center justify-center text-center px-5 text-zinc-500">
+                <MessageCircle className="h-7 w-7 mb-3 text-zinc-600" />
+                <p className="text-sm font-semibold text-zinc-300">No messages in this session yet</p>
+                <p className="mt-1 max-w-sm text-[11px] leading-relaxed">A real multi-user community feed is not connected. Your prompts and AI replies stay in this browser session and are not presented as posts from other traders.</p>
+              </div>
+            )}
             {filteredMessages.map((msg) => (
               <div
                 key={msg.id}
@@ -298,12 +216,7 @@ export default function TradingChat({ activeAsset, currencyMode, formatCurrency 
                     V
                   </div>
                 ) : (
-                  <img
-                    src={msg.avatar}
-                    alt={msg.username}
-                    referrerPolicy="no-referrer"
-                    className="h-8 w-8 rounded-full border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 object-cover"
-                  />
+                  <div className="h-8 w-8 rounded-full border border-zinc-800 bg-zinc-900 flex items-center justify-center text-[10px] font-bold text-zinc-300">YOU</div>
                 )}
 
                 <div className="flex-1 min-w-0">
