@@ -61,9 +61,9 @@ export default function AssetDetails({
 
   const handleShareInsights = () => {
     const text = `Asset Insight: ${asset.name} (${asset.symbol})\n` +
-                 `Current Price: ${formatCurrencyProp(asset.price, asset.type, asset.country)}\n` +
-                 `24h Change: ${asset.change > 0 ? '+' : ''}${asset.change}%\n` +
-                 `View full technical analysis and AI correlations on our platform!`;
+                 `Current Price: ${isDataOffline ? 'Unavailable — quote feed offline' : formatCurrencyProp(asset.price, asset.type, asset.country)}\n` +
+                 `Provider-reported Change: ${isDataOffline ? 'Unavailable' : `${asset.change > 0 ? '+' : ''}${asset.change}%`}\n` +
+                 `Historical technical metrics use provider-backed candles; unavailable datasets are marked N/A.`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
