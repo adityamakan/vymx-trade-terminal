@@ -203,50 +203,56 @@ export default function Portfolio({
   const [editingNoteText, setEditingNoteText] = useState('');
   const [aiReviewResult, setAiReviewResult] = useState<string | null>(null);
 
-  const handleAiReview = () => {
+  const handleAiReview = async () => {
     setShowAiReview(true);
     setIsAiLoading(true);
-    // Simulate AI API Call
-    setTimeout(() => {
-      let totalHoldingsValue = 0;
-      const sectors: Record<string, number> = {};
-      portfolio.forEach((item) => {
-        const liveAsset = assets.find((a) => a.symbol === item.symbol);
-        const currentPrice = liveAsset ? liveAsset.price : item.avgBuyPrice;
-        const val = item.quantity * currentPrice;
-        const sector = liveAsset?.sector || 'Unknown';
-        sectors[sector] = (sectors[sector] || 0) + val;
-        totalHoldingsValue += val;
+    setAiReviewResult(null);
+
+    const holdings = portfolio.map((item) => {
+      const asset = assets.find((candidate) => candidate.symbol === item.symbol);
+      const price = asset?.price;
+      return {
+        symbol: item.symbol,
+        name: item.name,
+        quantity: item.quantity,
+        averageCost: item.avgBuyPrice,
+        currentPrice: typeof price === 'number' && Number.isFinite(price) ? price : null,
+        sector: asset?.sector || null,
+        currency: asset?.currency || null
+      };
+    });
+
+    const totalHoldingsValue = holdings.reduce((total, holding) => {
+      const price = holding.currentPrice ?? holding.averageCost;
+      return total + holding.quantity * price;
+    }, 0);
+
+    try {
+      const response = await fetch('/api/ai/vymx-intelligence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: 'Review this portfolio using only the supplied holdings and calculated context. Separate observed facts from assumptions. Do not invent historical performance, volatility, beta, correlation, benchmark returns, news, or suitability. Identify concentration and data limitations. This is educational research, not personalised investment advice.',
+          contextData: {
+            holdings,
+            cashBalance: virtualBalance,
+            totalHoldingsValue,
+            totalAccountValue: virtualBalance + totalHoldingsValue,
+            calculationNotes: 'Current prices are included only when available from the app asset feed; otherwise average cost is supplied and must not be described as a live market valuation.'
+          }
+        }),
+        signal: AbortSignal.timeout(30_000)
       });
-
-      const sectorAllocation = Object.keys(sectors).map(name => ({
-        name,
-        value: sectors[name]
-      }));
-
-      // Very basic AI mock based on allocations
-      const topAllocation = sectorAllocation.sort((a,b) => b.value - a.value)[0];
-
-      let review = `### Portfolio Executive Summary\n\n`;
-      review += `Based on current holdings, your portfolio displays a concentration in the **${topAllocation?.name || 'unknown'}** sector, making up approximately ${Math.round((topAllocation?.value || 0) / (totalHoldingsValue || 1) * 100)}% of your active equity.\n\n`;
-      review += `**Diversification Check:**\n`;
-      if (sectorAllocation.length < 3) {
-        review += `- You only hold assets across ${sectorAllocation.length} sectors. Consider diversifying across Healthcare or Industrials to reduce idiosyncratic risk.\n`;
-      } else {
-        review += `- Healthy sector spread across ${sectorAllocation.length} distinct industries.\n`;
+      const data = await response.json();
+      if (!response.ok || !data.success || typeof (data.answer || data.text) !== 'string') {
+        throw new Error(data.error || 'Portfolio AI analysis is unavailable. Check the server-side Gemini configuration.');
       }
-
-      const isTechHeavy = !!sectorAllocation.find(s => s.name === 'Technology' && s.value / totalHoldingsValue > 0.4);
-      if (isTechHeavy) {
-        review += `- High technology exposure implies higher beta. Great in bull markets but vulnerable to rate hikes.\n`;
-      }
-
-      review += `\n**Risk Profile:** Growth / Aggressive\n`;
-      review += `\n*Recommendation*: Monitor macro variables such as inflation data closely, as they will disproportionately impact your top holdings.`;
-
-      setAiReviewResult(review);
+      setAiReviewResult(data.answer || data.text);
+    } catch (error) {
+      setAiReviewResult(error instanceof Error ? error.message : 'Unable to generate portfolio analysis.');
+    } finally {
       setIsAiLoading(false);
-    }, 2500);
+    }
   };
 
   // Generate high-fidelity deterministic/semi-dynamic 30-day historical ledger sequence
