@@ -145,11 +145,11 @@ export default function WealthAdvisor({
       );
     } catch (err: any) {
       console.error(err);
-      const fallbackReply = `That is an excellent point. Since you are in the ${incomeLevel} bracket with a ${riskTolerance} profile, I recommend systematically accumulating Nifty Index units compounding via SIPs. Additionally, consider locking tax savings under ELSS mutual funds (exempt under Section 80C up to ₹1.5L/year) which align beautifully with your ${investmentHorizon} horizon.`;
+      const unavailableReply = 'The AI advice provider is unavailable, so no personalized recommendation has been generated. Configure the server-side GEMINI_API_KEY and retry. This tool does not execute trades.';
       setChatHistory(prev => {
         const next = [...prev];
         if (next.length > 0 && next[next.length - 1].sender === 'advisor') {
-          next[next.length - 1] = { sender: 'advisor', text: fallbackReply };
+          next[next.length - 1] = { sender: 'advisor', text: unavailableReply };
         }
         return next;
       });
@@ -496,7 +496,7 @@ export default function WealthAdvisor({
                   <div className="bg-zinc-950/80 border border-indigo-500/30 rounded-xl p-5 max-h-72 overflow-y-auto font-sans text-xs text-zinc-300 leading-relaxed space-y-2 custom-scrollbar shadow-inner">
                     <div className="flex items-center gap-2 text-[10px] font-mono text-indigo-400 uppercase tracking-widest border-b border-zinc-900 pb-2">
                       <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                      Live Reasoning Stream
+                      AI response stream (when configured)
                     </div>
                     <div className="whitespace-pre-line text-zinc-300">
                       {streamingReasoning}
