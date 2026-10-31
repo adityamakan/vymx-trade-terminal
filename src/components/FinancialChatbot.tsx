@@ -197,7 +197,7 @@ export default function FinancialChatbot({ activeAsset, portfolio, userId }: Fin
         if (next.length > 0 && next[next.length - 1].role === 'assistant') {
           next[next.length - 1] = {
             role: 'assistant',
-            text: 'I apologize, but I encountered a network issue contacting the financial intelligence core. Please try asking again shortly.',
+            text: err instanceof Error ? err.message : 'AI response unavailable. Check the server-side Gemini provider configuration and try again.',
             isNew: true
           };
         }
