@@ -21,7 +21,8 @@ app.use('/api', (_req, res, next) => {
 
 const SYMBOL_ALIASES: Record<string, string> = {
   NIFTY50: '^NSEI', NIFTY: '^NSEI', SENSEX: '^BSESN', BANKNIFTY: '^NSEBANK',
-  BTC: 'BTC-USD', ETH: 'ETH-USD', SPX: '^GSPC', '.SPX': '^GSPC',
+  BTC: 'BTC-USD', ETH: 'ETH-USD', SOL: 'SOL-USD', BNB: 'BNB-USD', XRP: 'XRP-USD',
+  DOGE: 'DOGE-USD', LINK: 'LINK-USD', UNI: 'UNI-USD', SPX: '^GSPC', '.SPX': '^GSPC',
   '.IXIC': '^IXIC', '.DJI': '^DJI', '.FTSE': '^FTSE', '.N225': '^N225',
   SANDP500: '^GSPC', NASDAQ: '^IXIC', UK100: '^FTSE', FTSE: '^FTSE',
   DAX: '^GDAXI', CAC: '^FCHI', COPPER: 'HG=F', TSMC: 'TSM',
@@ -42,6 +43,8 @@ type PriceQuote = {
   prevClose: number | null;
   currency: string | null;
   marketState: string | null;
+  dayHigh: number | null;
+  dayLow: number | null;
   asOf: string;
   source: 'Yahoo Finance';
 };
@@ -70,7 +73,7 @@ async function fetchQuote(symbol: string): Promise<PriceQuote> {
 
   const providerSymbol = normalizeSymbol(symbol);
   const quote: any = await yahooFinance.quote(providerSymbol);
-  const unitScale = symbol === 'US10Y' ? 0.1 : 1;
+  const unitScale = symbol === 'US10Y' || providerSymbol === '^TNX' ? 0.1 : 1;
   const rawPrice = Number(quote?.regularMarketPrice);
   const price = rawPrice * unitScale;
   if (!Number.isFinite(price) || price <= 0) throw new Error(`Provider returned no valid price for ${symbol}`);
@@ -90,6 +93,8 @@ async function fetchQuote(symbol: string): Promise<PriceQuote> {
     prevClose: Number.isFinite(previousClose) && previousClose > 0 ? previousClose : null,
     currency: typeof quote?.currency === 'string' ? quote.currency : null,
     marketState: typeof quote?.marketState === 'string' ? quote.marketState : null,
+    dayHigh: Number.isFinite(Number(quote?.regularMarketDayHigh)) ? Number(quote.regularMarketDayHigh) * unitScale : null,
+    dayLow: Number.isFinite(Number(quote?.regularMarketDayLow)) ? Number(quote.regularMarketDayLow) * unitScale : null,
     asOf: new Date().toISOString(), source: 'Yahoo Finance'
   };
   quoteCache.set(symbol, { value: result, expiresAt: now + CACHE_TTL_MS });
@@ -164,8 +169,14 @@ app.get('/api/historical/:symbol', async (req: Request, res: Response) => {
   if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start >= end) {
     return res.status(400).json({ success: false, error: 'Invalid historical date range' });
   }
-  if (end.getTime() - start.getTime() > 5 * 365 * 24 * 60 * 60 * 1000) {
-    return res.status(400).json({ success: false, error: 'Historical range is limited to five years' });
+  const rangeMs = end.getTime() - start.getTime();
+  const maxRangeMs = ['5m', '15m', '30m'].includes(interval)
+    ? 60 * 24 * 60 * 60 * 1000
+    : interval === '1h'
+      ? 730 * 24 * 60 * 60 * 1000
+      : 5 * 365 * 24 * 60 * 60 * 1000;
+  if (rangeMs > maxRangeMs) {
+    return res.status(400).json({ success: false, error: `Historical range exceeds the supported limit for ${interval}` });
   }
   const cacheKey = `${symbol}:${interval}:${start.toISOString()}:${end.toISOString()}`;
   const cached = historyCache.get(cacheKey);
@@ -175,7 +186,7 @@ app.get('/api/historical/:symbol', async (req: Request, res: Response) => {
       period1: start, period2: end, interval
     });
     const quotes = Array.isArray(chart?.quotes) ? chart.quotes : [];
-    const historyScale = symbol === 'US10Y' ? 0.1 : 1;
+    const historyScale = symbol === 'US10Y' || normalizeSymbol(symbol) === '^TNX' ? 0.1 : 1;
     if (!quotes.length) return res.status(404).json({ success: false, error: 'No historical observations returned', symbol });
     const payload = {
       success: true, symbol, providerSymbol: normalizeSymbol(symbol), interval,
@@ -258,6 +269,36 @@ app.get('/api/finnhub/news', async (req: Request, res: Response) => {
   } catch (error) {
     return res.status(502).json({ success: false, error: 'News provider unavailable', detail: (error as Error).message });
   }
+});
+
+// Quote-backed intelligence endpoint. It returns only observations supplied by
+// Yahoo Finance; sentiment, order-book depth and institutional flows are not inferred.
+app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
+  const symbols = ['^GSPC', '^NSEI', '^BSESN', 'BTC-USD', '^VIX'];
+  const result = await getPrices(symbols);
+  if (!result.returned) return res.status(503).json({ success: false, error: 'Market quote providers are temporarily unavailable', unavailable: result.errors });
+  const quote = (symbol: string) => result.prices[symbol];
+  const spx = quote('^GSPC');
+  const nifty = quote('^NSEI');
+  const sensex = quote('^BSESN');
+  const btc = quote('BTC-USD');
+  const vix = quote('^VIX');
+  return res.json({
+    success: true,
+    generated: false,
+    source: 'Yahoo Finance',
+    fetchedAt: new Date().toISOString(),
+    unavailable: result.errors,
+    data: {
+      spxPrice: spx?.price ?? null, spxChange: spx?.change ?? null,
+      niftyPrice: nifty?.price ?? null, niftyChange: nifty?.change ?? null,
+      sensexPrice: sensex?.price ?? null, sensexChange: sensex?.change ?? null,
+      btcPrice: btc?.price ?? null, btcHigh: btc?.dayHigh ?? null, btcLow: btc?.dayLow ?? null,
+      vixPrice: vix?.price ?? null, vixChange: vix?.change ?? null,
+      quoteSource: 'Yahoo Finance', quoteAsOf: new Date().toISOString()
+    },
+    note: 'Only listed market quotes are provider-backed. Sentiment, order-book, dark-pool and institutional-flow metrics require separate verified data sources.'
+  });
 });
 
 // AI routes share a single server-side Gemini integration. If no key exists,
@@ -387,7 +428,7 @@ app.use('/api/*', (req, res) => {
   res.status(404).json({ success: false, error: 'API endpoint not found', path: req.path });
 });
 
-const wss = new WebSocketServer({ noServer: true });
+const wss = new WebSocketServer({ noServer: true, maxPayload: 4096 });
 const subscriptions = new Map<WebSocket, string[]>();
 
 server.on('upgrade', (request, socket, head) => {
@@ -412,17 +453,27 @@ wss.on('connection', (ws) => {
   ws.on('error', () => subscriptions.delete(ws));
 });
 
+let broadcastInFlight = false;
 const broadcastPrices = async () => {
-  const active = [...wss.clients].filter((client) => client.readyState === WebSocket.OPEN);
-  if (!active.length) return;
-  const symbols = [...new Set(active.flatMap((client) => subscriptions.get(client) || DEFAULT_SYMBOLS))];
-  const result = await getPrices(symbols);
-  for (const client of active) {
-    const requested = subscriptions.get(client) || DEFAULT_SYMBOLS;
-    const prices = Object.fromEntries(requested.filter((symbol) => result.prices[symbol]).map((symbol) => [symbol, result.prices[symbol]]));
-    if (Object.keys(prices).length) {
-      client.send(JSON.stringify({ type: 'price_update', prices, source: 'Yahoo Finance', fetchedAt: new Date().toISOString() }));
+  if (broadcastInFlight) return;
+  broadcastInFlight = true;
+  try {
+    const active = [...wss.clients].filter((client) => client.readyState === WebSocket.OPEN);
+    if (!active.length) return;
+    const symbols = [...new Set(active.flatMap((client) => subscriptions.get(client) || DEFAULT_SYMBOLS))];
+    const result = await getPrices(symbols);
+    for (const client of active) {
+      if (client.readyState !== WebSocket.OPEN) continue;
+      const requested = subscriptions.get(client) || DEFAULT_SYMBOLS;
+      const prices = Object.fromEntries(requested.filter((symbol) => result.prices[symbol]).map((symbol) => [symbol, result.prices[symbol]]));
+      if (Object.keys(prices).length) {
+        client.send(JSON.stringify({ type: 'price_update', prices, source: 'Yahoo Finance', fetchedAt: new Date().toISOString() }));
+      }
     }
+  } catch (error) {
+    console.error('[Market Data Engine] Broadcast failed:', error);
+  } finally {
+    broadcastInFlight = false;
   }
 };
 const broadcastTimer = setInterval(() => { void broadcastPrices(); }, 20_000);
