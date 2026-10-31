@@ -57,7 +57,7 @@ service cloud.firestore {
       allow create, update: if isOwner(userId)
         && request.resource.data.keys().hasOnly([
           'id', 'capturedAt', 'cashBalance', 'positions', 'baseCurrency', 'fxRates',
-          'totalEquityUSD', 'source', 'currencyNormalization'
+          'totalEquityUSD', 'source', 'currencyNormalization', 'expiresAt'
         ])
         && request.resource.data.id == snapshotId
         && request.resource.data.capturedAt is int
@@ -70,7 +70,8 @@ service cloud.firestore {
         && request.resource.data.fxRates.keys().size() <= 30
         && (request.resource.data.totalEquityUSD == null || request.resource.data.totalEquityUSD is number)
         && request.resource.data.source == 'provider-quote-snapshot'
-        && request.resource.data.currencyNormalization in ['provider-fx-to-usd', 'incomplete'];
+        && request.resource.data.currencyNormalization in ['provider-fx-to-usd', 'incomplete']
+        && request.resource.data.expiresAt is timestamp;
       allow delete: if isOwner(userId);
     }
 
