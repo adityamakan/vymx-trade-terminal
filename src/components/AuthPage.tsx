@@ -440,7 +440,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
                 authMode === 'email' ? 'bg-blue-600/15 text-blue-400 border border-blue-600/25' : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              Email SSO
+              Email / Password
             </button>
           </div>
 
@@ -569,6 +569,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
                 exit={{ opacity: 0, y: -10 }}
                 className="space-y-4 text-left"
               >
+                <div className="rounded-xl border border-blue-500/10 bg-blue-500/5 p-3 text-[10px] leading-relaxed text-zinc-400">Sign in with an existing Firebase Email/Password account. New account registration is not enabled in this interface.</div>
                 <div>
                   <label className="text-[9px] font-bold tracking-widest text-zinc-500 uppercase block mb-1">Email Identity</label>
                   <div className="relative">
