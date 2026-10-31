@@ -244,7 +244,7 @@ export default function Dashboard({
     };
   }, [verifiedQuoteAssets]);
 
-  const [news, setNews = useState<NewsArticle[]>([]);
+  const [news, setNews] = useState<NewsArticle[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
   const [newsError, setNewsError] = useState<string | null>(null);
   const [selectedNews, setSelectedNews] = useState<NewsArticle | null>(null);
