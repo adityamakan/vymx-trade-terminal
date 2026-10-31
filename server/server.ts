@@ -116,7 +116,6 @@ app.get(['/health', '/api/health', '/api/status'], (_req: Request, res: Response
       gemini: Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY),
       fred: Boolean(process.env.FRED_API_KEY),
       finnhub: Boolean(process.env.FINNHUB_API_KEY),
-      twelveData: Boolean(process.env.TWELVEDATA_API_KEY)
     },
     checkedAt: new Date().toISOString(),
     note: 'Health confirms API process availability, not market availability or execution capability.'
