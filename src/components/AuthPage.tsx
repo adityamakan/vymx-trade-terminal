@@ -265,7 +265,6 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
         console.warn('Could not write user to firestore yet', e);
       }
 
-      localStorage.setItem('vymx_integrity_signature', 'vymx_google_verified_' + user.uid);
 
       logSecurityEvent(`Google authenticated session validated: ${payload.email}`, 'SUCCESS', 'low');
       onLoginSuccess(payload);
@@ -291,7 +290,6 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
       authType: 'guest' as const,
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&fit=crop&q=80'
     };
-    localStorage.setItem('vymx_integrity_signature', 'vymx_guest_demo_verified');
     logSecurityEvent('Guest demo simulation session activated', 'SUCCESS', 'low');
     onLoginSuccess(payload);
     setIsLoading(false);
