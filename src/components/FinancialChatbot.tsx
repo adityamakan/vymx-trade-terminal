@@ -62,6 +62,7 @@ export default function FinancialChatbot({ activeAsset, portfolio, userId }: Fin
   const [speechError, setSpeechError] = useState<string | null>(null);
 
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
+  const activeStorageKeyRef = useRef(storageKey);
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
@@ -117,6 +118,8 @@ export default function FinancialChatbot({ activeAsset, portfolio, userId }: Fin
   };
 
   useEffect(() => {
+    activeStorageKeyRef.current = storageKey;
+    setIsLoading(false);
     const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
@@ -157,6 +160,7 @@ export default function FinancialChatbot({ activeAsset, portfolio, userId }: Fin
       setIsListening(false);
     }
 
+    const requestStorageKey = storageKey;
     const userMessage = input.trim();
     const updatedMessages = [
       ...messages,
@@ -174,6 +178,7 @@ export default function FinancialChatbot({ activeAsset, portfolio, userId }: Fin
         persona,
         { activeAsset, portfolio },
         (accumulatedText) => {
+          if (activeStorageKeyRef.current !== requestStorageKey) return;
           setMessages(prev => {
             const next = [...prev];
             if (next.length > 0 && next[next.length - 1].role === 'assistant') {
@@ -185,6 +190,7 @@ export default function FinancialChatbot({ activeAsset, portfolio, userId }: Fin
       );
     } catch (err) {
       console.error(err);
+      if (activeStorageKeyRef.current !== requestStorageKey) return;
       setMessages(prev => {
         const next = [...prev];
         if (next.length > 0 && next[next.length - 1].role === 'assistant') {
@@ -197,7 +203,7 @@ export default function FinancialChatbot({ activeAsset, portfolio, userId }: Fin
         return next;
       });
     } finally {
-      setIsLoading(false);
+      if (activeStorageKeyRef.current === requestStorageKey) setIsLoading(false);
     }
   };
 
