@@ -761,7 +761,7 @@ export default function MacroeconomicAnalyzer() {
                   return (
                     <div key={symbol} className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 font-mono">
                       <span className="text-[10px] text-zinc-500 block uppercase tracking-wider">{labels[symbol] || symbol}</span>
-                      <span className="text-xl font-bold text-white block mt-1">{quote.price.toLocaleString(undefined, { maximumFractionDigits: 4 })}{symbol === '^TNX' ? '%' : ''}</span>
+                      <span className="text-xl font-bold text-white block mt-1">{(symbol === '^TNX' ? quote.price / 10 : quote.price).toLocaleString(undefined, { maximumFractionDigits: 4 })}{symbol === '^TNX' ? '%' : ''}</span>
                       <span className={`text-xs font-semibold ${quote.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {quote.change >= 0 ? '+' : ''}{quote.change.toFixed(2)}%
                       </span>
