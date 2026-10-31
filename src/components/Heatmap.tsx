@@ -299,7 +299,7 @@ export default function Heatmap({
               Avg Change
             </span>
             <span
-              className={`font-bold text-sm font-mono ${summaryStats.avgChange >= 0 ? "text-emerald-400" : "text-rose-400"}`}
+              className={`font-bold text-sm font-mono ${summaryStats.avgChange == null ? "text-zinc-500" : summaryStats.avgChange >= 0 ? "text-emerald-400" : "text-rose-400"}`}
             >
               {summaryStats.avgChange == null ? 'N/A' : `${summaryStats.avgChange >= 0 ? "+" : ""}${summaryStats.avgChange.toFixed(2)}%`}
             </span>
