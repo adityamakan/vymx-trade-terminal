@@ -26,9 +26,18 @@ import { Layers, GraduationCap, Globe, BarChart3, TrendingUp, AlertTriangle } fr
 import { motion, AnimatePresence } from 'motion/react';
 import { calculateIntegritySignature } from './utils/security';
 import { getAssetMarketStatus } from './utils/market';
-import { auth, onAuthStateChanged, signOut, db, doc, getDoc, setDoc } from './lib/firebase';
+import { auth, onAuthStateChanged, signOut, db, doc, getDoc, setDoc, collection, getDocs } from './lib/firebase';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useDataIntegrity } from './contexts/DataIntegrityContext';
+
+interface PortfolioSnapshot {
+  id: string;
+  capturedAt: number;
+  cashBalance: number;
+  positions: { symbol: string; quantity: number; price: number; marketValue: number; quoteCurrency: string }[];
+  source: 'provider-quote-snapshot';
+  currencyNormalization: 'not-applied';
+}
 
 export default function App() {
   const { addLog } = useDataIntegrity();
@@ -44,6 +53,8 @@ export default function App() {
   const [authUser, setAuthUser] = useState<{ uid?: string; email?: string; name?: string; authType?: string } | null>(null);
   const [ledgerHydrated, setLedgerHydrated] = useState(false);
   const guestSessionRef = useRef(false);
+  const portfolioSnapshotRef = useRef<{ virtualBalance: number; portfolio: PortfolioItem[]; assets: Asset[] }>({ virtualBalance: 100000, portfolio: [], assets: [] });
+  const lastSnapshotBucketRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!auth) return;
@@ -66,6 +77,8 @@ export default function App() {
         setPriceAlerts([]);
         setPortfolio([]);
         setTransactions([]);
+        setPortfolioSnapshots([]);
+        lastSnapshotBucketRef.current = null;
 
         let ledgerReadSucceeded = !db;
         try {
@@ -80,6 +93,14 @@ export default function App() {
               if (Array.isArray(data.portfolio)) setPortfolio(data.portfolio);
               if (Array.isArray(data.transactions)) setTransactions(data.transactions);
             }
+            const snapshotsRef = collection(db, 'users', user.uid, 'portfolioSnapshots');
+            const snapshotDocs = await getDocs(snapshotsRef);
+            if (auth.currentUser?.uid !== user.uid) return;
+            const loadedSnapshots = snapshotDocs.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }))
+              .filter((snapshot: any) => Number.isFinite(snapshot.capturedAt))
+              .sort((a: any, b: any) => a.capturedAt - b.capturedAt)
+              .slice(-500);
+            setPortfolioSnapshots(loadedSnapshots as PortfolioSnapshot[]);
             ledgerReadSucceeded = true;
           }
         } catch (e) {
@@ -100,6 +121,8 @@ export default function App() {
         setPriceAlerts([]);
         setPortfolio([]);
         setTransactions([]);
+        setPortfolioSnapshots([]);
+        lastSnapshotBucketRef.current = null;
         ['finova_watchlist', 'finova_balance', 'finova_price_alerts', 'finova_portfolio', 'finova_transactions'].forEach((key) => localStorage.removeItem(key));
       }
     });
@@ -133,6 +156,8 @@ export default function App() {
     setPriceAlerts([]);
     setPortfolio([]);
     setTransactions([]);
+    setPortfolioSnapshots([]);
+    lastSnapshotBucketRef.current = null;
     ['finova_watchlist', 'finova_balance', 'finova_price_alerts', 'finova_portfolio', 'finova_transactions', 'vymx_auth_user', 'vymx_integrity_signature'].forEach((key) => localStorage.removeItem(key));
   };
 
@@ -353,6 +378,8 @@ export default function App() {
   // accounts load their own persisted portfolio after authentication.
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [portfolioSnapshots, setPortfolioSnapshots] = useState<PortfolioSnapshot[]>([]);
+  portfolioSnapshotRef.current = { virtualBalance, portfolio, assets: liveAssets };
 
   const updateTransactionNote = (id: string, note: string) => {
     setTransactions(prev => prev.map(t => t.id === id ? { ...t, note } : t));
@@ -380,6 +407,48 @@ export default function App() {
     saveToCloud();
   }, [watchlist, portfolio, virtualBalance, transactions, authUser, ledgerHydrated]);
 
+
+  // Capture provider-backed portfolio valuation snapshots for authenticated accounts.
+  // Prices remain in each provider's native quote currency; cross-currency aggregation
+  // is deliberately deferred until a verified FX normalization layer is available.
+  useEffect(() => {
+    if (!ledgerHydrated || !db || !auth || !authUser?.uid || authUser.authType === 'guest' || auth.currentUser?.uid !== authUser.uid || isDataOffline) return;
+    const uid = authUser.uid;
+    const captureSnapshot = async () => {
+      const bucket = Math.floor(Date.now() / (15 * 60 * 1000));
+      if (lastSnapshotBucketRef.current === bucket) return;
+      const current = portfolioSnapshotRef.current;
+      const validPositions = current.portfolio
+        .filter((position) => position.quantity > 0)
+        .map((position) => {
+          const quote = current.assets.find((asset) => asset.symbol === position.symbol);
+          return quote && Number.isFinite(quote.price) && quote.price > 0
+            ? { symbol: position.symbol, quantity: position.quantity, price: quote.price, marketValue: position.quantity * quote.price, quoteCurrency: 'provider-native' }
+            : null;
+        })
+        .filter((position): position is NonNullable<typeof position> => position !== null);
+      const capturedAt = Date.now();
+      const snapshot: PortfolioSnapshot = {
+        id: String(bucket),
+        capturedAt,
+        cashBalance: current.virtualBalance,
+        positions: validPositions,
+        source: 'provider-quote-snapshot',
+        currencyNormalization: 'not-applied'
+      };
+      try {
+        await setDoc(doc(db, 'users', uid, 'portfolioSnapshots', String(bucket)), snapshot);
+        if (auth.currentUser?.uid !== uid) return;
+        lastSnapshotBucketRef.current = bucket;
+        setPortfolioSnapshots((previous) => [...previous.filter((item) => item.id !== snapshot.id), snapshot].sort((a, b) => a.capturedAt - b.capturedAt).slice(-500));
+      } catch (error) {
+        console.warn('Portfolio snapshot was not persisted:', error);
+      }
+    };
+    void captureSnapshot();
+    const timer = window.setInterval(() => void captureSnapshot(), 60_000);
+    return () => window.clearInterval(timer);
+  }, [ledgerHydrated, authUser?.uid, authUser?.authType, isDataOffline]);
 
   // --- ACTIONS ---
 
@@ -667,6 +736,7 @@ export default function App() {
                   virtualBalance={virtualBalance}
                   portfolio={portfolio}
                   transactions={transactions}
+                  snapshots={portfolioSnapshots}
                   onSelectAsset={handleSelectAsset}
                   setView={setView}
                   assets={liveAssets}
