@@ -63,9 +63,9 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
     return () => { isMounted = false; };
   }, []);
 
-  // Simulate live incoming deals or fetch real ones
+  // Rotate through provider-supplied deal records only when a verified feed exists.
   useEffect(() => {
-    // We will just rotate the live ticker for now
+    // No local or synthetic deal records are generated.
     if (liveDeals.length === 0) return;
     const interval = setInterval(() => {
       setTickerIndex((prev) => (prev + 1) % liveDeals.length);
