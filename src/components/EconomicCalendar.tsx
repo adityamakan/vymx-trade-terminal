@@ -36,8 +36,8 @@ export default function WorldMonitor() {
       try {
         setIsLoading(true);
         const response = await fetch('/api/world-monitor');
-        if (!response.ok) throw new Error('Failed to fetch world monitor data');
-        const json = await response.json();
+        const json = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(json?.error || 'No verified world-monitor data provider is connected.');
         setEconomies(json.top_100_global_matrix || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -72,13 +72,13 @@ export default function WorldMonitor() {
           </div>
           <div>
             <h1 className="text-2xl font-black text-zinc-100 tracking-tight">World Monitor Engine</h1>
-            <p className="text-sm text-zinc-500 mt-1">Real-time macro matrix of the top 100 global economies and corporate anchors.</p>
+            <p className="text-sm text-zinc-500 mt-1">Country-level macro matrix. No verified live top-100 country dataset is currently connected; unavailable indicators are not replaced with estimates.</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
           {isLoading && (
             <div className="flex items-center gap-2 text-zinc-500 text-sm">
-              <Activity className="w-4 h-4 animate-spin" /> Syncing live feeds...
+              <Activity className="w-4 h-4 animate-spin" /> Checking provider availability...
             </div>
           )}
           {flaggedRanks.length > 0 && (
@@ -110,20 +110,20 @@ export default function WorldMonitor() {
         <div className="rounded-2xl border border-indigo-500/20 bg-indigo-950/20 p-5 space-y-4">
            <div className="flex items-center gap-2 text-indigo-400">
              <Bot className="w-5 h-5" />
-             <h3 className="font-bold text-sm">Sovereign Matrix Synthesis</h3>
+             <h3 className="font-bold text-sm">Macro data coverage</h3>
            </div>
            <p className="text-xs text-indigo-200/80 leading-relaxed">
-             "Live synchronization across 100 global nodes indicates an emergent divergence between developed equity fundamentals and sovereign debt profiles."
+             "No verified 100-country macro dataset is connected. GDP, debt, reserves and policy-rate readings remain unavailable until source integrations are enabled."
            </p>
         </div>
 
         <div className="rounded-2xl border border-blue-500/20 bg-blue-950/20 p-5 space-y-4">
            <div className="flex items-center gap-2 text-blue-400">
              <Network className="w-5 h-5" />
-             <h3 className="font-bold text-sm">RBI Telemetry Active</h3>
+             <h3 className="font-bold text-sm">Central bank data feed</h3>
            </div>
            <p className="text-xs text-blue-200/80 leading-relaxed">
-             "Engine successfully extracting live central bank rates. Incorporating corporate proxy structures (AAPL, SAP, etc.) for cross-border anchoring."
+             "No live central-bank policy-rate or telemetry provider is configured in this deployment."
            </p>
         </div>
       </div>
@@ -218,7 +218,7 @@ export default function WorldMonitor() {
               {visibleEconomies.length === 0 && !isLoading && (
                 <tr>
                   <td colSpan={16} className="px-6 py-12 text-center text-zinc-500 font-mono text-xs">
-                    No data available.
+                    No verified country-level macro dataset is connected. No hard-coded GDP, debt, reserve or policy-rate figures are substituted.
                   </td>
                 </tr>
               )}
@@ -226,8 +226,8 @@ export default function WorldMonitor() {
           </table>
         </div>
         <div className="p-4 bg-zinc-950/50 text-xs text-zinc-500 font-mono text-center border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex justify-between items-center">
-          <span>* Data unified directly via World Bank & Yahoo Finance APIs.</span>
-          <span className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-indigo-500/70" /> Top 100 Live Matrix</span>
+          <span>* Verified World Bank and Yahoo Finance integrations are not currently connected to this matrix.</span>
+          <span className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-indigo-500/70" /> Top 100 matrix — unavailable</span>
         </div>
       </div>
     </div>
