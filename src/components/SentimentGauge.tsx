@@ -30,8 +30,6 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
   const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
   const [sentimentExplanation, setSentimentExplanation] = useState<string>('');
 
-  // Suffix/Trageting dynamic state for simulation
-  const [simulationMultiplier, setSimulationMultiplier] = useState<number>(1.0); // Allow manual calibration!
 
   // 1. Dynamic Sentiment Calculator based on current live prices/changes of different asset classes
   const computedSentiment = useMemo(() => {
@@ -42,7 +40,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
       : 0;
     // Map avg change % to score (0 - 100). Avg change around 0% is 50. +2% or more is Extreme Greed.
     // eqScore = 50 + (avgChange * 15). Clamped 5-95
-    let eqScore = 50 + (eqAvgChange * 18 * simulationMultiplier);
+    let eqScore = 50 + (eqAvgChange * 18);
     eqScore = Math.max(5, Math.min(95, eqScore));
 
     // B. Crypto Velocity Sub-indicator
@@ -52,7 +50,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
       : 0;
     // Cryptocurrencies are 3x more volatile, so scale appropriately:
     // score = 50 + (avgChange * 6). Clamped 5-95
-    let cryptoScore = 50 + (cryptoAvgChange * 7 * simulationMultiplier);
+    let cryptoScore = 50 + (cryptoAvgChange * 7);
     cryptoScore = Math.max(5, Math.min(95, cryptoScore));
 
     // C. Safe Haven Hedge Premium Sub-indicator (Gold Spot)
@@ -64,7 +62,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
     // Inverse relationship: standard stock outperformance over safe-havens signals greed.
     // Gold outperformance over stocks signals fear/protective capital allocation.
     const safeHavenGap = (spxChange - goldChange);
-    let safeHavenScore = 50 + (safeHavenGap * 15 * simulationMultiplier);
+    let safeHavenScore = 50 + (safeHavenGap * 15);
     safeHavenScore = Math.max(5, Math.min(95, safeHavenScore));
 
     // D. Market Volume Breadth Sub-indicator (Advance vs. Decline Index)
@@ -79,11 +77,11 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
 
     // Convert volatility (e.g., 0-5% avg) into a 0-100 score. High volatility + high volume = extreme fear or greed
     // We'll map it such that higher volatility increases the extreme nature of the score.
-    let top5VolScore = (top5AvgVolatility * 20 * simulationMultiplier);
+    let top5VolScore = (top5AvgVolatility * 20);
     top5VolScore = Math.max(5, Math.min(95, top5VolScore));
 
     // Add volume breadth to the mix
-    let volumeBreadthScore = advancingRatio * 100 * simulationMultiplier;
+    let volumeBreadthScore = advancingRatio * 100;
 
     volumeBreadthScore = Math.max(5, Math.min(95, volumeBreadthScore));
 
@@ -157,29 +155,11 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
       decliningCount: totalAssetsCount - advancingAssets,
       totalCount: totalAssetsCount
     };
-  }, [activeAnalysisMode, simulationMultiplier, assets]);
+  }, [activeAnalysisMode, assets]);
 
-  // Recalculating simulation
   const handleRecalculate = () => {
     setIsRecalculating(true);
-    // Mimic deep database network sweep
-    setTimeout(() => {
-      setIsRecalculating(false);
-    }, 900);
-  };
-
-  // Custom simulation adjusters for playground engagement!
-  const adjustSentiment = (direction: 'up' | 'down') => {
-    setSimulationMultiplier(prev => {
-      let next = direction === 'up' ? prev + 0.15 : prev - 0.15;
-      if (next < 0.2) next = 0.2;
-      if (next > 2.0) next = 2.0;
-      return parseFloat(next.toFixed(2));
-    });
-  };
-
-  const handleResetMultiplier = () => {
-    setSimulationMultiplier(1.0);
+    window.setTimeout(() => setIsRecalculating(false), 300);
   };
 
   // AI Sentiment briefing using real server-side prompt!
@@ -197,7 +177,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
         },
         body: JSON.stringify({
           symbol: 'FGI-INDEX',
-          name: `Vymx Sentiment Gauge (${computedSentiment.status})`,
+          name: `Vymx Market Sentiment Proxy (${computedSentiment.status})`,
           type: 'complex macroeconomic sentiment indices',
           price: computedSentiment.score,
           change: parseFloat(((computedSentiment.score - 50) / 50 * 100).toFixed(2)),
@@ -434,7 +414,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
       <div className="bg-zinc-900/40 border border-zinc-900 rounded-lg p-3 space-y-3" id="sentiment-strategic-adviser">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1 text-[8.5px] font-bold text-zinc-550 font-mono uppercase tracking-wider">
-            <Activity className="h-3 w-3 text-emerald-400" /> Sentiment Simulator
+            <Activity className="h-3 w-3 text-emerald-400" /> Market sentiment proxy
           </div>
           {simulationMultiplier !== 1.0 && (
             <button
@@ -446,25 +426,10 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
           )}
         </div>
 
-        {/* Playground controls to force simulated crash or pump to show state responsiveness! */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => adjustSentiment('down')}
-            className="flex-1 py-1 rounded bg-zinc-950 hover:bg-zinc-900 text-[10px] font-bold font-mono text-rose-500 border border-zinc-850 hover:border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 transition cursor-pointer flex items-center justify-center gap-0.5"
-            title="Simulate fear/panic market dump"
-          >
-            <TrendingDown className="h-3 w-3" /> Simulate Dump
-          </button>
-          <button
-            onClick={() => adjustSentiment('up')}
-            className="flex-1 py-1 rounded bg-zinc-950 hover:bg-zinc-900 text-[10px] font-bold font-mono text-emerald-500 border border-zinc-850 hover:border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 transition cursor-pointer flex items-center justify-center gap-0.5"
-            title="Simulate greed/parabolic market pump"
-          >
-            <TrendingUp className="h-3 w-3" /> Simulate Pump
-          </button>
-        </div>
+        <p className="text-[10px] text-zinc-500 border-t border-zinc-800 pt-3">This is a heuristic snapshot proxy derived from the supplied quote changes and breadth. It is not an official Fear &amp; Greed Index, volatility measure, or investment signal.</p>
+      </div>
 
-        {/* Consult AI Button */}
+      {/* Consult AI Button */}
         <button
           onClick={handleConsultAiSentiment}
           className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-600 hover:to-blue-600 text-[10px] font-bold font-mono uppercase tracking-wider text-white shadow-lg transition flex items-center justify-center gap-1.5 cursor-pointer border border-indigo-500/20"
@@ -486,7 +451,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
                   Dynamic Market Sentiment Assessment Brief
                 </h3>
                 <p className="text-[10px] text-zinc-500 font-mono mt-0.5">
-                  Index Score: <span className="font-bold text-white">{computedSentiment.score}</span>/100 • Zone: <strong className={computedSentiment.color}>{computedSentiment.status.toUpperCase()}</strong>
+                  Proxy score: <span className="font-bold text-white">{computedSentiment.score}</span>/100 • Zone: <strong className={computedSentiment.color}>{computedSentiment.status.toUpperCase()}</strong>
                 </p>
               </div>
               <button
