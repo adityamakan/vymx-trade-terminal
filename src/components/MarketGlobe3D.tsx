@@ -158,17 +158,7 @@ export default function MarketGlobe3D() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const [isDataRefreshing, setIsDataRefreshing] = useState(false);
-  const [dataLastUpdated, setDataLastUpdated] = useState(new Date());
-
-  const refreshGlobalData = () => {
-    setIsDataRefreshing(true);
-    // Simulate complex background data routing for Capital Flows, Currency Swaps, etc.
-    setTimeout(() => {
-       setDataLastUpdated(new Date());
-       setIsDataRefreshing(false);
-    }, 1500);
-  };
+  // Market and event data are loaded by the dedicated provider-backed endpoints below.
 
   useEffect(() => {
     fetch('https://raw.githubusercontent.com/vasturiano/react-globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
@@ -189,7 +179,7 @@ export default function MarketGlobe3D() {
   
   const [quizData, setQuizData] = useState<any>(null);
   const quizRequestStarted = useRef(false);
-  const [narrativeText, setNarrativeText] = useState("Market narrative unavailable until verified event and flow feeds are connected.");
+  const [narrativeText, setNarrativeText] = useState('Waiting for a provider-backed market quote snapshot.');
   const [liveExchangeData, setLiveExchangeData] = useState<any>(null);
   const [loadingExchangeData, setLoadingExchangeData] = useState(false);
 
@@ -567,15 +557,15 @@ export default function MarketGlobe3D() {
             <div className="grid grid-cols-2 gap-1.5 bg-zinc-900/60 backdrop-blur-md p-2 rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 w-full sm:w-64 shadow-xl">
                {[
                  { id: 'default', label: 'Market Intelligence', icon: Globe2 },
-                 { id: 'capitalFlows', label: 'Capital Flows', icon: Network },
+                 { id: 'capitalFlows', label: 'Flows (not connected)', icon: Network },
                  { id: 'currencySwap', label: 'Currency Swaps', icon: Coins },
                  { id: 'sectorRotation', label: 'Sector Rotation', icon: Activity },
-                 { id: 'earningsSeason', label: 'Earnings Season', icon: BarChart3 },
-                 { id: 'geoRisk', label: 'Geo Risk', icon: ShieldAlert },
-                 { id: 'supplyChain', label: 'Supply Chain', icon: Ship },
+                 { id: 'earningsSeason', label: 'Earnings data (not connected)', icon: BarChart3 },
+                 { id: 'geoRisk', label: 'Geo-risk scenarios', icon: ShieldAlert },
+                 { id: 'supplyChain', label: 'Supply-chain locations', icon: Ship },
                  { id: 'commodities', label: 'Commodities', icon: Layers },
-                 { id: 'holdings', label: 'My Holdings', icon: Target },
-                 { id: 'correlationWeb', label: 'Correlations', icon: Zap },
+                 { id: 'holdings', label: 'Exchange nodes (sample)', icon: Target },
+                 { id: 'correlationWeb', label: 'Correlations (not computed)', icon: Zap },
                  { id: 'timeMachine', label: 'Time Machine', icon: Rewind },
                  { id: 'dominoQuiz', label: 'Domino Quiz', icon: Activity },
                ].map(m => (
@@ -602,7 +592,17 @@ export default function MarketGlobe3D() {
          </button>
       )}
 
-      {/* Top Right: AI Narrative & Detailed Intelligence Panels */}
+      {(mode === 'geoRisk' || mode === 'supplyChain' || mode === 'commodities') && (
+        <div className="absolute bottom-4 left-4 z-40 max-w-[min(26rem,calc(100vw-2rem))] rounded-lg border border-amber-500/30 bg-zinc-950/90 px-3 py-2 text-[9px] leading-relaxed text-amber-200 shadow-xl pointer-events-none">
+          {mode === 'geoRisk'
+            ? 'Illustrative geopolitical scenario locations only. This map is not connected to a live conflict, incident or risk-monitoring feed.'
+            : mode === 'supplyChain'
+              ? 'Reference supply-chain chokepoint locations only. No live disruption, vessel, freight or logistics feed is connected.'
+              : 'Illustrative commodity production locations only. These markers do not represent live production, inventory or shipping flows.'}
+        </div>
+      )}
+
+      {/* Top Right: Provider Quote Snapshot & Intelligence Panels */}
       {showPanel ? (
          <div className="absolute top-4 right-4 z-40 max-w-[calc(100vw-2rem)] w-[420px] max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col gap-3 pointer-events-auto pr-2">
             {/* AI Narrative Mode Overlay */}
@@ -610,7 +610,7 @@ export default function MarketGlobe3D() {
                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 opacity-50"></div>
                <div className="flex justify-between items-start mb-2 relative z-10">
                   <span className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest text-indigo-400">
-                     <Zap className="w-3.5 h-3.5" /> Macro Narrative
+                     <Zap className="w-3.5 h-3.5" /> Provider Quote Snapshot
                   </span>
                   <div className="flex items-center gap-2">
                      <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
