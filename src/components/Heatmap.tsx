@@ -1126,41 +1126,41 @@ export default function Heatmap({
                         : "text-zinc-300"
                   }`}
                 >
-                  {(20 + ((hoveredAsset.symbol.charCodeAt(0) * 7) % 60)).toFixed(1)}
+                  N/A
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-zinc-500">MACD(12,26)</span>
+                <span className="text-zinc-500">MACD (not calculated)</span>
                 <span className={`font-bold ${hoveredAsset.change > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {hoveredAsset.change > 0 ? '+' : ''}{(hoveredAsset.change * 0.42).toFixed(2)}
+                  N/A
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-zinc-500">Bollinger</span>
+                <span className="text-zinc-500">Bollinger Bands (not calculated)</span>
                 <span className="font-bold text-blue-400">
-                  {Math.abs(hoveredAsset.change) > 2 ? 'Outside' : 'Middle'}
+                  N/A
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-zinc-500">Volatility(IV)</span>
+                <span className="text-zinc-500">Implied volatility (not available)</span>
                 <span className="font-bold text-amber-400">
                   N/A
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-zinc-500">Beta vs SPY</span>
+                <span className="text-zinc-500">Beta vs SPY (not calculated)</span>
                 <span className="font-bold text-zinc-300">
                   N/A
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-zinc-500">VWAP Spread</span>
+                <span className="text-zinc-500">VWAP spread (not calculated)</span>
                 <span className="font-bold text-indigo-400">
-                  +{(Math.abs(hoveredAsset.change) * 0.12).toFixed(2)}%
+                  N/A
                 </span>
               </div>
               <div className="flex justify-between items-center col-span-2">
-                <span className="text-zinc-500">Dark Pool Index</span>
+                <span className="text-zinc-500">Dark-pool data</span>
                 <div className="w-1/2 bg-zinc-900 rounded-full h-1.5 overflow-hidden">
                    <div className="bg-purple-500 h-full" style={{ width: `${30 + ((hoveredAsset.symbol.charCodeAt(0) * 5) % 50)}%` }}></div>
                 </div>
