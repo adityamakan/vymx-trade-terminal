@@ -215,8 +215,8 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
             <Gauge className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="text-xs font-bold font-mono uppercase tracking-wider text-zinc-100">Fear & Greed Index</h2>
-            <span className="text-[9px] font-mono text-zinc-550 block">Market Breadth Pulse</span>
+            <h2 className="text-xs font-bold font-mono uppercase tracking-wider text-zinc-100">Market Sentiment Proxy</h2>
+            <span className="text-[9px] font-mono text-zinc-550 block">Quote-change heuristic · not an official index</span>
           </div>
         </div>
 
@@ -416,14 +416,6 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
           <div className="flex items-center gap-1 text-[8.5px] font-bold text-zinc-550 font-mono uppercase tracking-wider">
             <Activity className="h-3 w-3 text-emerald-400" /> Market sentiment proxy
           </div>
-          {simulationMultiplier !== 1.0 && (
-            <button
-              onClick={handleResetMultiplier}
-              className="text-[8px] text-zinc-500 hover:text-rose-450 underline cursor-pointer"
-            >
-              Reset Scale
-            </button>
-          )}
         </div>
 
         <p className="text-[10px] text-zinc-500 border-t border-zinc-800 pt-3">This is a heuristic snapshot proxy derived from the supplied quote changes and breadth. It is not an official Fear &amp; Greed Index, volatility measure, or investment signal.</p>
@@ -437,8 +429,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
           <Sparkles className="h-3.5 w-3.5 text-amber-300 animate-pulse" />
           Consult AI Strategist Brief
         </button>
-      </div>
-
+ 
       {/* --- AI Sentiment consultation modal --- */}
       {showExplanationModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-fade-in select-text">
