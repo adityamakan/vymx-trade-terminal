@@ -49,7 +49,7 @@ import { motion } from 'motion/react';
 import Markdown from 'react-markdown';
 import MarketGlobe3D from './MarketGlobe3D';
 import SectorBreakdown from './SectorBreakdown';
-import EventShockwave from './EventShockwave';
+
 import MarketAurasWidget from './MarketAurasWidget';
 import DashboardNewsWidget from './DashboardNewsWidget';
 import MarketTicker from './MarketTicker';
@@ -496,7 +496,7 @@ export default function Dashboard({
         {/* The 3D Globe */}
         <div className="absolute inset-0 z-10">
            <MarketGlobe3D />
-           <EventShockwave />
+           
         </div>
 
         {/* Bottom Overlay Features */}
