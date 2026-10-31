@@ -182,11 +182,15 @@ server.on('upgrade', (request, socket, head) => {
 wss.on('connection', (ws) => {
   subscriptions.set(ws, DEFAULT_SYMBOLS);
   ws.on('message', (raw) => {
+    if (raw.toString() === 'ping') {
+      ws.send('pong');
+      return;
+    }
     try {
       const message = JSON.parse(raw.toString());
       if (message?.type === 'subscribe') {
         subscriptions.set(ws, validateSymbols(message.symbols));
-      } else if (raw.toString() === 'ping' || message?.type === 'ping') {
+      } else if (message?.type === 'ping') {
         ws.send(JSON.stringify({ type: 'pong', timestamp: new Date().toISOString() }));
       }
     } catch (error) {
