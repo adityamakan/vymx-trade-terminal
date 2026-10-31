@@ -652,12 +652,12 @@ export default function Dashboard({
       <section id="market-sentiment-aggregator" className="rounded-xl border border-zinc-850 bg-gradient-to-br from-zinc-900/40 to-zinc-950/80 p-5 shadow-lg space-y-4">
         <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
           <div>
-            <h3 className="text-xs font-black tracking-widest text-zinc-400 font-mono uppercase">Live Market Sentiment Aggregate Indicator</h3>
-            <p className="text-[10px] text-zinc-500 mt-0.5">Real-time bullish vs bearish sentiment score calculated dynamically across active indices and stocks</p>
+            <h3 className="text-xs font-black tracking-widest text-zinc-400 font-mono uppercase">Market Breadth Proxy — Advancers vs Decliners</h3>
+            <p className="text-[10px] text-zinc-500 mt-0.5">A descriptive advance/decline and average-change proxy. It is not a third-party Fear & Greed or sentiment index.</p>
           </div>
           <div className="hidden sm:flex items-center gap-2 text-[10px] font-mono text-zinc-400">
-            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Live Computed (IST Clock)</span>
+            <span className={`inline-block h-2 w-2 rounded-full ${isDataOffline ? 'bg-amber-500' : 'bg-emerald-500'} ${isDataOffline ? '' : 'animate-pulse'}`}></span>
+            <span>{isDataOffline ? 'SANDBOX SAMPLE — NOT LIVE' : 'PROVIDER QUOTE BREADTH'}</span>
           </div>
         </div>
 
@@ -665,7 +665,7 @@ export default function Dashboard({
           {/* Sentiment Meter Gauge (Col span 5) */}
           <div className="lg:col-span-5 flex flex-col justify-center space-y-3.5 bg-zinc-950/30 p-4 border border-zinc-900 rounded-xl">
             <div className="flex justify-between items-baseline">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono">Fear & Greed Index Scale</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono">Advance / Decline Proxy Scale</span>
               <span className="text-xl font-extrabold text-zinc-100 font-mono flex items-baseline gap-1">
                 {sentimentScore}
                 <span className="text-xs font-bold text-zinc-500">/ 100</span>
@@ -711,7 +711,7 @@ export default function Dashboard({
             {/* Sentiment assessment label */}
             <div className="pt-2 text-center border-t border-zinc-900/60 font-sans">
               <p className="text-[10.5px] font-bold text-zinc-450 font-sans">
-                Market Sentiment is currently{' '}
+                Market Breadth Proxy is currently{' '}
                 <span className={`px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase inline-block ${
                   sentimentScore >= 75
                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
@@ -813,10 +813,10 @@ export default function Dashboard({
 
               <div className="pt-2 border-t border-zinc-900 font-mono text-[9.5px] leading-relaxed text-zinc-500">
                 {sentimentScore >= 55
-                  ? "Overall momentum is bullish, driven by strong gains in the top outperforming sector. Consider momentum strategies."
+                  ? "Advancers currently outnumber decliners in the selected quote universe. This is a descriptive breadth observation, not a trading signal."
                   : sentimentScore <= 45
-                  ? "Downside velocity exceeds bullish support. Consider risk-hedging configurations."
-                  : "Markets exhibit strong consolidation. Directionless movement makes rangebound trading ideal."}
+                  ? "Decliners currently outnumber advancers in the selected quote universe. This is a descriptive breadth observation, not a hedge recommendation."
+                  : "Advancers and decliners are relatively balanced in the selected quote universe. This proxy does not measure investor sentiment."}
               </div>
             </div>
 
@@ -858,7 +858,7 @@ export default function Dashboard({
         <SectorBreakdown portfolio={portfolio} assets={assets} />
       </section>
 
-      {/* AI Stock Comparison Matrix */}
+      {/* Historical Return Correlation Matrix */}
       <section id="portfolio-correlation-analytics-dashboard" className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-6 shadow-xl space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-900 pb-4">
           <div>
@@ -871,10 +871,10 @@ export default function Dashboard({
             </div>
             <h2 className="text-sm font-bold tracking-tight text-zinc-100 mt-2 flex items-center gap-2">
               <Binary className="h-4.5 w-4.5 text-indigo-400" />
-              AI Stock Comparison Matrix
+              Historical Return Correlation Matrix
             </h2>
             <p className="text-[11px] text-zinc-500 mt-0.5">
-              Select any two assets in your portfolio or watchlist to evaluate historical correlation ratios ($r$) and assess asset dispersion. AI engine interprets diversification properties.
+              Select two assets to compare overlapping provider-backed daily or weekly percentage returns. Pearson correlation is descriptive, not causal, and is not a hedge recommendation.
             </p>
           </div>
 
@@ -961,8 +961,8 @@ export default function Dashboard({
 
               <div className="p-3 rounded-lg bg-zinc-950/80 border border-zinc-900 flex items-center justify-between">
                 <div>
-                  <span className="text-[9px] text-zinc-500 uppercase">Pearson Ratio (r)</span>
-                  <div className="text-sm font-black text-white mt-0.5">{pearsonCoefficient.toFixed(4)}</div>
+                  <span className="text-[9px] text-zinc-500 uppercase">Pearson r (returns)</span>
+                  <div className="text-sm font-black text-white mt-0.5">{pearsonCoefficient == null ? 'N/A' : pearsonCoefficient.toFixed(4)}</div>
                 </div>
                 <div className={`text-[10px] font-extrabold px-2 py-1 rounded border ${
                   Math.abs(pearsonCoefficient) >= 0.7
@@ -972,6 +972,7 @@ export default function Dashboard({
                     : 'bg-zinc-900 text-zinc-400 border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300'
                 }`}>
                   {(() => {
+                    if (pearsonCoefficient == null) return 'INSUFFICIENT DATA';
                     const r = Math.abs(pearsonCoefficient);
                     if (r >= 0.7) return 'STRONG';
                     if (r >= 0.3) return 'MODERATE';
@@ -985,11 +986,12 @@ export default function Dashboard({
                 <p className="italic">
                   {(() => {
                     const r = pearsonCoefficient;
-                    if (r >= 0.7) return `Strong positive correlation detected. ${symbolA} and ${symbolB} trade in tight unison. High concentration risk.`;
-                    if (r >= 0.3) return `Moderate co-movement. ${symbolA} and ${symbolB} show alignment, but decouple during localized micro-economic updates.`;
-                    if (r > -0.3) return `Weaker co-movement. ${symbolA} and ${symbolB} are nearly independent, which is ideal to establish balanced risk limits.`;
-                    if (r > -0.7) return `Moderate opposite co-movement. Potential hedge structures are present.`;
-                    return `Strong inverse correlation detected. Trades act as automated opposite hedge protections.`;
+                    if (r == null) return 'At least five overlapping provider-backed return observations are required to estimate correlation.';
+                    if (r >= 0.7) return `Strong positive co-movement in this sample between ${symbolA} and ${symbolB}. Correlation is not causal and may change.`;
+                    if (r >= 0.3) return `Moderate positive co-movement in this sample. Do not treat this as a stable relationship.`;
+                    if (r > -0.3) return `Weak linear co-movement in this sample. This does not prove the assets are independent.`;
+                    if (r > -0.7) return `Moderate negative co-movement in this sample. It is not a guaranteed hedge.`;
+                    return `Strong negative co-movement in this sample. The relationship may change and is not a guaranteed hedge.`;
                   })()}
                 </p>
               </div>
@@ -999,13 +1001,13 @@ export default function Dashboard({
           {/* Core Scatter Plot Matrix Visual Canvas */}
           <div className="lg:col-span-8 bg-zinc-950/40 p-4 rounded-xl border border-zinc-900 h-80 flex flex-col justify-between">
             <span className="text-[10px] font-bold text-zinc-500 font-mono uppercase tracking-widest pl-1">
-              Scatter Plot: {symbolA} Price vs {symbolB} Price Over Time
+              Scatter Plot: {symbolA} vs {symbolB} Percentage Returns
             </span>
 
             {correlationData.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center space-y-2 text-center">
                 <CircleAlert className="h-6 w-6 text-zinc-650" />
-                <span className="text-xs text-zinc-500">Error rendering chart framework</span>
+                <span className="text-xs text-zinc-500">No overlapping provider-backed return observations are available.</span>
               </div>
             ) : (
               <div className="flex-1 w-full mt-3">
@@ -1022,7 +1024,7 @@ export default function Dashboard({
                       tick={{ fill: '#71717a', fontSize: 9, fontFamily: 'monospace' }}
                       domain={['auto', 'auto']}
                       label={{
-                        value: `${symbolA} (X-Axis price USD)`,
+                        value: `${symbolA} (X-axis return %)`,
                         position: 'insideBottom',
                         offset: -12,
                         fill: '#a1a1aa',
@@ -1039,7 +1041,7 @@ export default function Dashboard({
                       tick={{ fill: '#71717a', fontSize: 9, fontFamily: 'monospace' }}
                       domain={['auto', 'auto']}
                       label={{
-                        value: `${symbolB} (Y-Axis price USD)`,
+                        value: `${symbolB} (Y-axis return %)`,
                         angle: -90,
                         position: 'insideLeft',
                         offset: -2,
@@ -1062,8 +1064,8 @@ export default function Dashboard({
               </div>
             )}
             <div className="flex items-center justify-between text-[9px] text-zinc-600 font-mono mt-1 border-t border-zinc-900 pt-1">
-              <span>Points mapped: {correlationData.length} records</span>
-              <span>Visualizing correlation factor</span>
+              <span>Points mapped: {correlationData.length} return observations</span>
+              <span>{correlationLoading ? 'Loading Yahoo Finance history…' : correlationError ? 'Provider data unavailable' : 'Yahoo Finance historical closes'}</span>
             </div>
           </div>
         </div>
@@ -1343,9 +1345,15 @@ export default function Dashboard({
       <section id="global-news-section" className="rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-6 shadow-xl space-y-6">
         <div className="flex items-center gap-2 border-b border-zinc-900 pb-3">
           <BookOpen className="h-4 w-4 text-emerald-400" />
-          <h2 className="text-sm font-semibold tracking-tight text-white">Vymx Intelligent News Feed</h2>
+          <h2 className="text-sm font-semibold tracking-tight text-white">Provider News Feed</h2>
         </div>
 
+        <p className="text-[10px] text-zinc-500">Headlines are supplied by Finnhub when configured. Headline sentiment is not classified by this feed.</p>
+        {newsLoading ? (
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-6 text-xs text-zinc-500">Loading provider headlines…</div>
+        ) : news.length === 0 ? (
+          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-6 text-xs text-amber-200">{newsError || 'No verified headlines are available.'}</div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {news.map((n, idx) => (
             <div
@@ -1375,7 +1383,7 @@ export default function Dashboard({
                     ? 'bg-rose-500/5 text-rose-400 border-rose-500/10'
                     : 'bg-zinc-500/5 text-zinc-400 border-zinc-500/10'
                 }`}>
-                  {n.sentiment.toUpperCase()}
+                  {n.sentiment === 'neutral' ? 'NOT CLASSIFIED' : n.sentiment.toUpperCase()}
                 </span>
 
                 <button
@@ -1389,6 +1397,7 @@ export default function Dashboard({
             </div>
           ))}
         </div>
+        )}
       </section>
 
       {/* news summarizer modal / overlay detail */}
