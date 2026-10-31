@@ -42,6 +42,7 @@ export default function App() {
   // explicitly ephemeral local sandbox and is never treated as a Firebase identity.
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [authUser, setAuthUser] = useState<{ uid?: string; email?: string; name?: string; authType?: string } | null>(null);
+  const [ledgerHydrated, setLedgerHydrated] = useState(false);
   const guestSessionRef = useRef(false);
 
   useEffect(() => {
@@ -49,29 +50,42 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         guestSessionRef.current = false;
+        setLedgerHydrated(false);
         setIsAuthenticated(true);
         setAuthUser({
           uid: user.uid,
-          name: user.displayName || 'Vymx Trader',
+          name: user.displayName || user.email?.split('@')[0] || 'Vymx Trader',
           email: user.email || '',
-          authType: 'google'
+          authType: user.providerData.some((provider) => provider.providerId === 'password') ? 'email' : 'google'
         });
+
+        // Never carry a previous guest/browser demo portfolio into a new
+        // Firebase identity. A newly created account starts with an empty ledger.
+        setVirtualBalance(100000);
+        setWatchlist(['AAPL', 'BTC', 'SOL', 'GC=F']);
+        setPortfolio([]);
+        setTransactions([]);
+
         try {
           if (db) {
             const ledgerRef = doc(db, 'users', user.uid, 'ledger', 'data');
             const snap = await getDoc(ledgerRef);
+            if (auth.currentUser?.uid !== user.uid) return;
             if (snap.exists()) {
               const data = snap.data();
-              if (data.virtualBalance) setVirtualBalance(data.virtualBalance);
-              if (data.watchlist) setWatchlist(data.watchlist);
-              if (data.portfolio) setPortfolio(data.portfolio);
-              if (data.transactions) setTransactions(data.transactions);
+              if (typeof data.virtualBalance === 'number' && Number.isFinite(data.virtualBalance)) setVirtualBalance(data.virtualBalance);
+              if (Array.isArray(data.watchlist)) setWatchlist(data.watchlist);
+              if (Array.isArray(data.portfolio)) setPortfolio(data.portfolio);
+              if (Array.isArray(data.transactions)) setTransactions(data.transactions);
             }
           }
         } catch (e) {
           console.warn('Ledger fetch issue:', e);
+        } finally {
+          if (auth.currentUser?.uid === user.uid) setLedgerHydrated(true);
         }
       } else if (!guestSessionRef.current) {
+        setLedgerHydrated(false);
         setIsAuthenticated(false);
         setAuthUser(null);
       }
@@ -82,6 +96,7 @@ export default function App() {
   const handleLoginSuccess = (userPayload: any) => {
     if (userPayload?.authType === 'guest') {
       guestSessionRef.current = true;
+      setLedgerHydrated(true);
       setIsAuthenticated(true);
       setAuthUser(userPayload);
       return;
@@ -398,7 +413,7 @@ export default function App() {
   useEffect(() => {
     const saveToCloud = async () => {
       if (
-        db && auth && auth.currentUser && authUser?.uid &&
+        ledgerHydrated && db && auth && auth.currentUser && authUser?.uid &&
         authUser.authType !== 'guest' && auth.currentUser.uid === authUser.uid
       ) {
          try {
@@ -415,7 +430,7 @@ export default function App() {
       }
     };
     saveToCloud();
-  }, [watchlist, portfolio, virtualBalance, transactions, authUser]);
+  }, [watchlist, portfolio, virtualBalance, transactions, authUser, ledgerHydrated]);
 
 
   // --- ACTIONS ---
