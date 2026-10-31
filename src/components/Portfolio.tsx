@@ -733,14 +733,7 @@ export default function Portfolio({
   const totalPnl = totalHoldingsValue - totalCostBase;
   const totalPnlPercent = totalCostBase !== 0 ? (totalPnl / totalCostBase) * 100 : 0;
 
-  const portfolioBeta = totalHoldingsValue > 0
-    ? (
-        enrichedHoldings.reduce((acc, h) => {
-          const beta = h.assetType === 'crypto' ? 1.85 : h.assetType === 'commodity' ? 0.75 : 1.12;
-          return acc + beta * (h.value / totalHoldingsValue);
-        }, 0)
-      ).toFixed(2)
-    : '1.00';
+  const portfolioBeta = 'N/A'; // A defensible beta requires aligned portfolio and benchmark return series.
 
   // 2. Prepare Recharts Pie Chart data representing asset allocations
   const chartData = enrichedHoldings.map((hold) => ({
@@ -776,7 +769,7 @@ export default function Portfolio({
           <p className="text-[10px] text-zinc-500 font-medium">Virtual cash + asset holdings</p>
           <div className="mt-3 pt-3 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex justify-between items-center text-[10px] font-mono w-full">
             <span className="text-zinc-500 uppercase">Velocity</span>
-            <span className="text-emerald-400">+{((netEquity / 100000) * 1.4).toFixed(2)}% (30D)</span>
+            <span className="text-zinc-500">Unavailable — no dated valuation history</span>
           </div>
         </div>
 
@@ -787,7 +780,7 @@ export default function Portfolio({
           <p className="text-[10px] text-zinc-500 font-medium">USD liquidity for virtual orders</p>
           <div className="mt-3 pt-3 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex justify-between items-center text-[10px] font-mono w-full">
             <span className="text-zinc-500 uppercase">Cash Drag</span>
-            <span className="text-rose-400">-{((virtualBalance / netEquity) * 2.1).toFixed(2)}%</span>
+            <span className="text-zinc-500">Not calculated</span>
           </div>
         </div>
 
@@ -798,7 +791,7 @@ export default function Portfolio({
           <p className="text-[10px] text-zinc-500 font-medium">Current valued assets holdings</p>
           <div className="mt-3 pt-3 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex justify-between items-center text-[10px] font-mono w-full">
             <span className="text-zinc-500 uppercase">Beta vs Market</span>
-            <span className="text-amber-400">{portfolioBeta}x</span>
+            <span className="text-zinc-500">{portfolioBeta}</span>
           </div>
         </div>
 
@@ -814,7 +807,7 @@ export default function Portfolio({
           </p>
           <div className="mt-3 pt-3 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex justify-between items-center text-[10px] font-mono w-full">
             <span className="text-zinc-500 uppercase">Alpha</span>
-            <span className="text-emerald-400">+{((totalPnlPercent || 0) * 0.4).toFixed(2)}%</span>
+            <span className="text-zinc-500">Requires benchmark data</span>
           </div>
         </div>
 
@@ -1135,9 +1128,9 @@ export default function Portfolio({
                         <td className="py-3.5 px-6 text-right font-mono font-semibold">{hold.quantity}</td>
                         <td className="py-3.5 px-6 text-right font-mono text-zinc-400">{formatCurrency(hold.avgBuyPrice, hold.assetType)}</td>
                         <td className="py-3.5 px-6 text-right font-mono font-bold text-zinc-200">{formatCurrency(hold.currentPrice, hold.assetType)}</td>
-                        <td className="py-3.5 px-6 text-right font-mono text-amber-400 hidden lg:table-cell">{(15 + ((hold.symbol.charCodeAt(0) * 3) % 40)).toFixed(1)}%</td>
-                        <td className="py-3.5 px-6 text-right font-mono text-blue-400 hidden xl:table-cell">{(1.1 + ((hold.symbol.charCodeAt(0) * 0.1) % 1.5)).toFixed(2)}</td>
-                        <td className="py-3.5 px-6 text-right font-mono text-indigo-400 hidden xl:table-cell">{(hold.pnlPercent * 0.12).toFixed(2)}</td>
+                        <td className="py-3.5 px-6 text-right font-mono text-amber-400 hidden lg:table-cell">N/A</td>
+                        <td className="py-3.5 px-6 text-right font-mono text-blue-400 hidden xl:table-cell">N/A</td>
+                        <td className="py-3.5 px-6 text-right font-mono text-indigo-400 hidden xl:table-cell">N/A</td>
                         <td className="py-3.5 px-6 text-right font-mono font-bold text-white">{formatCurrency(hold.value, 'cash')}</td>
                         <td className={`py-3.5 px-6 text-right font-mono font-bold`}>
                           <div className={isPlus ? 'text-emerald-400' : 'text-rose-455'}>
