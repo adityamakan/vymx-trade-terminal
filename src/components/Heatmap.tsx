@@ -176,24 +176,25 @@ export default function Heatmap({
 
   // Helper stats calculations
   const summaryStats = useMemo(() => {
+    const verifiedAssets = filteredAssets.filter((asset) => Boolean(asset.quoteAsOf));
     const total = filteredAssets.length;
-    const gainers = filteredAssets.filter((a) => a.change > 0.05).length;
-    const losers = filteredAssets.filter((a) => a.change < -0.05).length;
-    const neutral = total - gainers - losers;
-    const avgChange =
-      total > 0
-        ? filteredAssets.reduce((sum, a) => sum + a.change, 0) / total
-        : 0;
+    const gainers = verifiedAssets.filter((a) => a.change > 0.05).length;
+    const losers = verifiedAssets.filter((a) => a.change < -0.05).length;
+    const neutral = verifiedAssets.length - gainers - losers;
+    const avgChange = verifiedAssets.length > 0
+      ? verifiedAssets.reduce((sum, a) => sum + a.change, 0) / verifiedAssets.length
+      : null;
 
-    return { total, gainers, losers, neutral, avgChange };
+    return { total, verified: verifiedAssets.length, gainers, losers, neutral, avgChange };
   }, [filteredAssets]);
 
   const activeMarketCapTotal = 'Not supplied by quote feed';
 
   // Compute cell display value according to metric setting
   const getCellMetricDisplay = (asset: Asset) => {
+    if (!asset.quoteAsOf) return 'N/A';
     if (metricView === "volume") {
-      return asset.volumeDisplay;
+      return asset.volumeDisplay || 'N/A';
     }
     if (metricView === "range52w") {
       const spread = asset.high52w - asset.low52w;
@@ -215,10 +216,11 @@ export default function Heatmap({
   const getTimeframeChange = (asset: Asset): number | null => {
     // Bundled asset.history contains synthetic demo samples. Only 1D provider
     // quote changes are valid here until interval-specific candles are wired in.
-    return heatmapTimeframe === "1D" ? asset.change : null;
+    return asset.quoteAsOf && heatmapTimeframe === "1D" ? asset.change : null;
   };
 
   const getCellMetricColorIntensityStyle = (asset: Asset) => {
+    if (!asset.quoteAsOf) return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
     if (metricView === "volume") return asset.volume > 10000000 ? "bg-indigo-950/90 text-indigo-300 border-indigo-500/30" : "bg-zinc-900 text-zinc-400 border-zinc-800/60";
     if (metricView === "range52w") {
       const spread = asset.high52w - asset.low52w;
@@ -264,7 +266,7 @@ export default function Heatmap({
             Summary
           </span>
           <span className="text-[10px] uppercase text-zinc-500">
-            Provider snapshot
+            Provider quotes: {summaryStats.verified}/{summaryStats.total}
           </span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -299,8 +301,7 @@ export default function Heatmap({
             <span
               className={`font-bold text-sm font-mono ${summaryStats.avgChange >= 0 ? "text-emerald-400" : "text-rose-400"}`}
             >
-              {summaryStats.avgChange >= 0 ? "+" : ""}
-              {summaryStats.avgChange.toFixed(2)}%
+              {summaryStats.avgChange == null ? 'N/A' : `${summaryStats.avgChange >= 0 ? "+" : ""}${summaryStats.avgChange.toFixed(2)}%`}
             </span>
           </div>
           <div className="bg-zinc-950/50 p-2.5 rounded-lg border border-zinc-900 col-span-2 sm:col-span-1 flex justify-between items-center">
