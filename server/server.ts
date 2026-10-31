@@ -43,6 +43,8 @@ type PriceQuote = {
   high52w: number | null;
   prevClose: number | null;
   currency: string | null;
+  volume: number | null;
+  volumeDisplay: string | null;
   marketState: string | null;
   dayHigh: number | null;
   dayLow: number | null;
@@ -111,6 +113,8 @@ async function fetchQuote(symbol: string): Promise<PriceQuote> {
     high52w: quote?.fiftyTwoWeekHigh != null && Number.isFinite(Number(quote.fiftyTwoWeekHigh)) ? Number(quote.fiftyTwoWeekHigh) * unitScale : null,
     prevClose: Number.isFinite(previousClose) && previousClose > 0 ? previousClose : null,
     currency: typeof quote?.currency === 'string' ? quote.currency : null,
+    volume: quote?.regularMarketVolume != null && Number.isFinite(Number(quote.regularMarketVolume)) ? Number(quote.regularMarketVolume) : null,
+    volumeDisplay: quote?.regularMarketVolume != null && Number.isFinite(Number(quote.regularMarketVolume)) ? new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(quote.regularMarketVolume)) : null,
     marketState: typeof quote?.marketState === 'string' ? quote.marketState : null,
     dayHigh: quote?.regularMarketDayHigh != null && Number.isFinite(Number(quote.regularMarketDayHigh)) ? Number(quote.regularMarketDayHigh) * unitScale : null,
     dayLow: quote?.regularMarketDayLow != null && Number.isFinite(Number(quote.regularMarketDayLow)) ? Number(quote.regularMarketDayLow) * unitScale : null,
