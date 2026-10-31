@@ -469,7 +469,7 @@ export default function Dashboard({
                   <span className={`text-[9px] font-mono font-bold ${isDataOffline ? 'text-amber-400' : 'text-emerald-400'}`}>{isDataOffline ? 'OFFLINE / SAMPLE DATA' : 'CONNECTED'}</span>
                </div>
                <div className="flex items-center justify-between gap-6">
-                  <span className="text-[9px] font-mono text-zinc-500 uppercase">Historical candle source</span>
+                  <span className="text-[9px] font-mono text-zinc-500 uppercase">Quote update status</span>
                   <span className="text-[9px] font-mono text-indigo-400 font-bold">{isDataOffline ? 'WAITING' : 'PROVIDER DATA'}</span>
                </div>
                <div className="w-full h-0.5 bg-zinc-800 rounded-full mt-1 overflow-hidden">
@@ -716,7 +716,7 @@ export default function Dashboard({
 
             <div className="flex justify-between items-center text-[9px] font-mono font-bold uppercase tracking-widest px-1">
               <span className="text-red-500">More decliners</span>
-              <span className="text-zinc-500">Neutral</span>
+              <span className="text-zinc-500">Balanced</span>
               <span className="text-green-500">More advancers</span>
             </div>
 
