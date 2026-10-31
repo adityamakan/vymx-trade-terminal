@@ -558,7 +558,7 @@ export default function MarketGlobe3D() {
                {[
                  { id: 'default', label: 'Market Intelligence', icon: Globe2 },
                  { id: 'capitalFlows', label: 'Flows (not connected)', icon: Network },
-                 { id: 'currencySwap', label: 'Currency Swaps', icon: Coins },
+                 { id: 'currencySwap', label: 'FX quote proxies', icon: Coins },
                  { id: 'sectorRotation', label: 'Sector Rotation', icon: Activity },
                  { id: 'earningsSeason', label: 'Earnings data (not connected)', icon: BarChart3 },
                  { id: 'geoRisk', label: 'Geo-risk scenarios', icon: ShieldAlert },
@@ -566,8 +566,8 @@ export default function MarketGlobe3D() {
                  { id: 'commodities', label: 'Commodities', icon: Layers },
                  { id: 'holdings', label: 'Treasury yields / reference nodes', icon: Target },
                  { id: 'correlationWeb', label: 'Correlations (not computed)', icon: Zap },
-                 { id: 'timeMachine', label: 'Time Machine', icon: Rewind },
-                 { id: 'dominoQuiz', label: 'Domino Quiz', icon: Activity },
+                 { id: 'timeMachine', label: 'Time Machine (simulation)', icon: Rewind },
+                 { id: 'dominoQuiz', label: 'Domino Quiz (educational)', icon: Activity },
                ].map(m => (
                   <button
                      key={m.id}
@@ -592,7 +592,7 @@ export default function MarketGlobe3D() {
          </button>
       )}
 
-      {(mode === 'geoRisk' || mode === 'supplyChain' || mode === 'commodities' || mode === 'holdings' || mode === 'correlationWeb') && (
+      {(mode === 'geoRisk' || mode === 'supplyChain' || mode === 'commodities' || mode === 'holdings' || mode === 'correlationWeb' || mode === 'capitalFlows' || mode === 'earningsSeason' || mode === 'timeMachine' || mode === 'currencySwap') && (
         <div className="absolute bottom-4 left-4 z-40 max-w-[min(26rem,calc(100vw-2rem))] rounded-lg border border-amber-500/30 bg-zinc-950/90 px-3 py-2 text-[9px] leading-relaxed text-amber-200 shadow-xl pointer-events-none">
           {mode === 'geoRisk'
             ? 'Illustrative geopolitical scenario locations only. This map is not connected to a live conflict, incident or risk-monitoring feed.'
@@ -602,7 +602,15 @@ export default function MarketGlobe3D() {
                 ? 'Illustrative commodity production locations only. These markers do not represent live production, inventory or shipping flows.'
                 : mode === 'holdings'
                   ? 'Exchange markers are reference locations, not your linked brokerage holdings or positions.'
-                  : 'Correlation arcs are illustrative only; no synchronized historical correlation model is connected.'}
+                  : mode === 'correlationWeb'
+                    ? 'Correlation arcs are illustrative only; no synchronized historical correlation model is connected.'
+                    : mode === 'capitalFlows'
+                      ? 'Capital-flow lines are illustrative only. No verified FII/DII, block-deal or cross-border flow dataset is connected.'
+                      : mode === 'earningsSeason'
+                        ? 'No verified earnings calendar is connected. These markers are not live earnings announcements.'
+                        : mode === 'timeMachine'
+                          ? 'Historical scenario animation only. This is not a verified historical replay or a backtest.'
+                          : 'FX quote proxies only. This view does not provide swap points, forward curves or executable FX pricing.'}
         </div>
       )}
 
