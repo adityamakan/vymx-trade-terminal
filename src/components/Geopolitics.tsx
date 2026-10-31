@@ -19,8 +19,10 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
     try {
       const endpoint = force ? '/api/ai/geopolitics?forceRefresh=true' : '/api/ai/geopolitics';
       const response = await fetch(endpoint);
-      if (!response.ok) throw new Error("Failed to fetch geopolitical intelligence");
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result?.success || !Array.isArray(result.tensions) || !Array.isArray(result.news)) {
+        throw new Error(result?.error || 'No verified geopolitical event feed is available.');
+      }
       setData(result);
       setLastUpdated(new Date());
     } catch (err: any) {
@@ -32,13 +34,6 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
 
   useEffect(() => {
     fetchGeopolitics();
-
-    // Auto-update every 5 minutes (120000 ms) to keep the data fresh
-    const intervalId = setInterval(() => {
-      fetchGeopolitics(true);
-    }, 300000);
-
-    return () => clearInterval(intervalId);
   }, []);
 
   const toggleExpand = (id: string) => {
@@ -54,11 +49,11 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
             <h1 className="text-3xl font-black text-white tracking-tight">Geopolitical Tension</h1>
           </div>
           <p className="text-zinc-400 max-w-2xl text-sm md:text-base mb-2">
-            Live intelligence tracking global conflicts, political affairs, and their macroeconomic impact on sovereign and corporate risk.
+            Geopolitical research view. A verified live conflict, news and event-attribution provider is not currently connected; no live risk scores or events are fabricated.
           </p>
           <div className="flex items-center gap-2 text-xs text-indigo-400 bg-indigo-500/10 w-max px-2 py-1 rounded border border-indigo-500/20">
             <Activity className="h-3 w-3 animate-pulse" />
-            <span>Auto-updating live feed • Last fetch: {lastUpdated.toLocaleTimeString()}</span>
+            <span>{data ? `Provider response received • Last successful fetch: ${lastUpdated.toLocaleTimeString()}` : 'No verified live geopolitical feed connected'}</span>
           </div>
         </div>
 
@@ -88,7 +83,7 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
       {isLoading && !data ? (
         <div className="flex-1 flex flex-col items-center justify-center min-h-[400px]">
           <div className="w-16 h-16 border-4 border-rose-500/20 border-t-rose-500 rounded-full animate-spin mb-4"></div>
-          <p className="text-zinc-500 font-mono animate-pulse text-sm">Aggregating global intelligence...</p>
+          <p className="text-zinc-500 font-mono text-sm">Checking configured geopolitical data providers...</p>
         </div>
       ) : error ? (
         <div className="flex-1 flex items-center justify-center">
