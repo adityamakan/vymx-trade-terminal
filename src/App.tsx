@@ -736,7 +736,6 @@ export default function App() {
                   assets={liveAssets}
                   formatCurrency={formatCurrency}
                   isStrictHours={isStrictHours}
-                  isDataOffline={isDataOffline}
                   setIsStrictHours={setIsStrictHours}
                   priceAlerts={priceAlerts}
                   setPriceAlerts={setPriceAlerts}
@@ -766,6 +765,7 @@ export default function App() {
                   assets={liveAssets}
                   formatCurrency={formatCurrency}
                   isStrictHours={isStrictHours}
+                  isDataOffline={isDataOffline}
                 />
               </motion.div>
             )}
