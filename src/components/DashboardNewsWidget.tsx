@@ -5,21 +5,27 @@ import { NewsArticle } from '../types';
 export default function DashboardNewsWidget() {
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchNews = async () => {
     setLoading(true);
+    setError(null);
     try {
       const response = await fetch('/api/ai/live-news', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ market: 'us' })
+        body: JSON.stringify({ market: 'us' }),
+        signal: AbortSignal.timeout(15_000)
       });
-      const data = await response.json();
-      if (data.articles && data.articles.length > 0) {
-        setNews(data.articles);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !Array.isArray(data.articles)) {
+        throw new Error(data.error || 'Verified news provider unavailable. Configure FINNHUB_API_KEY.');
       }
-    } catch (e) {
-      // Silenced fallback;
+      setNews(data.articles);
+      if (data.articles.length === 0) setError('The provider returned no current headlines.');
+    } catch (e: any) {
+      setNews([]);
+      setError(e?.message || 'Verified news provider unavailable.');
     } finally {
       setLoading(false);
     }
@@ -36,7 +42,7 @@ export default function DashboardNewsWidget() {
            <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-indigo-500/10 border border-indigo-500/30">
              <Newspaper className="h-3 w-3 text-indigo-400" />
            </div>
-           <h2 className="text-xs font-black tracking-widest uppercase text-white font-mono">Global Intel Feed</h2>
+           <h2 className="text-xs font-black tracking-widest uppercase text-white font-mono">Finnhub News Feed</h2>
         </div>
         <button onClick={fetchNews} className="text-zinc-500 hover:text-white transition-colors" disabled={loading}>
            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -47,8 +53,10 @@ export default function DashboardNewsWidget() {
         {loading && news.length === 0 ? (
           <div className="py-8 flex flex-col items-center justify-center gap-3 text-indigo-500/50">
              <RefreshCw className="h-5 w-5 animate-spin" />
-             <span className="text-[10px] font-mono uppercase tracking-widest">Intercepting News Vectors...</span>
+             <span className="text-[10px] font-mono uppercase tracking-widest">Loading provider headlines...</span>
           </div>
+        ) : news.length === 0 ? (
+          <div className="py-6 text-center text-[10px] leading-relaxed text-amber-300">{error || 'No verified headlines are available.'}</div>
         ) : (
           news.map((article, idx) => (
             <div key={`${article.id}-${idx}`} className="group p-3.5 rounded-xl border border-zinc-900 bg-zinc-950/50 hover:bg-zinc-900 transition-all duration-300 cursor-pointer hover:border-indigo-500/30 hover:shadow-lg">
