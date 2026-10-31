@@ -743,6 +743,7 @@ export default function App() {
                   watchlist={watchlist}
                   toggleWatchlist={toggleWatchlist}
                   assets={liveAssets}
+                  isDataOffline={isDataOffline}
                   onTradeSubmit={handleTradeSubmit}
                 />
               </motion.div>
