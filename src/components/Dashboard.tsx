@@ -965,9 +965,9 @@ export default function Dashboard({
                   <div className="text-sm font-black text-white mt-0.5">{pearsonCoefficient == null ? 'N/A' : pearsonCoefficient.toFixed(4)}</div>
                 </div>
                 <div className={`text-[10px] font-extrabold px-2 py-1 rounded border ${
-                  Math.abs(pearsonCoefficient) >= 0.7
+                  pearsonCoefficient != null && Math.abs(pearsonCoefficient) >= 0.7
                     ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
-                    : Math.abs(pearsonCoefficient) >= 0.3
+                    : pearsonCoefficient != null && Math.abs(pearsonCoefficient) >= 0.3
                     ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                     : 'bg-zinc-900 text-zinc-400 border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300'
                 }`}>
@@ -1004,10 +1004,10 @@ export default function Dashboard({
               Scatter Plot: {symbolA} vs {symbolB} Percentage Returns
             </span>
 
-            {correlationData.length === 0 ? (
+            {correlationLoading || correlationData.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center space-y-2 text-center">
                 <CircleAlert className="h-6 w-6 text-zinc-650" />
-                <span className="text-xs text-zinc-500">No overlapping provider-backed return observations are available.</span>
+                <span className="text-xs text-zinc-500">{correlationLoading ? 'Loading provider-backed historical returns…' : correlationError || 'No overlapping provider-backed return observations are available.'}</span>
               </div>
             ) : (
               <div className="flex-1 w-full mt-3">
