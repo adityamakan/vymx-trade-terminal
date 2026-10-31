@@ -206,6 +206,7 @@ export default function MarketGlobe3D() {
 
   const activeExchangeData = selectedExchange ? EXCHANGE_DETAILS[selectedExchange] : null;
   const exchangeIndices = liveExchangeData?.indices?.length ? liveExchangeData.indices : activeExchangeData?.indices || [];
+  const fearGreedValue = liveExchangeData ? (typeof liveExchangeData.fearAndGreed === 'number' ? liveExchangeData.fearAndGreed : null) : (activeExchangeData?.fearAndGreed ?? null);
 
   useEffect(() => {
      if (selectedExchange) {
@@ -856,9 +857,9 @@ export default function MarketGlobe3D() {
                 <div className="bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2.5 rounded-xl flex flex-col gap-1">
                   <span className="text-[10px] text-zinc-500 font-medium">{liveExchangeData ? 'Fear / Greed (not supplied)' : 'Sample Fear / Greed (not live)'}</span>
                   <div className="flex items-center gap-1.5">
-                    {activeExchangeData.fearAndGreed > 70 ? <ThermometerSun className="w-3.5 h-3.5 text-emerald-400" /> : <ThermometerSnowflake className="w-3.5 h-3.5 text-amber-400" />}
+                    {fearGreedValue !== null && fearGreedValue > 70 ? <ThermometerSun className="w-3.5 h-3.5 text-emerald-400" /> : <ThermometerSnowflake className="w-3.5 h-3.5 text-amber-400" />}
                     <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                       <div className={`h-full ${activeExchangeData.fearAndGreed > 70 ? 'bg-emerald-400' : 'bg-amber-400'}`} style={{ width: `${activeExchangeData.fearAndGreed}%` }}></div>
+                       <div className={`h-full ${activeExchangeData.fearAndGreed > 70 ? 'bg-emerald-400' : 'bg-amber-400'}`} style={{ width: `${fearGreedValue ?? 0}%` }}></div>
                     </div>
                     <span className="font-mono font-bold text-zinc-300 text-[10px]">{liveExchangeData ? 'N/A' : activeExchangeData.fearAndGreed}</span>
                   </div>
