@@ -167,12 +167,8 @@ export default function Heatmap({
     // Sort groups so that larger categories or higher performing categories stay aligned neatly
     return Object.entries(groups)
       .map(([name, items]) => {
-        // Sort items in group by total size/weight (Market Cap)
-        const sortedItems = [...items].sort((a, b) => {
-          if (a.marketCap === 0) return 1;
-          if (b.marketCap === 0) return -1;
-          return b.marketCap - a.marketCap;
-        });
+        // Sort by absolute provider-reported daily move; market-cap metadata is not refreshed by the quote feed.
+        const sortedItems = [...items].sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
         return { name, items: sortedItems };
       })
       .sort((a, b) => b.items.length - a.items.length); // Larger groups first
@@ -192,10 +188,7 @@ export default function Heatmap({
     return { total, gainers, losers, neutral, avgChange };
   }, [filteredAssets]);
 
-  const activeMarketCapTotal = useMemo(() => {
-    const sum = filteredAssets.reduce((acc, a) => acc + (a.marketCap || 0), 0);
-    return sum > 1000 ? `$${(sum / 1000).toFixed(2)}T` : `$${sum.toFixed(1)}B`;
-  }, [filteredAssets]);
+  const activeMarketCapTotal = 'Not supplied by quote feed';
 
   // Compute cell display value according to metric setting
   const getCellMetricDisplay = (asset: Asset) => {
@@ -312,7 +305,7 @@ export default function Heatmap({
           </div>
           <div className="bg-zinc-950/50 p-2.5 rounded-lg border border-zinc-900 col-span-2 sm:col-span-1 flex justify-between items-center">
             <span className="text-zinc-500 text-[10px] uppercase font-bold">
-              Mkt Focus Size
+              Market cap total
             </span>
             <span className="font-bold text-indigo-400 text-sm font-mono">
               {activeMarketCapTotal}
@@ -687,23 +680,17 @@ export default function Heatmap({
 
                 {/* Visualizer detail label */}
                 <span className="text-[10px] font-mono font-medium text-zinc-500 uppercase tracking-widest hidden sm:inline">
-                  Sorted by relative weight
+                  Sorted by daily move magnitude
                 </span>
               </div>
 
-              {/* Grid of Blocks Map. We formulate custom sizes based on relative weight (market cap) */}
+              {/* Uniform tiles: verified market-cap weighting is not available in this quote feed. */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
                 {group.items.map((asset) => {
                   const relativeUp = asset.change >= 0;
                   const isFlash = flashUpdateSym[asset.symbol];
 
-                  // Setup specific sizing based on asset market cap class
                   let sizeClass = "col-span-1 row-span-1 h-24";
-                  if (groupBy === "sector") {
-                    // Boost huge market caps visuals so they are major anchors
-                    if (asset.marketCap > 1000)
-                      sizeClass = "col-span-1 sm:col-span-2 row-span-1 h-24";
-                  }
 
                   if (expandedTile === asset.symbol) {
                     sizeClass = "col-span-2 sm:col-span-3 lg:col-span-2 row-span-2 min-h-[260px]";
