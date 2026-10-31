@@ -8,7 +8,8 @@
     "build": "tsc && vite build && esbuild server/server.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "tsx scripts/test-financial-analytics.ts"
   },
   "devDependencies": {
     "@types/compression": "^1.8.1",
