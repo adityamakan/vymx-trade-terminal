@@ -651,7 +651,7 @@ export default function Portfolio({
             </div>
           ))}
         </div>
-        <p className="mt-3 text-[10px] text-zinc-500">Risk metrics use daily USD-normalized valuations, a conventional 252-trading-day annualization factor, and require at least 30 daily return observations. Sharpe assumes a 0% annual risk-free rate; Sortino uses a 0% daily target. VaR/CVaR are empirical historical 95% estimates, not forecasts. FX rates are indicative Yahoo Finance quotes captured at snapshot time.</p>
+        <p className="mt-3 text-[10px] text-zinc-500">Risk metrics use daily USD-normalized valuations and require at least 30 daily return observations. CAGR is withheld until at least 30 calendar days are observed. Volatility, Sharpe and Sortino use a 252-trading-day annualization convention; Sharpe assumes a 0% annual risk-free rate and Sortino a 0% daily target. VaR/CVaR are empirical historical 95% estimates, not forecasts. FX rates are indicative Yahoo Finance quotes captured at snapshot time. Returns are valuation changes, not cash-flow-adjusted time-weighted returns; external deposits or withdrawals would distort performance until separately recorded and adjusted.</p>
         {historicalRisk.unavailableReason && <p className="mt-2 text-[10px] text-amber-300/80">{historicalRisk.unavailableReason}</p>}
         <p className="mt-2 text-[10px] text-amber-300/80">Benchmark-relative alpha and beta remain unavailable until a benchmark return series is aligned to these portfolio valuation timestamps.</p>
       </section>
