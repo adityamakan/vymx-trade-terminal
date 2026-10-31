@@ -418,9 +418,10 @@ export default function MarketGlobe3D() {
 
             // Normal Exchanges & Custom nodes
             const isCustom = ['Israel/Gaza', 'Ukraine', 'Taiwan Strait', 'Red Sea', 'Panama Canal', 'Suez Canal', 'Strait of Malacca', 'Oil (Saudi Arabia)', 'Copper (Chile)', 'Lithium (Australia)'].includes(d.label);
-            const exchangeData = EXCHANGE_DETAILS[d.label];
-            const changeStr = exchangeData ? exchangeData.indices[0]?.change : null;
-            const isBullish = changeStr?.startsWith('+');
+            // Exchange markers show geography only. The selected exchange panel
+            // fetches its provider quote independently; no cached sentiment is implied.
+            const changeStr: string | null = null;
+            const isBullish = false;
 
             el.innerHTML = `
               <div class="flex flex-col items-center cursor-pointer group" style="pointer-events: auto;">
