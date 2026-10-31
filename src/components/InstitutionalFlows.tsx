@@ -113,44 +113,7 @@ const MONTHLY_TRENDS = Array.from({ length: 30 }).map((_, i) => ({
   DII: Math.floor(Math.cos(i * 0.3) * 2100 + 1200),
 }));
 
-const GEOPOLITICAL_EVENTS = [
-  {
-    id: 'g1',
-    date: 'Oct 2023',
-    event: 'Middle East Conflict Escalation',
-    impact: 'FIIs pulled out $1.5B from Emerging Markets, flocking to US Treasuries.',
-    severity: 'High',
-    region: 'Global',
-    fiiFlow: -1500
-  },
-  {
-    id: 'g2',
-    date: 'Dec 2023',
-    event: 'US Fed Signals Rate Cuts',
-    impact: 'Massive $2.1B FII inflow into Indian Equities, anticipating weaker dollar.',
-    severity: 'Medium',
-    region: 'US/India',
-    fiiFlow: 2100
-  },
-  {
-    id: 'g3',
-    date: 'Mar 2024',
-    event: 'China Property Sector Restructuring',
-    impact: 'Capital reallocation from China to India, boosting Indian Infra sector by $800M.',
-    severity: 'High',
-    region: 'Asia',
-    fiiFlow: 800
-  },
-  {
-    id: 'g4',
-    date: 'May 2024',
-    event: 'Indian General Elections',
-    impact: 'Pre-election jitters led to $1.2B FII outflow, completely absorbed by record DII buying.',
-    severity: 'Medium',
-    region: 'India',
-    fiiFlow: -1200
-  }
-];
+const GEOPOLITICAL_EVENTS: any[] = [];
 
 export default function InstitutionalFlows({ formatCurrency }: { formatCurrency: (v: number) => string }) {
   const [activeTab, setActiveTab] = useState<'overview' | 'deals' | 'sectors' | 'geopolitics'>('overview');
