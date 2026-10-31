@@ -168,7 +168,7 @@ export default function App() {
   // --- REAL-TIME LIVE MARKET DATA TICKER ---
   const [liveAssets, setLiveAssets] = useState<Asset[]>(assets);
   const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
-  const [isDataOffline, setIsDataOffline] = useState<boolean>(false);
+  const [isDataOffline, setIsDataOffline] = useState<boolean>(true);
   const [isCmdKOpen, setIsCmdKOpen] = useState(false);
 
   const getKolkataTimeStr = useCallback(() => {
@@ -240,12 +240,8 @@ export default function App() {
   });
 
   useEffect(() => {
-    if (isConnectionUnstable) {
-      setIsDataOffline(true);
-    } else {
-      setIsDataOffline(false);
-    }
-  }, [isConnectionUnstable]);
+    setIsDataOffline(!isConnected || isConnectionUnstable || !lastUpdatedTime);
+  }, [isConnected, isConnectionUnstable, lastUpdatedTime]);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
