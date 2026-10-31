@@ -19,6 +19,7 @@ interface UseWebSocketOptions {
 export function useWebSocket(options?: UseWebSocketOptions) {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnectionUnstable, setIsConnectionUnstable] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
   const [livePrices, setLivePrices] = useState<PriceMap>({});
   const [messages, setMessages] = useState<string[]>([]);
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
@@ -47,12 +48,14 @@ export function useWebSocket(options?: UseWebSocketOptions) {
       pollingInterval.current = null;
     }
     isPollingActive.current = false;
+    setIsPolling(false);
   }, []);
 
   // HTTP Long-Polling Fallback when WebSocket drops
   const startPolling = useCallback(() => {
     if (isPollingActive.current) return;
     isPollingActive.current = true;
+    setIsPolling(true);
     console.warn('[Market Data Engine] WebSocket disconnected. Initiating HTTP long-polling fallback...');
 
     const pollPrices = async () => {
@@ -237,6 +240,7 @@ export function useWebSocket(options?: UseWebSocketOptions) {
   return {
     isConnected,
     isConnectionUnstable,
+    isPolling,
     livePrices,
     messages,
     sendMessage,
