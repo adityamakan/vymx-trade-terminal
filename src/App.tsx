@@ -677,6 +677,7 @@ export default function App() {
               return (
                 <motion.div key="details" initial={{ opacity: 0, y: 25, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -25, filter: 'blur(4px)' }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
                   <AssetDetails
+                    isDataOffline={isDataOffline}
                     asset={liveSelected}
                     virtualBalance={virtualBalance}
                     portfolio={portfolio}
