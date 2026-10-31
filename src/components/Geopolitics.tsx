@@ -26,7 +26,8 @@ export const Geopolitics: React.FC<GeopoliticsProps> = ({ isMobile }) => {
       setData(result);
       setLastUpdated(new Date());
     } catch (err: any) {
-      setError(err.message);
+      setData(null);
+      setError(err.message || 'Geopolitical provider unavailable.');
     } finally {
       setIsLoading(false);
     }
