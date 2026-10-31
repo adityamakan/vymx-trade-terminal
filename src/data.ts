@@ -1,6 +1,7 @@
 import { Asset, NewsArticle } from './types';
 
-// Helper to generate realistic historical data using a geometric Brownian motion random walk.
+// DEMO DATA ONLY: these price histories are synthetic geometric-Brownian-motion samples.
+// They are not exchange observations and must never be used for performance claims or backtests.
 const generateHistory = (
   startPrice: number,
   pointsCount: number,
@@ -27,7 +28,7 @@ const generateHistory = (
   return points;
 };
 
-// Generates hourly data for 1 Day
+// DEMO DATA ONLY: generates synthetic hourly points; not actual intraday observations.
 const generate1DHistory = (startPrice: number, changePercent: number): { date: string; value: number }[] => {
   const points: { date: string; value: number }[] = [];
   const now = new Date();

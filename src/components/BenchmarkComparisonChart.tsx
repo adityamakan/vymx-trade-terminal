@@ -112,13 +112,14 @@ export default function BenchmarkComparisonChart({ asset, timeframe }: Benchmark
             <h3 className="text-xs font-black uppercase tracking-widest text-zinc-100 font-mono">Relative Performance Matrix</h3>
           </div>
           <p className="text-[10px] text-zinc-500 font-mono tracking-wider">
-            {asset.symbol} vs {benchmarkName} • {timeframe} Scaled Alpha
+            {asset.symbol} vs {benchmarkName} • {timeframe} illustrative model
           </p>
         </div>
 
         <div className="flex items-center gap-4">
+          <span className="text-[9px] font-mono font-bold tracking-widest text-amber-400 border border-amber-500/30 bg-amber-500/10 rounded px-2 py-1">SYNTHETIC MODEL · NOT ACTUAL RETURNS</span>
           <div className="flex flex-col items-end">
-            <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Generated Alpha</span>
+            <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Simulated Alpha</span>
             <div className={`px-2 py-1 rounded border flex items-center gap-1.5 shadow-lg ${
               isAlphaPositive
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'

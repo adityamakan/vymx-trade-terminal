@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
@@ -38,15 +38,17 @@ export default function App() {
   // --- STRICT MARKET HOURS ENFORCEMENT ---
   const [isStrictHours, setIsStrictHours] = useState<boolean>(true);
 
-  // --- INSTITUTIONAL USER AUTHENTICATION STATES & SECURE SYNC ---
-  // Firebase is the authentication source of truth. Never trust a localStorage flag.
+  // Firebase is authoritative for persistent accounts. Demo access is an
+  // explicitly ephemeral local sandbox and is never treated as a Firebase identity.
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [authUser, setAuthUser] = useState<{ uid?: string; email?: string; name?: string; authType?: string } | null>(null);
+  const guestSessionRef = useRef(false);
 
   useEffect(() => {
     if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        guestSessionRef.current = false;
         setIsAuthenticated(true);
         setAuthUser({
           uid: user.uid,
@@ -54,9 +56,6 @@ export default function App() {
           email: user.email || '',
           authType: 'google'
         });
-        localStorage.removeItem('vymx_is_authenticated');
-        localStorage.setItem('vymx_auth_user', JSON.stringify({ uid: user.uid, name: user.displayName || 'Vymx Trader', email: user.email || '', authType: 'google' }));
-
         try {
           if (db) {
             const ledgerRef = doc(db, 'users', user.uid, 'ledger', 'data');
@@ -70,35 +69,36 @@ export default function App() {
             }
           }
         } catch (e) {
-          console.warn("Ledger fetch issue:", e);
+          console.warn('Ledger fetch issue:', e);
         }
-      } else {
+      } else if (!guestSessionRef.current) {
         setIsAuthenticated(false);
         setAuthUser(null);
-        localStorage.removeItem('vymx_is_authenticated');
-        localStorage.removeItem('vymx_auth_user');
       }
     });
-
     return () => unsubscribe();
   }, []);
 
   const handleLoginSuccess = (userPayload: any) => {
-    // UI state is optimistic only; onAuthStateChanged will reconcile with Firebase.
+    if (userPayload?.authType === 'guest') {
+      guestSessionRef.current = true;
+      setIsAuthenticated(true);
+      setAuthUser(userPayload);
+      return;
+    }
+    // A persistent account becomes authenticated only after Firebase emits
+    // its signed-in user through onAuthStateChanged.
     setAuthUser(userPayload);
   };
 
   const handleLogout = async () => {
+    guestSessionRef.current = false;
     if (auth) {
-      try {
-        await signOut(auth);
-      } catch (err) {
-        console.warn("Firebase signout error:", err);
-      }
+      try { await signOut(auth); }
+      catch (err) { console.warn('Firebase signout error:', err); }
     }
     setIsAuthenticated(false);
     setAuthUser(null);
-    localStorage.removeItem('vymx_is_authenticated');
     localStorage.removeItem('vymx_auth_user');
     localStorage.removeItem('vymx_integrity_signature');
   };
@@ -202,7 +202,8 @@ export default function App() {
 
   // Establish WebSocket connection globally at /api/prices with auto-reconnect and HTTP long-polling fallback
   const { isConnected, isConnectionUnstable, sendMessage, latencyMs } = useWebSocket({
-    onPriceUpdate: handlePriceUpdate
+    onPriceUpdate: handlePriceUpdate,
+    symbols: assets.map((asset) => asset.symbol)
   });
 
   useEffect(() => {

@@ -11,19 +11,15 @@ export default function MarketAurasWidget() {
     try {
       const response = await fetch('/api/ai/market-auras');
       const json = await response.json();
+      if (!response.ok || !Array.isArray(json)) {
+        setData([]);
+        return;
+      }
       setData(json);
       setLastUpdated(new Date());
     } catch (e) {
-      // Silenced fallback;
-      // Fallback local UI data rendering if fetch fails
-      setData([
-        { sector: 'Technology', score: 85, trend: 'growth' },
-        { sector: 'Healthcare', score: 62, trend: 'neutral' },
-        { sector: 'Energy', score: 30, trend: 'stress' },
-        { sector: 'Financials', score: 45, trend: 'stress' },
-        { sector: 'Consumer', score: 75, trend: 'growth' },
-        { sector: 'Industrials', score: 55, trend: 'neutral' },
-      ]);
+      // Never replace missing provider data with invented sector scores.
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -71,7 +67,12 @@ export default function MarketAurasWidget() {
         ))}
         {loading && data.length === 0 && (
            <div className="col-span-full text-center py-6 text-[10px] text-zinc-500 font-mono tracking-widest uppercase animate-pulse">
-              Initializing AI Sector Telemetry...
+              Loading verified sector telemetry...
+           </div>
+        )}
+        {!loading && data.length === 0 && (
+           <div className="col-span-full text-center py-6 text-xs text-zinc-500">
+              Sector telemetry unavailable — no verified provider feed is configured.
            </div>
         )}
       </div>

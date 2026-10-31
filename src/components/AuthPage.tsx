@@ -265,9 +265,6 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
         console.warn('Could not write user to firestore yet', e);
       }
 
-      localStorage.setItem('vymx_is_authenticated', 'true');
-      localStorage.setItem('vymx_auth_user', JSON.stringify(payload));
-      localStorage.setItem('vymx_integrity_signature', 'vymx_google_verified_' + user.uid);
 
       logSecurityEvent(`Google authenticated session validated: ${payload.email}`, 'SUCCESS', 'low');
       onLoginSuccess(payload);
@@ -293,94 +290,24 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
       authType: 'guest' as const,
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&fit=crop&q=80'
     };
-    localStorage.setItem('vymx_is_authenticated', 'true');
-    localStorage.setItem('vymx_auth_user', JSON.stringify(payload));
-    localStorage.setItem('vymx_integrity_signature', 'vymx_guest_demo_verified');
     logSecurityEvent('Guest demo simulation session activated', 'SUCCESS', 'low');
     onLoginSuccess(payload);
     setIsLoading(false);
   };
 
-  // Simplified and satisfying direct phone connection
+  // Do not simulate SMS delivery or verify a browser-generated OTP. This
+  // method becomes available only after a trusted SMS provider is configured.
   const handleSendPhoneOTP = () => {
-    if (!phoneVal.trim()) {
-      setErrorText('Please specify your phone number.');
-      return;
-    }
-    setIsLoading(true);
-    setErrorText('');
-
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsOtpSent(true);
-      const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
-      setDispatchedPhoneOtp(generatedOtp);
-      setShowPhoneNotification(true);
-      logSecurityEvent(`MFA OTP challenge dispatched to ${phoneVal}`, 'ALIGNED', 'low');
-    }, 450);
+    setErrorText('Phone OTP is not configured with a trusted SMS provider yet. Use Google Identity or Demo Access.');
   };
 
   const handleVerifyPhoneOTP = () => {
-    if (otpVal.trim() !== dispatchedPhoneOtp) {
-      setErrorText('Incorrect security code. Please review the dispatched SMS.');
-      return;
-    }
-
-    setIsLoading(true);
-    setErrorText('');
-    setShowPhoneNotification(false);
-
-    setTimeout(() => {
-      const payload = {
-        uid: `vymx-p-${Date.now()}`,
-        name: `User ${phoneVal.slice(-4)}`,
-        phone: phoneVal,
-        email: `${phoneVal.replace(/\D/g, '')}@vymx-trade.org`,
-        authType: 'phone' as const,
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&fit=crop&q=80'
-      };
-
-      localStorage.setItem('vymx_is_authenticated', 'true');
-      localStorage.setItem('vymx_auth_user', JSON.stringify(payload));
-      localStorage.setItem('vymx_integrity_signature', 'vymx_phone_token_validated');
-
-      logSecurityEvent(`Authenticated verified phone account: ${phoneVal}`, 'SUCCESS', 'medium');
-      onLoginSuccess(payload);
-      setIsLoading(false);
-    }, 300);
+    setErrorText('Phone verification is unavailable until server-backed Firebase Phone Authentication is configured.');
   };
 
-  // Clean, satisfying direct email sign-in without rigid character locks
+  // A password typed into this UI must never create a fake authenticated user.
   const handleEmailLogin = () => {
-    if (!emailVal.trim() || !emailVal.includes('@')) {
-      setErrorText('Please enter a valid email address.');
-      return;
-    }
-    if (passwordVal.length < 4) {
-      setErrorText('Safety password is too short. Please use at least 4 characters.');
-      return;
-    }
-
-    setIsLoading(true);
-    setErrorText('');
-
-    setTimeout(() => {
-      const payload = {
-        uid: `vymx-e-${Date.now()}`,
-        name: emailVal.split('@')[0],
-        email: emailVal.toLowerCase().trim(),
-        authType: 'email' as const,
-        avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&fit=crop&q=80'
-      };
-
-      localStorage.setItem('vymx_is_authenticated', 'true');
-      localStorage.setItem('vymx_auth_user', JSON.stringify(payload));
-      localStorage.setItem('vymx_integrity_signature', 'vymx_email_session_verified');
-
-      logSecurityEvent(`Authenticated email session for: ${emailVal}`, 'SUCCESS', 'medium');
-      onLoginSuccess(payload);
-      setIsLoading(false);
-    }, 450);
+    setErrorText('Email/password authentication is not configured. Use Google Identity or Demo Access.');
   };
 
   return (
