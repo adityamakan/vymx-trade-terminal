@@ -7,6 +7,10 @@ export interface PriceQuote {
   low52w: number;
   high52w: number;
   prevClose: number;
+  currency?: string | null;
+  volume?: number | null;
+  volumeDisplay?: string | null;
+  asOf?: string;
 }
 
 export type PriceMap = Record<string, PriceQuote>;
