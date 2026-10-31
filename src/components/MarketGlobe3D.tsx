@@ -724,7 +724,7 @@ export default function MarketGlobe3D() {
                   <span className="text-xs font-bold font-mono tracking-wider">{selectedExchange} {loadingExchangeData && <span className="text-[9px] text-zinc-500 animate-pulse ml-2">(Fetching Live Data...)</span>}</span>
                 </div>
                 <h3 className="text-base font-bold text-white leading-tight">{activeExchangeData.name}</h3>
-                <span className={`mt-1 inline-flex rounded border px-2 py-0.5 text-[8px] font-mono font-bold tracking-widest ${liveExchangeData ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400' : 'border-amber-500/20 bg-amber-500/5 text-amber-300'}`}>{liveExchangeData ? 'PROVIDER INDEX QUOTE' : 'ILLUSTRATIVE SAMPLE — NOT LIVE'}</span>
+                <span className={`mt-1 inline-flex rounded border px-2 py-0.5 text-[8px] font-mono font-bold tracking-widest ${liveExchangeData ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400' : 'border-amber-500/20 bg-amber-500/5 text-amber-300'}`}>{liveExchangeData ? 'PROVIDER INDEX QUOTE' : 'INDEX QUOTE UNAVAILABLE'}</span>
               </div>
               <button 
                 onClick={() => { setSelectedExchange(null); setChainReaction(null); }}
@@ -767,13 +767,13 @@ export default function MarketGlobe3D() {
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2.5 rounded-xl flex flex-col gap-1">
-                  <span className="text-[10px] text-zinc-500 font-medium">{liveExchangeData ? 'Sentiment (not supplied)' : 'Sample sentiment (not live)'}</span>
-                  <span className={`font-bold tracking-tight $text-amber-400`}>
+                  <span className="text-[10px] text-zinc-500 font-medium">Sentiment (not supplied)</span>
+                  <span className="font-bold tracking-tight text-amber-400">
                     {liveExchangeData?.sentiment || 'Not calculated from index quotes'}
                   </span>
                 </div>
                 <div className="bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2.5 rounded-xl flex flex-col gap-1">
-                  <span className="text-[10px] text-zinc-500 font-medium">{liveExchangeData ? 'Fear / Greed (not supplied)' : 'Sample Fear / Greed (not live)'}</span>
+                  <span className="text-[10px] text-zinc-500 font-medium">Fear / Greed (not supplied)</span>
                   <div className="flex items-center gap-1.5">
                     {fearGreedValue !== null && fearGreedValue > 70 ? <ThermometerSun className="w-3.5 h-3.5 text-emerald-400" /> : <ThermometerSnowflake className="w-3.5 h-3.5 text-amber-400" />}
                     <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
@@ -794,7 +794,7 @@ export default function MarketGlobe3D() {
 
               <div className="space-y-2 pt-1 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
                 <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                  <TrendingUp className="w-3 h-3 text-emerald-400" /> {liveExchangeData ? 'Top Gainers (not supplied)' : 'Sample Gainers (not live)'}
+                  <TrendingUp className="w-3 h-3 text-emerald-400" /> Top gainers (not supplied)
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {(Array.isArray(liveExchangeData?.gainers) ? liveExchangeData.gainers : []).map((gainer: string, i: number) => (
@@ -807,7 +807,7 @@ export default function MarketGlobe3D() {
 
               <div className="space-y-1.5 pt-2 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
                 <div className="flex items-center gap-1.5 text-[10px] text-indigo-400 font-bold uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded w-fit">
-                  <Newspaper className="w-3 h-3" /> {liveExchangeData ? 'Event feed unavailable' : 'Sample event text (not live)'}
+                  <Newspaper className="w-3 h-3" /> Exchange news (not connected)
                 </div>
                 <p className="text-xs text-zinc-300 leading-relaxed font-medium bg-zinc-950/50 p-2.5 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 mt-2">
                   "{liveExchangeData?.news || 'No verified exchange-specific news feed is connected.'}"
@@ -842,20 +842,20 @@ export default function MarketGlobe3D() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2.5 rounded-xl flex flex-col gap-1">
-                      <span className="text-[10px] text-zinc-500 font-medium">Sentiment model</span>
-                      <span className="font-bold tracking-tight text-white">{liveExchangeData.sentiment}</span>
+                      <span className="text-[10px] text-zinc-500 font-medium">Sentiment</span>
+                      <span className="font-bold tracking-tight text-white">Not calculated from index quotes</span>
                     </div>
                     <div className="bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2.5 rounded-xl flex flex-col gap-1">
-                      <span className="text-[10px] text-zinc-500 font-medium">Impacted Sector</span>
-                      <span className="font-bold text-white truncate">{liveExchangeData.topSector}</span>
+                      <span className="text-[10px] text-zinc-500 font-medium">Leading sector</span>
+                      <span className="font-bold text-white truncate">Not supplied by this feed</span>
                     </div>
                   </div>
                   <div className="space-y-1.5 pt-2 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
                     <div className="flex items-center gap-1.5 text-[10px] text-indigo-400 font-bold uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded w-fit">
-                      <Newspaper className="w-3 h-3" /> News / event source
+                      <Newspaper className="w-3 h-3" /> Exchange news unavailable
                     </div>
                     <p className="text-xs text-zinc-300 leading-relaxed font-medium bg-zinc-950/50 p-2.5 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 mt-2">
-                      "{liveExchangeData.news}"
+                      "No verified exchange-specific news provider is connected."
                     </p>
                   </div>
                   <button onClick={() => setChainReaction(selectedExchange)} className="w-full flex items-center justify-center gap-2 bg-indigo-500 text-white text-[10px] font-bold py-2.5 rounded-lg hover:bg-indigo-600 transition-colors uppercase tracking-widest">
@@ -865,7 +865,7 @@ export default function MarketGlobe3D() {
              ) : (
                 <>
                   <p className="text-xs text-zinc-400 mt-4 leading-relaxed bg-zinc-950/50 p-3 rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 font-medium">
-                    Waiting for Vymx Intelligence to lock onto region data flow...
+                    No verified quote or exchange-specific data is available for this exchange. The marker shows location only.
                   </p>
                 </>
              )}
