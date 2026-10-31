@@ -37,7 +37,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
   const [aiData, setAiData] = useState<any>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [deepDiveTile, setDeepDiveTile] = useState<string | null>(null);
-  const [quoteFeedStatus, setQuoteFeedStatus] = useState<'connecting' | 'connected' | 'unavailable'>('connecting');
+  const [quoteFeedStatus, setQuoteFeedStatus] = useState<'connecting' | 'connected' | 'partial' | 'unavailable'>('connecting');
 
   // Real-time data streams
   const [realtimeData, setRealtimeData] = useState<any>({
@@ -89,7 +89,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
         if (!isActive) return;
         if (res.ok && json.success && json.data) {
           setRealtimeData((previous: any) => ({ ...previous, ...json.data }));
-          setQuoteFeedStatus('connected');
+          setQuoteFeedStatus(Array.isArray(json.unavailable) && json.unavailable.length > 0 ? 'partial' : 'connected');
         } else {
           clearQuoteData();
           setQuoteFeedStatus('unavailable');
@@ -240,7 +240,7 @@ export default function VymxIntelligencePanel({ mode }: Props) {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span className={`text-[9px] font-mono font-bold tracking-widest uppercase ${quoteFeedStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400'}`}>{quoteFeedStatus === 'connected' ? 'QUOTE FEED CONNECTED' : quoteFeedStatus === 'connecting' ? 'CONNECTING' : 'QUOTE FEED UNAVAILABLE'}</span>
+            <span className={`text-[9px] font-mono font-bold tracking-widest uppercase ${quoteFeedStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400'}`}>{quoteFeedStatus === 'connected' ? 'QUOTE FEED CONNECTED' : quoteFeedStatus === 'partial' ? 'QUOTE FEED PARTIAL' : quoteFeedStatus === 'connecting' ? 'CONNECTING' : 'QUOTE FEED UNAVAILABLE'}</span>
           </div>
         </div>
 
