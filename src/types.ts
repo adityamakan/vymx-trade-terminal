@@ -8,6 +8,7 @@ export interface Asset {
   name: string;
   type: 'stock' | 'crypto' | 'forex' | 'commodity' | 'index' | 'bond';
   price: number;
+  currency?: string | null; // Provider-reported quote currency; null until verified.
   change: number; // percentage change, e.g. 1.25 or -0.84
   changeAbs: number; // absolute change, e.g. 5.12 or -1.20
   marketCap: number; // in Millions for smaller or Billions for larger, let's double specify standard
