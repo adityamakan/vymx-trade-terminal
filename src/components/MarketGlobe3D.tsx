@@ -645,20 +645,20 @@ export default function MarketGlobe3D() {
             <div className="bg-zinc-900/90 backdrop-blur-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 rounded-lg overflow-hidden flex relative group h-8 shadow-2xl shrink-0">
                <div className="absolute left-0 top-0 bottom-0 bg-zinc-900 z-10 px-2 flex items-center justify-center border-r border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 shadow-[2px_0_10px_rgba(0,0,0,0.5)]">
                  <span className="text-[9px] uppercase font-bold text-zinc-500 tracking-wider flex items-center gap-1">
-                   <Activity className="w-3 h-3 text-amber-500" /> Live
+                   <Activity className="w-3 h-3 text-amber-500" /> Feed
                  </span>
                </div>
                <div className="flex animate-marquee whitespace-nowrap items-center px-4 pl-16">
                  <div className="flex items-center gap-6 text-[10px] font-mono">
-                   <span className="text-zinc-300"><span className="text-emerald-400 font-bold">FED</span> RATE CUT PROB +12.4%</span>
+                   <span className="text-zinc-300"><span className="text-amber-400 font-bold">FED</span> RATE EXPECTATIONS: NOT CONNECTED</span>
                    <span className="text-zinc-600">•</span>
-                   <span className="text-zinc-300"><span className="text-rose-400 font-bold">CRUDE</span> BREAKS $85/BBL (-2.1%)</span>
+                   <span className="text-zinc-300"><span className="text-amber-400 font-bold">COMMODITY NEWS</span>: NOT CONNECTED</span>
                    <span className="text-zinc-600">•</span>
-                   <span className="text-zinc-300"><span className="text-amber-400 font-bold">NIFTY50</span> FII INFLOWS +$2.4B</span>
+                   <span className="text-zinc-300"><span className="text-amber-400 font-bold">FII/DII FLOWS</span>: NOT CONNECTED</span>
                    <span className="text-zinc-600">•</span>
-                   <span className="text-zinc-300"><span className="text-indigo-400 font-bold">GOLD</span> ALL-TIME HIGH IMMINENT</span>
+                   <span className="text-zinc-300"><span className="text-indigo-400 font-bold">GOLD</span>: SEE PROVIDER QUOTE PANEL</span>
                    <span className="text-zinc-600">•</span>
-                   <span className="text-zinc-300"><span className="text-emerald-400 font-bold">VIX</span> CRUSH TO 13.2</span>
+                   <span className="text-zinc-300"><span className="text-amber-400 font-bold">VIX</span>: SEE PROVIDER QUOTE PANEL</span>
                  </div>
                </div>
             </div>
@@ -936,7 +936,7 @@ export default function MarketGlobe3D() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2.5 rounded-xl flex flex-col gap-1">
-                      <span className="text-[10px] text-zinc-500 font-medium">Live Sentiment</span>
+                      <span className="text-[10px] text-zinc-500 font-medium">Sentiment model</span>
                       <span className="font-bold tracking-tight text-white">{liveExchangeData.sentiment}</span>
                     </div>
                     <div className="bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2.5 rounded-xl flex flex-col gap-1">
@@ -946,7 +946,7 @@ export default function MarketGlobe3D() {
                   </div>
                   <div className="space-y-1.5 pt-2 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
                     <div className="flex items-center gap-1.5 text-[10px] text-indigo-400 font-bold uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded w-fit">
-                      <Newspaper className="w-3 h-3" /> Live Event Alert
+                      <Newspaper className="w-3 h-3" /> News / event source
                     </div>
                     <p className="text-xs text-zinc-300 leading-relaxed font-medium bg-zinc-950/50 p-2.5 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 mt-2">
                       "{liveExchangeData.news}"
