@@ -331,6 +331,11 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                  30-Day Institutional Buy/Sell Trends (Net)
                </h3>
                <div className="h-72 w-full">
+                 {monthlyTrends.length === 0 ? (
+                   <div className="h-full flex items-center justify-center text-center text-xs text-zinc-500">
+                     No verified monthly FII/DII flow observations are available.
+                   </div>
+                 ) : (
                  <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={monthlyTrends} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                       <XAxis dataKey="date" stroke="#52525b" fontSize={11} tickMargin={10} />
@@ -347,6 +352,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                       <Bar dataKey="DII" name="Domestic (DII)" fill="#10b981" radius={[4, 4, 0, 0]} />
                     </BarChart>
                  </ResponsiveContainer>
+                 )}
                </div>
             </div>
           </div>
@@ -356,7 +362,7 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
           <div className="space-y-4">
             {filteredDeals.length === 0 ? (
                <div className="text-center py-12 text-zinc-500">
-                  No block deals found matching the current filters.
+                  No verified block-deal provider is connected. No sample transactions are presented.
                </div>
             ) : (
               filteredDeals.map((deal, idx) => (
@@ -396,18 +402,6 @@ export default function InstitutionalFlows({ formatCurrency }: { formatCurrency:
                           <div className="text-[10px] uppercase text-zinc-500 font-bold mb-1">Volume / Amount</div>
                           <div className={`font-mono font-bold ${deal.sentiment === 'Bullish' ? 'text-emerald-400' : 'text-rose-400'}`}>
                             {deal.sentiment === 'Bullish' ? '+' : '-'}{deal.currency} {(deal.amount / 1000000).toFixed(1)}M
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] uppercase text-zinc-500 font-bold mb-1">Dark Pool Vol</div>
-                          <div className="font-mono font-bold text-indigo-400">
-                            {((deal.amount * 0.42) / 1000000).toFixed(1)}M (42%)
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] uppercase text-zinc-500 font-bold mb-1">Smart Money Index</div>
-                          <div className={`font-mono font-bold ${deal.sentiment === 'Bullish' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                            {deal.sentiment === 'Bullish' ? '94.2' : '12.4'} (Extreme)
                           </div>
                         </div>
                       </div>
