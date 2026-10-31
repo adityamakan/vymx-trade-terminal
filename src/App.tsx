@@ -728,7 +728,7 @@ export default function App() {
 
             {currentView === 'chatbot' && (
               <motion.div key="chatbot" initial={{ opacity: 0, y: 20, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -20, filter: 'blur(4px)' }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
-                <FinancialChatbot activeAsset={selectedAsset} portfolio={portfolio} />
+                <FinancialChatbot activeAsset={selectedAsset} portfolio={portfolio} userId={authUser?.uid || 'guest'} />
               </motion.div>
             )}
 
