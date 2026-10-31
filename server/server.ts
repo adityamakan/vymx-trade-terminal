@@ -220,7 +220,7 @@ app.get('/api/macro/indicators', async (_req: Request, res: Response) => {
 // FRED access uses a server-side secret only. Never accept API keys from browsers.
 app.get('/api/fred/series/:seriesId', async (req: Request, res: Response) => {
   const apiKey = process.env.FRED_API_KEY;
-  if (!apiKey) return res.status(503).json({ success: false, code: 'PROVIDER_NOT_CONFIGURED', error: 'FRED integration is not configured' });
+  if (!apiKey && req.params.feature !== 'live-news') return res.status(503).json({ success: false, code: 'PROVIDER_NOT_CONFIGURED', error: 'FRED integration is not configured' });
   const seriesId = String(req.params.seriesId || '');
   if (!/^[A-Za-z0-9_-]{1,32}$/.test(seriesId)) return res.status(400).json({ success: false, error: 'Invalid FRED series ID' });
   try {
@@ -301,6 +301,7 @@ app.all('/api/ai/:feature', async (req: Request, res: Response) => {
   } else if (!prompt && Object.keys(body).length) {
     prompt = `Analyze the following user-provided context. Distinguish supplied facts from assumptions, do not invent live prices, breaking news, institutional flows, or economic releases, and state uncertainty clearly. Feature: ${req.params.feature}. Context: ${JSON.stringify(body)}`;
   }
+  if (body.systemInstruction) prompt = String(body.systemInstruction).slice(0, 2_000) + '\n\n' + prompt;
   prompt = prompt.slice(0, 12_000);
   if (!prompt) return res.status(503).json({
     success: false, code: 'FEATURE_DATA_NOT_CONFIGURED',
@@ -319,8 +320,8 @@ app.all('/api/ai/:feature', async (req: Request, res: Response) => {
     if (!answer) return res.status(502).json({ success: false, error: 'AI provider returned an empty response' });
     const common = { success: true, feature: req.params.feature, answer, text: answer, content: answer, reply: answer, generated: true, source: 'Google Gemini', fetchedAt: new Date().toISOString() };
     if (req.params.feature === 'advisor') {
-      const jsonBlock = answer.match(/```json\\s*([\\s\\S]*?)\\s*```/i);
-      const rawObject = jsonBlock?.[1] || answer.match(/\\{[\\s\\S]*\\}/)?.[0];
+      const jsonBlock = answer.match(/```json\s*([\s\S]*?)\s*```/i);
+      const rawObject = jsonBlock?.[1] || answer.match(/\{[\s\S]*\}/)?.[0];
       if (!rawObject) return res.status(502).json({ success: false, error: 'AI advisor did not return the required structured allocation' });
       try {
         const parsed = JSON.parse(rawObject);
@@ -330,7 +331,7 @@ app.all('/api/ai/:feature', async (req: Request, res: Response) => {
         if (values.some((value) => !Number.isFinite(value) || value < 0 || value > 100) || values.reduce((sum, value) => sum + value, 0) !== 100) {
           return res.status(502).json({ success: false, error: 'AI advisor allocation failed validation; percentages must sum to 100' });
         }
-        const reasoning = answer.replace(/```json[\\s\\S]*?```/gi, '').trim();
+        const reasoning = answer.replace(/```json[\s\S]*?```/gi, '').trim();
         return res.json({ ...common, result: { ...parsed, allocation, reasoning } });
       } catch {
         return res.status(502).json({ success: false, error: 'AI advisor returned invalid structured output' });
