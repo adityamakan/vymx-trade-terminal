@@ -458,6 +458,22 @@ app.get('/api/ai/exchange-latest', async (req: Request, res: Response) => {
 // AI routes share a single server-side Gemini integration. If no key exists,
 // return an explicit unavailable response rather than invented fallback content.
 const aiRequestWindow = new Map<string, number[]>();
+// These panels require specialized external datasets. Do not let a generic
+// language model invent geopolitical events, institutional transactions or
+// scheduled economic releases when those feeds are not configured.
+app.all('/api/ai/geopolitics', (_req: Request, res: Response) => res.status(503).json({
+  success: false, code: 'GEOPOLITICAL_FEED_UNAVAILABLE',
+  error: 'No verified geopolitical event and news provider is connected.'
+}));
+app.all('/api/ai/institutional-flows', (_req: Request, res: Response) => res.status(503).json({
+  success: false, code: 'INSTITUTIONAL_FLOW_FEED_UNAVAILABLE',
+  error: 'No verified FII/DII, block-deal or institutional transaction provider is connected.'
+}));
+app.all('/api/ai/economic-calendar', (_req: Request, res: Response) => res.status(503).json({
+  success: false, code: 'ECONOMIC_CALENDAR_UNAVAILABLE',
+  error: 'No verified economic-release calendar provider is connected.'
+}));
+
 const supportedAiFeatures = new Set([
   'advisor', 'live-news', 'geopolitics', 'generic-chat', 'chat', 'hedge', 'explain',
   'quiz', 'narrative', 'exchange-latest', 'market-auras', 'institutional-flows',
