@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "react-example",
+      "name": "vymx-trade-terminal",
       "dependencies": {
         "@google/genai": "^2.4.0",
         "@react-three/drei": "^10.7.7",
