@@ -165,6 +165,54 @@ app.post('/api/prices', async (req: Request, res: Response) => {
   });
 });
 
+// FX conversion rates expressed as USD value for one unit of foreign currency.
+const USD_FX_QUOTES: Record<string, { symbol: string; invert: boolean }> = {
+  INR: { symbol: 'INR=X', invert: true }, EUR: { symbol: 'EURUSD=X', invert: false },
+  GBP: { symbol: 'GBPUSD=X', invert: false }, JPY: { symbol: 'JPY=X', invert: true },
+  CAD: { symbol: 'CAD=X', invert: true }, AUD: { symbol: 'AUDUSD=X', invert: false },
+  CHF: { symbol: 'CHF=X', invert: true }, KRW: { symbol: 'KRW=X', invert: true },
+  TWD: { symbol: 'TWD=X', invert: true }, HKD: { symbol: 'HKD=X', invert: true },
+  CNY: { symbol: 'CNY=X', invert: true }, SGD: { symbol: 'SGD=X', invert: true },
+  SEK: { symbol: 'SEK=X', invert: true }, NZD: { symbol: 'NZDUSD=X', invert: false },
+  MXN: { symbol: 'MXN=X', invert: true }, BRL: { symbol: 'BRL=X', invert: true }
+};
+
+app.get('/api/fx/rates', async (req: Request, res: Response) => {
+  const base = String(req.query.base || 'USD').toUpperCase();
+  const requested = String(req.query.currencies || '').split(',').map((value) => value.trim().toUpperCase()).filter(Boolean);
+  if (base !== 'USD') return res.status(400).json({ success: false, error: 'Only USD base conversion is currently supported.' });
+  if (requested.length > 30 || requested.some((currency) => !/^[A-Z]{3}$/.test(currency))) {
+    return res.status(400).json({ success: false, error: 'Provide up to 30 valid ISO currency codes.' });
+  }
+  const currencies = [...new Set(requested)];
+  const rates: Record<string, number> = { USD: 1 };
+  const unavailable: string[] = [];
+  for (let index = 0; index < currencies.length; index += 6) {
+    const batch = currencies.slice(index, index + 6);
+    const results = await Promise.all(batch.map(async (currency) => {
+      if (currency === 'USD') return [currency, 1] as const;
+      const config = USD_FX_QUOTES[currency];
+      if (!config) return [currency, null] as const;
+      try {
+        const quote = await fetchQuote(config.symbol);
+        const rate = config.invert ? 1 / quote.price : quote.price;
+        return [currency, Number.isFinite(rate) && rate > 0 ? rate : null] as const;
+      } catch {
+        return [currency, null] as const;
+      }
+    }));
+    for (const [currency, rate] of results) {
+      if (rate == null) unavailable.push(currency);
+      else rates[currency] = rate;
+    }
+  }
+  return res.json({
+    success: true, base: 'USD', rates, unavailable,
+    source: 'Yahoo Finance FX quotes', fetchedAt: new Date().toISOString(),
+    note: 'Rates are indicative provider quotes, not executable conversion prices. Historical valuations use the latest retrieved rate available at snapshot time.'
+  });
+});
+
 app.get('/api/market-snapshot', async (_req: Request, res: Response) => {
   const symbols = ['^NSEI', '^BSESN', '^GSPC', '^IXIC', 'BTC-USD', '^VIX'];
   const result = await getPrices(symbols);
