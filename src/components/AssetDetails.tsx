@@ -239,6 +239,12 @@ export default function AssetDetails({
       transition={{ duration: 0.3 }}
     >
 
+      {isDataOffline && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-[10px] leading-relaxed text-amber-200">
+          The provider quote feed is offline or has not delivered a verified update. The displayed price may be a static sample value; do not treat it as current.
+        </div>
+      )}
+
       {/* 1. Header Segment with Core Price & Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-zinc-900 pb-5 relative"><div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
         <div className="flex flex-col md:flex-row items-start gap-4">
@@ -381,14 +387,14 @@ export default function AssetDetails({
                   keyThemes = isUp
                     ? ['On-chain Wallet Accumulation', 'Meme & Layer2 Narrative Heat', 'DeFi Liquidity Pools Inflows']
                     : ['Macro Sentiment De-Risking', 'Derivatives Open-Interest Over-leveraging', 'Halving Post-Cycle Soft Floor'];
-                  summary = `${asset.name} (${asset.symbol}) is showing a 24-hour displacement of ${asset.change.toFixed(2)}% to settle at ${formatCurrency(asset.price, asset.type)}. Lacking physical P/E ratios, blockchain activity indices and stablecoin buying metrics act as key drivers. Baseline support is establishing nicely near the 52-week low bounds of ${formatCurrency(asset.low52w, asset.type)}.`;
+                  summary = `${asset.name} (${asset.symbol}) is showing a 24-hour displacement of ${asset.change.toFixed(2)}% to settle at ${formatCurrency(asset.price, asset.type)}. Lacking physical P/E ratios, blockchain activity indices and stablecoin buying metrics act as key drivers. Baseline support is establishing nicely near the 52-week low bounds of ${low52Value == null ? 'N/A' : formatCurrency(low52Value, asset.type)}.`;
                 } else if (asset.type === 'stock') {
                   if (isUp) {
                     if (pe && pe < 18) {
                       recommendation = 'STRONG BUY';
                       sentimentScore = 89;
                       keyThemes = ['Undervalued P/E Multiples', 'Institutional Buying Core Support', 'Robust Capital Allocations'];
-                      summary = `${asset.name} is demonstrating exceptional capital resilience with a strong 24h change of ${asset.change.toFixed(2)}%. Trading at a highly attractive P/E valuation of ${pe}, it represents excellent defensive coverage. Indicators point toward heavy volume accumulation above the initial ${formatCurrency(asset.openPrice, asset.type)} floor.`;
+                      summary = `${asset.name} is demonstrating exceptional capital resilience with a strong 24h change of ${asset.change.toFixed(2)}%. Trading at a highly attractive P/E valuation of ${pe}, it represents excellent defensive coverage. Indicators point toward heavy volume accumulation above the initial ${openValue == null ? 'N/A' : formatCurrency(openValue, asset.type)} floor.`;
                     } else {
                       recommendation = 'ACCUMULATE';
                       sentimentScore = 76;
@@ -400,12 +406,12 @@ export default function AssetDetails({
                       recommendation = 'REDUCE';
                       sentimentScore = 31;
                       keyThemes = ['Premium P/E Multiple Compress', 'Technical Trend Support Break', 'Post-Earnings Capital Shift'];
-                      summary = `${asset.name} is undergoing a minor consolidation pattern, dropping ${asset.change.toFixed(2)}%. The premium P/E valuation profile (${pe}) introduces intermediate valuation headwinds. Momentum shifts lean negative until consolidated baselines stabilize around ${formatCurrency(asset.low52w, asset.type)}.`;
+                      summary = `${asset.name} is undergoing a minor consolidation pattern, dropping ${asset.change.toFixed(2)}%. The premium P/E valuation profile (${pe}) introduces intermediate valuation headwinds. Momentum shifts lean negative until consolidated baselines stabilize around ${low52Value == null ? 'N/A' : formatCurrency(low52Value, asset.type)}.`;
                     } else {
                       recommendation = 'UNDER REVIEW';
                       sentimentScore = 47;
                       keyThemes = ['Dynamic Support Reinforcement', 'Range-Bound Distribution', 'Volatility Squeeze Pattern'];
-                      summary = `${asset.name} is consolidating with a 24-hour movement of ${asset.change.toFixed(2)}%. Fundamental balance sheets are steady, but macro rates introduce a range-bound profile. Watch for breakout triggers above the 52-week peak high of ${formatCurrency(asset.high52w, asset.type)}.`;
+                      summary = `${asset.name} is consolidating with a 24-hour movement of ${asset.change.toFixed(2)}%. Fundamental balance sheets are steady, but macro rates introduce a range-bound profile. Watch for breakout triggers above the 52-week peak high of ${high52Value == null ? 'N/A' : formatCurrency(high52Value, asset.type)}.`;
                     }
                   }
                 } else {
@@ -414,7 +420,7 @@ export default function AssetDetails({
                   keyThemes = isUp
                     ? ['Sovereign Arbitrage Flows', 'Hedged Alternative Inbound', 'Global Trade Spread Widening']
                     : ['Capital Outflows to High Yields', 'Safehaven Assets Rotation', 'Demand Curve Readjustments'];
-                  summary = `${asset.symbol} is responding dynamically to micro-rate revisions, currently priced at ${formatCurrency(asset.price, asset.type)}. Dynamic resistance stands near ${formatCurrency(asset.high52w, asset.type)}, guiding risk managers to maintain neutral exposure matrices.`;
+                  summary = `${asset.symbol} is responding dynamically to micro-rate revisions, currently priced at ${formatCurrency(asset.price, asset.type)}. Dynamic resistance stands near ${high52Value == null ? 'N/A' : formatCurrency(high52Value, asset.type)}, guiding risk managers to maintain neutral exposure matrices.`;
                 }
 
                 let recommendationColor = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
@@ -495,33 +501,33 @@ export default function AssetDetails({
 
           {/* Quick Metrics grid stats panel */}
           <div className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/60 backdrop-blur-lg p-5 shadow-lg space-y-4">
-            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-900 pb-2">Trading metrics & stats</h3>
-            <p className="text-[9px] text-amber-300/80">Bundled RSI, MACD and volatility placeholders below are illustrative only. Use provider-backed financial statements and the embedded TradingView chart for current market information.</p>
+            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-900 pb-2">Provider fundamentals & quote statistics</h3>
+            <p className="text-[9px] text-amber-300/80">Fundamentals are sourced from Yahoo Finance when available; missing fields show N/A. The RSI, MACD and volatility placeholders in the lower matrix are illustrative only.</p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-xs">
               <div className="space-y-1">
                 <p className="text-zinc-500 font-medium border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 border-dashed w-fit cursor-help" title="Market Cap: Total dollar value of a company's outstanding shares. Formula: Share Price × Total Number of Shares.">Market Capitalization</p>
-                <p className="text-sm font-bold text-white">{asset.marketCapDisplay}</p>
+                <p className="text-sm font-bold text-white">{formatCompactCurrency(marketCapValue)}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-zinc-500 font-medium border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 border-dashed w-fit cursor-help" title="P/E Ratio: Price-to-Earnings. How much investors are willing to pay per dollar of earnings. High means growth expected or overvalued.">P/E Valuation Ratio</p>
-                <p className="text-sm font-bold text-white">{asset.peRatio !== null ? asset.peRatio : 'N/A'}</p>
+                <p className="text-sm font-bold text-white">{peValue == null ? 'N/A' : peValue.toFixed(2)}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-zinc-500 font-medium border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 border-dashed w-fit cursor-help" title="Volume: The total number of shares/contracts traded in a single day. High volume indicates strong market interest.">Standard Volume</p>
-                <p className="text-sm font-bold text-white">{asset.volumeDisplay}</p>
+                <p className="text-sm font-bold text-white">{formatCompactNumber(volumeValue)}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-zinc-500 font-medium border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 border-dashed w-fit cursor-help" title="The highest price this asset has traded at over the past year.">52-Week Peak High</p>
-                <p className="text-sm font-semibold text-emerald-400">{formatCurrency(asset.high52w, asset.type)}</p>
+                <p className="text-sm font-semibold text-emerald-400">{high52Value == null ? 'N/A' : formatCurrency(high52Value, asset.type)}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-zinc-500 font-medium font-sans border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 border-dashed w-fit cursor-help" title="The lowest price this asset has traded at over the past year.">52-Week Valley Low</p>
-                <p className="text-sm font-semibold text-rose-450">{formatCurrency(asset.low52w, asset.type)}</p>
+                <p className="text-sm font-semibold text-rose-450">{low52Value == null ? 'N/A' : formatCurrency(low52Value, asset.type)}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-zinc-500 font-medium border-b border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 border-dashed w-fit cursor-help" title="Opening Price: The first price at which this asset traded upon the market opening today.">Opening Price</p>
-                <p className="text-sm font-bold text-white">{formatCurrency(asset.openPrice, asset.type)}</p>
+                <p className="text-sm font-bold text-white">{openValue == null ? 'N/A' : formatCurrency(openValue, asset.type)}</p>
               </div>
             </div>
 
