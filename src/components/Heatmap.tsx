@@ -95,9 +95,6 @@ export default function Heatmap({
   const [timeframe, setTimeframe] = useState<"15m" | "1H" | "4H" | "1D" | "1W">(
     "1D",
   );
-  const [simSpeed, setSimSpeed] = useState<
-    "slow" | "normal" | "fast" | "paused"
-  >("normal");
   const [hoveredAsset, setHoveredAsset] = useState<Asset | null>(null);
   const [flashUpdateSym, setFlashUpdateSym] = useState<{
     [key: string]: "up" | "down" | null;
@@ -111,110 +108,7 @@ export default function Heatmap({
     }
   }, [assets]);
 
-  // Simulated ticks logic - makes prices fluctuate to demonstrate real-time discovery!
-  useEffect(() => {
-    if (simSpeed === "paused") return;
-
-    const intervalTime =
-      simSpeed === "fast" ? 1200 : simSpeed === "slow" ? 4500 : 2500;
-
-    const priceUpdater = setInterval(() => {
-      // Pick random assets to fluctuate
-      const updateCount = Math.floor(Math.random() * 4) + 1;
-      setLiveAssets((prevAssets) => {
-        const nextAssets = [...prevAssets];
-        const newFlashes: { [key: string]: "up" | "down" | null } = {};
-
-        for (let k = 0; k < updateCount; k++) {
-          const randomIndex = Math.floor(Math.random() * nextAssets.length);
-          const asset = nextAssets[randomIndex];
-
-          // Determine fluctuation pct
-          const changeWeight =
-            asset.type === "crypto"
-              ? 0.012
-              : asset.type === "forex"
-                ? 0.0008
-                : 0.005;
-          const delta = (Math.random() - 0.49) * changeWeight; // slight positive bias
-          const isUp = delta >= 0;
-
-          const updatedPrice = parseFloat(
-            (asset.price * (1 + delta)).toFixed(
-              asset.type === "forex" || asset.type === "bond" ? 4 : 2,
-            ),
-          );
-
-          // Validation Wrapper: Ensure calculated price data is valid
-          if (
-            updatedPrice === null ||
-            updatedPrice === undefined ||
-            isNaN(updatedPrice) ||
-            !isFinite(updatedPrice) ||
-            updatedPrice < 0
-          ) {
-            console.error(`[Data Integrity Error] Simulated Market Data Update Failed: Invalid price calculated for ${asset.symbol} - Price: ${updatedPrice}`);
-            continue;
-          }
-
-          const tickPctChange = delta * 100;
-          const currentChange = (asset.change !== undefined && !isNaN(asset.change)) ? asset.change : 0;
-          const updatedChangePct = parseFloat(
-            (currentChange + tickPctChange).toFixed(2),
-          );
-
-          if (isNaN(updatedChangePct) || !isFinite(updatedChangePct)) {
-            console.error(`[Data Integrity Error] Simulated Market Data Update Failed: Invalid change calculated for ${asset.symbol} - Change: ${updatedChangePct}`);
-            continue;
-          }
-
-          const currentChangeAbs = (asset.changeAbs !== undefined && !isNaN(asset.changeAbs)) ? asset.changeAbs : 0;
-          const updatedChangeAbs = parseFloat(
-            (currentChangeAbs + asset.price * delta).toFixed(
-              asset.type === "forex" || asset.type === "bond" ? 4 : 2,
-            ),
-          );
-
-          if (isNaN(updatedChangeAbs) || !isFinite(updatedChangeAbs)) {
-            console.error(`[Data Integrity Error] Simulated Market Data Update Failed: Invalid absolute change calculated for ${asset.symbol} - ChangeAbs: ${updatedChangeAbs}`);
-            continue;
-          }
-
-          // Calculate new limits
-          const high52w = Math.max(asset.high52w || updatedPrice, updatedPrice);
-          const low52w = Math.min(asset.low52w || updatedPrice, updatedPrice);
-
-          nextAssets[randomIndex] = {
-            ...asset,
-            price: updatedPrice,
-            change: updatedChangePct,
-            changeAbs: updatedChangeAbs,
-            high52w,
-            low52w,
-          };
-
-          newFlashes[asset.symbol] = isUp ? "up" : "down";
-        }
-
-        setFlashUpdateSym((prev) => ({ ...prev, ...newFlashes }));
-
-        // Auto clear flashes
-        setTimeout(() => {
-          setFlashUpdateSym((prev) => {
-            const cleared = { ...prev };
-            Object.keys(newFlashes).forEach((sym) => {
-              cleared[sym] = null;
-            });
-            return cleared;
-          });
-        }, 850);
-
-        return nextAssets;
-      });
-    }, intervalTime);
-
-    return () => clearInterval(priceUpdater);
-  }, [simSpeed]);
+  // Price changes are sourced from the parent market-data feed; this view never mutates quotes locally.
 
   // Handle Search & Regional filtering
   const filteredAssets = useMemo(() => {
@@ -313,12 +207,10 @@ export default function Heatmap({
       return `${relativePosition.toFixed(0)}% Range`;
     }
     if (metricView === "flowVelocity") {
-      const flow = getTimeframeChange(asset) * 1.5;
-      return `${flow >= 0 ? "+" : ""}${flow.toFixed(1)}B Flow`;
+      return 'N/A';
     }
     if (metricView === "volatility") {
-      const vol = Math.abs(asset.change) * 4.2 + 10;
-      return `${vol.toFixed(1)} VI`;
+      return 'N/A';
     }
     return `${asset.change >= 0 ? "+" : ""}${asset.change.toFixed(2)}%`;
   };
@@ -351,15 +243,15 @@ export default function Heatmap({
       return "bg-zinc-900 text-zinc-400 border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300";
     }
     if (metricView === "flowVelocity") {
-      const flow = asset.change * 1.5;
+      const flow = asset.change;
       if (flow > 2) return "bg-cyan-950/80 text-cyan-300 border-cyan-500/30";
       if (flow < -2) return "bg-orange-950/80 text-orange-300 border-orange-500/30";
       return "bg-zinc-900 text-zinc-400 border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300";
     }
     if (metricView === "volatility") {
-      const vol = Math.abs(asset.change) * 4.2 + 10;
-      if (vol > 25) return "bg-fuchsia-950/80 text-fuchsia-300 border-fuchsia-500/30";
-      if (vol > 15) return "bg-purple-950/60 text-purple-300 border-purple-500/20";
+      const vol = Math.abs(asset.change);
+      if (vol > 3) return "bg-fuchsia-950/80 text-fuchsia-300 border-fuchsia-500/30";
+      if (vol > 1.5) return "bg-purple-950/60 text-purple-300 border-purple-500/20";
       return "bg-zinc-900 text-zinc-400 border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300";
     }
     return getChangeBgColor(getTimeframeChange(asset), colorScheme);
@@ -377,31 +269,14 @@ export default function Heatmap({
             </h1>
           </div>
           <p className="text-xs text-zinc-400 mt-1 max-w-2xl">
-            Real-time visualization map of financial assets sorted by weights
-            and performance. Simulated tick fluctuations are live to support
-            asset discovery, absolute trends and regional opportunities.
+            Market snapshot visualization using the latest prices supplied by the connected market-data feed. Values update when the parent feed refreshes; no local price simulation is applied.
           </p>
         </div>
 
-        {/* Live Simulation Speed Controllers */}
-        <div className="flex items-center gap-2 bg-zinc-900/50 p-1.5 rounded-xl border border-zinc-850 self-start md:self-auto">
-          <span className="text-[10px] uppercase font-bold text-zinc-500 px-2 font-mono flex items-center gap-1">
-            <Zap className="h-3 w-3 text-amber-500" /> Live Stream:
-          </span>
-          {(["slow", "normal", "fast", "paused"] as const).map((speed) => (
-            <button
-              key={speed}
-              onClick={() => setSimSpeed(speed)}
-              className={`rounded-lg px-2 text-[10px] font-mono py-1 capitalize font-bold transition-all ${
-                simSpeed === speed
-                  ? "bg-zinc-800 text-amber-400 border border-zinc-700 shadow"
-                  : "text-zinc-400 hover:text-white hover:bg-zinc-800/30"
-              }`}
-            >
-              {speed}
-            </button>
-          ))}
+        <div className="text-[10px] uppercase font-bold text-zinc-500 px-3 py-2 rounded-lg border border-zinc-800">
+          Provider snapshot · no local price simulation
         </div>
+      </div>
       </div>
 
       {/* 2. Top-Bar Banner Ticker tape */}
@@ -1270,13 +1145,13 @@ export default function Heatmap({
               <div className="flex justify-between items-center">
                 <span className="text-zinc-500">Volatility(IV)</span>
                 <span className="font-bold text-amber-400">
-                  {(15 + ((hoveredAsset.symbol.charCodeAt(0) * 3) % 40)).toFixed(1)}%
+                  N/A
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-zinc-500">Beta vs SPY</span>
                 <span className="font-bold text-zinc-300">
-                  {(0.5 + ((hoveredAsset.symbol.charCodeAt(0) * 1.1) % 1.5)).toFixed(2)}
+                  N/A
                 </span>
               </div>
               <div className="flex justify-between items-center">
