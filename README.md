@@ -91,6 +91,9 @@ Without optional provider credentials, the corresponding endpoints return explic
 
 - Yahoo Finance is an unofficial upstream data source. Availability, latency, licensing and rate limits are outside this application's control.
 - Quote responses include source and timestamps and report partial failures rather than fabricating missing prices.
+- Historical analysis panels request OHLCV candles from the server-side Yahoo Finance adapter; identical symbol/range requests are deduplicated and cached briefly in the browser and server.
+- Bundled initial asset metadata is a demo fallback, not a current quote. Dashboard and asset-detail views disclose offline mode, and simulated orders are blocked until a provider quote update arrives.
+- Some advanced technical-indicator placeholders and competitor reference metadata remain illustrative and are labeled as such.
 - In-memory caches are bounded and expire automatically.
 - WebSocket broadcasts are throttled to the quote-cache cadence and protected against overlapping refreshes.
 - API keys are read only from server-side environment variables. Never send provider secrets from the browser in custom headers.
