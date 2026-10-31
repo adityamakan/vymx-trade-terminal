@@ -239,6 +239,69 @@ export default function AssetDetails({
     notation: 'compact', maximumFractionDigits: 2
   }).format(value);
 
+  const technicalMetrics = React.useMemo(() => {
+    const prices = verifiedHistory.map((point) => point.value);
+    if (prices.length < 15) return { rsi: null, macdHistogram: null, realizedVolatility: null, sharpe: null, sortino: null };
+    const changes = prices.slice(1).map((price, index) => price - prices[index]);
+    const recentChanges = changes.slice(-14);
+    const averageGain = recentChanges.reduce((sum, value) => sum + Math.max(value, 0), 0) / recentChanges.length;
+    const averageLoss = recentChanges.reduce((sum, value) => sum + Math.max(-value, 0), 0) / recentChanges.length;
+    const rsi = averageLoss === 0 ? (averageGain === 0 ? 50 : 100) : 100 - (100 / (1 + averageGain / averageLoss));
+
+    const ema = (values: number[], period: number) => {
+      const multiplier = 2 / (period + 1);
+      let previous = values[0];
+      return values.map((value, index) => {
+        if (index === 0) return previous;
+        previous = value * multiplier + previous * (1 - multiplier);
+        return previous;
+      });
+    };
+    let macdHistogram: number | null = null;
+    if (prices.length >= 35) {
+      const fast = ema(prices, 12);
+      const slow = ema(prices, 26);
+      const macdLine = fast.map((value, index) => value - slow[index]);
+      const signal = ema(macdLine, 9);
+      macdHistogram = macdLine[macdLine.length - 1] - signal[signal.length - 1];
+    }
+
+    const returns = prices.slice(1).map((price, index) => price / prices[index] - 1).filter(Number.isFinite);
+    const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
+    const stdDev = (values: number[]) => {
+      if (values.length < 2) return null;
+      const average = mean(values);
+      return Math.sqrt(values.reduce((sum, value) => sum + (value - average) ** 2, 0) / (values.length - 1));
+    };
+    const recentReturns = returns.slice(-30);
+    const realizedVolatility = recentReturns.length >= 10 && stdDev(recentReturns) != null
+      ? (stdDev(recentReturns) as number) * Math.sqrt(252) * 100
+      : null;
+    const returnVolatility = stdDev(returns);
+    const downsideReturns = returns.map((value) => Math.min(value, 0));
+    const downsideDeviation = Math.sqrt(mean(downsideReturns.map((value) => value ** 2)));
+    const sharpe = returnVolatility == null || returnVolatility === 0 ? null : mean(returns) / returnVolatility * Math.sqrt(252);
+    const sortino = downsideDeviation === 0 ? null : mean(returns) / downsideDeviation * Math.sqrt(252);
+
+    return { rsi, macdHistogram, realizedVolatility, sharpe, sortino };
+  }, [verifiedHistory]);
+
+  const formatMetric = (value: number | null, digits = 2) => value == null || !Number.isFinite(value) ? 'N/A' : value.toFixed(digits);
+  const technicalRows = [
+    { label: 'RSI (14)', value: formatMetric(technicalMetrics.rsi), note: 'Daily closes' },
+    { label: 'MACD histogram', value: formatMetric(technicalMetrics.macdHistogram, 4), note: 'EMA 12/26/9' },
+    { label: '30D realized volatility', value: formatMetric(technicalMetrics.realizedVolatility) + (technicalMetrics.realizedVolatility == null ? '' : '%'), note: 'Annualized' },
+    { label: 'Sharpe ratio', value: formatMetric(technicalMetrics.sharpe), note: 'Risk-free rate = 0' },
+    { label: 'Sortino ratio', value: formatMetric(technicalMetrics.sortino), note: 'Risk-free rate = 0' },
+    { label: 'Beta', value: 'N/A', note: 'Benchmark regression not connected' },
+    { label: 'VWAP', value: 'N/A', note: 'Intraday trade data not connected' },
+    { label: 'Dark-pool volume', value: 'N/A', note: 'No dark-pool provider' },
+    { label: 'Short interest', value: 'N/A', note: 'No short-interest provider' },
+    { label: 'Institutional ownership', value: 'N/A', note: 'No ownership dataset' },
+    { label: 'Altman Z-score', value: 'N/A', note: 'Financial model not implemented' },
+    { label: 'Piotroski F-score', value: 'N/A', note: 'Financial model not implemented' }
+  ];
+
   return (
     <motion.div
       className="py-6 space-y-6"
@@ -409,80 +472,21 @@ export default function AssetDetails({
               </div>
             </div>
 
-            {/* 100x Information Density Advanced Metrics Matrix */}
-            <div className="border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 mt-5 pt-5 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-x-6 gap-y-4">
-               <div className="space-y-1">
-                 <p className="text-[10px] uppercase font-mono tracking-widest text-zinc-500">RSI(14)</p>
-                 <p className={`text-xs font-bold font-mono ${20 + (asset.symbol.charCodeAt(0) * 7 % 60) > 65 ? 'text-rose-400' : 20 + (asset.symbol.charCodeAt(0) * 7 % 60) < 35 ? 'text-emerald-400' : 'text-zinc-300'}`}>
-                   {(20 + (asset.symbol.charCodeAt(0) * 7 % 60)).toFixed(2)}
-                 </p>
-               </div>
-               <div className="space-y-1">
-                 <p className="text-[10px] uppercase font-mono tracking-widest text-zinc-500">MACD</p>
-                 <p className={`text-xs font-bold font-mono ${asset.change > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                   {asset.change > 0 ? '+' : ''}{(asset.change * 0.42).toFixed(3)}
-                 </p>
-               </div>
-               <div className="space-y-1">
-                 <p className="text-[10px] uppercase font-mono tracking-widest text-zinc-500">Volat(IV)</p>
-                 <p className="text-xs font-bold font-mono text-amber-400">
-                   {(15 + (asset.symbol.charCodeAt(0) * 3 % 40)).toFixed(1)}%
-                 </p>
-               </div>
-               <div className="space-y-1">
-                 <p className="text-[10px] uppercase font-mono tracking-widest text-zinc-500">Beta</p>
-                 <p className="text-xs font-bold font-mono text-zinc-300">
-                   {(0.5 + (asset.symbol.charCodeAt(0) * 1.1 % 1.5)).toFixed(2)}
-                 </p>
-               </div>
-               <div className="space-y-1">
-                 <p className="text-[10px] uppercase font-mono tracking-widest text-zinc-500">VWAP</p>
-                 <p className="text-xs font-bold font-mono text-indigo-400">
-                   {formatCurrency(asset.price * (1 - (asset.change * 0.001)), asset.type)}
-                 </p>
-               </div>
-               <div className="space-y-1">
-                 <p className="text-[10px] uppercase font-mono tracking-widest text-zinc-500">Dark Pool</p>
-                 <div className="h-1.5 w-full bg-zinc-900 rounded-full mt-1.5 overflow-hidden">
-                    <div className="bg-purple-500 h-full" style={{ width: `${30 + (asset.symbol.charCodeAt(0) * 5 % 50)}%` }}></div>
-                 </div>
-               </div>
-               <div className="space-y-1">
-                 <p className="text-[10px] uppercase font-mono tracking-widest text-zinc-500">Short Int</p>
-                 <p className="text-xs font-bold font-mono text-zinc-300">
-                   {(2 + (asset.symbol.charCodeAt(0) * 0.5 % 15)).toFixed(1)}%
-                 </p>
-               </div>
-               <div className="space-y-1">
-                 <p className="text-[10px] uppercase font-mono tracking-widest text-zinc-500">Inst Own</p>
-                 <p className="text-xs font-bold font-mono text-emerald-400">
-                   {(40 + (asset.symbol.charCodeAt(0) * 2 % 45)).toFixed(1)}%
-                 </p>
-               </div>
-               <div className="space-y-1">
-                 <p className="text-[10px] uppercase font-mono tracking-widest text-zinc-500">Sharpe</p>
-                 <p className="text-xs font-bold font-mono text-zinc-300">
-                   {(1.1 + (asset.symbol.charCodeAt(0) * 0.1 % 1.5)).toFixed(2)}
-                 </p>
-               </div>
-               <div className="space-y-1">
-                 <p className="text-[10px] uppercase font-mono tracking-widest text-zinc-500">Sortino</p>
-                 <p className="text-xs font-bold font-mono text-zinc-300">
-                   {(1.5 + (asset.symbol.charCodeAt(0) * 0.15 % 2.0)).toFixed(2)}
-                 </p>
-               </div>
-               <div className="space-y-1">
-                 <p className="text-[10px] uppercase font-mono tracking-widest text-zinc-500">Altman Z</p>
-                 <p className={`text-xs font-bold font-mono ${(3.0 + (asset.symbol.charCodeAt(0) * 0.2 % 4.0)) > 2.99 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                   {(3.0 + (asset.symbol.charCodeAt(0) * 0.2 % 4.0)).toFixed(2)}
-                 </p>
-               </div>
-               <div className="space-y-1">
-                 <p className="text-[10px] uppercase font-mono tracking-widest text-zinc-500">Piotroski</p>
-                 <p className="text-xs font-bold font-mono text-emerald-400">
-                   {Math.floor(4 + (asset.symbol.charCodeAt(0) % 5))}/9
-                 </p>
-               </div>
+            {/* Provider-backed technical metrics */}
+            <div className="border-t border-zinc-800/60 mt-5 pt-5 space-y-3">
+              <div>
+                <h4 className="text-[10px] uppercase font-mono tracking-widest text-zinc-400">Technical & Risk Metrics</h4>
+                <p className="text-[9px] text-zinc-600 mt-1">RSI, MACD, realized volatility, Sharpe and Sortino are calculated from provider-backed daily closes. Sharpe/Sortino assume a zero risk-free rate. Unconnected datasets are shown as N/A.</p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-5 gap-y-4">
+                {technicalRows.map((row) => (
+                  <div key={row.label} className="space-y-1">
+                    <p className="text-[10px] uppercase font-mono tracking-widest text-zinc-500">{row.label}</p>
+                    <p className="text-xs font-bold font-mono text-zinc-200">{row.value}</p>
+                    <p className="text-[8px] text-zinc-600">{row.note}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
