@@ -22,8 +22,9 @@ export default function CompetitorDashboard({ asset, assets, formatCurrency }: C
     <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/60 backdrop-blur-lg p-5 shadow-lg space-y-4 mt-6">
       <div className="flex items-center gap-2 border-b border-zinc-900 pb-3">
         <Users className="h-4 w-4 text-emerald-400" />
-        <h3 className="text-xs font-bold tracking-wider uppercase text-zinc-300">Sector Competitors ({asset.sector})</h3>
+        <h3 className="text-xs font-bold tracking-wider uppercase text-zinc-300">Sector Competitor Reference ({asset.sector})</h3>
       </div>
+      <p className="text-[9px] text-zinc-500">Sector membership and market-cap ranking use bundled reference metadata. Prices and daily changes update from the quote feed when available.</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {topCompetitors.map((comp) => (
