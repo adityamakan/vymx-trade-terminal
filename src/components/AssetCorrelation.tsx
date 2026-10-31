@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Asset } from '../types';
 import { useHistoricalData } from '../hooks/useHistoricalData';
@@ -14,6 +14,7 @@ export default function AssetCorrelation({ asset, allAssets }: AssetCorrelationP
     return asset.country === 'India' ? 'NIFTY50' : '.SPX';
   }, [asset.type, asset.country, asset.symbol]);
   const [compareSymbol, setCompareSymbol] = useState(defaultBenchmark);
+  useEffect(() => { setCompareSymbol(defaultBenchmark); }, [defaultBenchmark]);
   const { data: assetHistory, loading: assetLoading, error: assetError } = useHistoricalData(asset.symbol, '1Y');
   const { data: benchmarkHistory, loading: benchmarkLoading, error: benchmarkError } = useHistoricalData(compareSymbol, '1Y');
 
