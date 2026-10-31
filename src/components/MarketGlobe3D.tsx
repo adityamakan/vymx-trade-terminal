@@ -564,7 +564,7 @@ export default function MarketGlobe3D() {
                  { id: 'geoRisk', label: 'Geo-risk scenarios', icon: ShieldAlert },
                  { id: 'supplyChain', label: 'Supply-chain locations', icon: Ship },
                  { id: 'commodities', label: 'Commodities', icon: Layers },
-                 { id: 'holdings', label: 'Exchange nodes (sample)', icon: Target },
+                 { id: 'holdings', label: 'Treasury yields / reference nodes', icon: Target },
                  { id: 'correlationWeb', label: 'Correlations (not computed)', icon: Zap },
                  { id: 'timeMachine', label: 'Time Machine', icon: Rewind },
                  { id: 'dominoQuiz', label: 'Domino Quiz', icon: Activity },
@@ -592,13 +592,17 @@ export default function MarketGlobe3D() {
          </button>
       )}
 
-      {(mode === 'geoRisk' || mode === 'supplyChain' || mode === 'commodities') && (
+      {(mode === 'geoRisk' || mode === 'supplyChain' || mode === 'commodities' || mode === 'holdings' || mode === 'correlationWeb') && (
         <div className="absolute bottom-4 left-4 z-40 max-w-[min(26rem,calc(100vw-2rem))] rounded-lg border border-amber-500/30 bg-zinc-950/90 px-3 py-2 text-[9px] leading-relaxed text-amber-200 shadow-xl pointer-events-none">
           {mode === 'geoRisk'
             ? 'Illustrative geopolitical scenario locations only. This map is not connected to a live conflict, incident or risk-monitoring feed.'
             : mode === 'supplyChain'
               ? 'Reference supply-chain chokepoint locations only. No live disruption, vessel, freight or logistics feed is connected.'
-              : 'Illustrative commodity production locations only. These markers do not represent live production, inventory or shipping flows.'}
+              : mode === 'commodities'
+                ? 'Illustrative commodity production locations only. These markers do not represent live production, inventory or shipping flows.'
+                : mode === 'holdings'
+                  ? 'Exchange markers are reference locations, not your linked brokerage holdings or positions.'
+                  : 'Correlation arcs are illustrative only; no synchronized historical correlation model is connected.'}
         </div>
       )}
 
