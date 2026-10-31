@@ -188,18 +188,18 @@ export default function MarketGlobe3D() {
   const [chainReaction, setChainReaction] = useState<string | null>(null);
   
   const [quizData, setQuizData] = useState<any>(null);
-  const [narrativeText, setNarrativeText] = useState("AI Hardware Setup: Aggressive rotation from US Software into Asian Semiconductor manufacturing detected.");
+  const [narrativeText, setNarrativeText] = useState("Market narrative unavailable until verified event and flow feeds are connected.");
   const [liveExchangeData, setLiveExchangeData] = useState<any>(null);
   const [loadingExchangeData, setLoadingExchangeData] = useState(false);
 
   useEffect(() => {
     if (quizActive && !quizData) {
-      fetch('/api/ai/quiz').then(r => r.json()).then(setQuizData).catch(() => {});
+      fetch('/api/ai/quiz').then(r => r.json()).then(data => setQuizData(data?.success && Array.isArray(data.options) ? data : null)).catch(() => setQuizData(null));
     }
   }, [quizActive, quizData]);
 
   useEffect(() => {
-    fetch('/api/ai/narrative').then(r => r.json()).then(data => setNarrativeText(data.text)).catch(() => {});
+    fetch('/api/ai/narrative').then(r => r.json()).then(data => setNarrativeText(data?.success && data.text ? data.text : 'Market narrative unavailable — no verified event feed is configured.')).catch(() => setNarrativeText('Market narrative unavailable — provider request failed.'));
   }, []);
 
   const activeExchangeData = selectedExchange ? EXCHANGE_DETAILS[selectedExchange] : null;
@@ -211,7 +211,7 @@ export default function MarketGlobe3D() {
         fetch(`/api/ai/exchange-latest?exchange=${selectedExchange}`)
           .then(r => r.json())
           .then(data => {
-            setLiveExchangeData(data);
+            setLiveExchangeData(data?.success ? data : null);
             setLoadingExchangeData(false);
           })
           .catch(() => setLoadingExchangeData(false));
