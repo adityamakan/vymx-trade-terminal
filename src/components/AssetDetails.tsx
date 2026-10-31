@@ -138,22 +138,27 @@ export default function AssetDetails({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          symbol: asset.symbol,
-          name: asset.name,
-          type: asset.type,
-          change: asset.change
+          prompt: 'Explain general hedging considerations for this asset. Do not invent positions, prices, option chains or specific trade recommendations.',
+          contextData: {
+            symbol: asset.symbol,
+            name: asset.name,
+            assetType: asset.type,
+            latestQuoteChangePercent: isDataOffline ? null : asset.change
+          },
+          systemInstruction: 'Provide educational risk-management considerations only. State that no live derivatives or portfolio exposure data is connected.'
         })
       });
-      const data = await response.json();
-      if (data.suggestions) {
-        setHedgeSuggestions(data.suggestions);
-      } else {
-        const { generateHedgeSuggestions } = await import('../utils/hedgeEngine');
-        setHedgeSuggestions(generateHedgeSuggestions(asset));
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success || !data.answer) {
+        throw new Error(data.error || `HTTP ${response.status}`);
       }
-    } catch (err) {
-      const { generateHedgeSuggestions } = await import('../utils/hedgeEngine');
-      setHedgeSuggestions(generateHedgeSuggestions(asset));
+      setHedgeSuggestions([{ name: 'Educational risk considerations', symbol: asset.symbol, reason: data.answer }]);
+    } catch (err: any) {
+      setHedgeSuggestions([{
+        name: 'Analysis unavailable',
+        symbol: asset.symbol,
+        reason: err?.message || 'No verified AI analysis provider is connected.'
+      }]);
     } finally {
       setIsGeneratingHedge(false);
     }
