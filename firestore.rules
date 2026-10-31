@@ -35,7 +35,7 @@ service cloud.firestore {
       allow read: if isOwner(userId);
       allow create, update: if isOwner(userId)
         && request.resource.data.keys().hasOnly([
-          'id', 'capturedAt', 'cashBalance', 'positions', 'source', 'currencyNormalization'
+          'id', 'capturedAt', 'cashBalance', 'positions', 'baseCurrency', 'fxRates', 'totalEquityUSD', 'source', 'currencyNormalization'
         ])
         && request.resource.data.id == snapshotId
         && request.resource.data.capturedAt is int
@@ -43,8 +43,12 @@ service cloud.firestore {
         && request.resource.data.cashBalance >= 0
         && request.resource.data.positions is list
         && request.resource.data.positions.size() <= 100
+        && request.resource.data.baseCurrency == 'USD'
+        && request.resource.data.fxRates is map
+        && request.resource.data.fxRates.keys().size() <= 30
+        && (request.resource.data.totalEquityUSD == null || request.resource.data.totalEquityUSD is number)
         && request.resource.data.source == 'provider-quote-snapshot'
-        && request.resource.data.currencyNormalization == 'not-applied';
+        && request.resource.data.currencyNormalization in ['provider-fx-to-usd', 'incomplete'];
       allow delete: if isOwner(userId);
     }
 
