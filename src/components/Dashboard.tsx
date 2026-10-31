@@ -204,28 +204,25 @@ export default function Dashboard({
     return `${hStr}:${mStr}`;
   };
 
-  // --- MARKET SENTIMENT CALCULATIONS ---
-  const advCount = useMemo(() => assets.filter(a => a.change > 0).length, [assets]);
-  const decCount = useMemo(() => assets.filter(a => a.change < 0).length, [assets]);
-  const flatCount = useMemo(() => assets.filter(a => a.change === 0).length, [assets]);
+  // --- MARKET BREADTH FROM PER-ASSET VERIFIED PROVIDER QUOTES ONLY ---
+  const verifiedQuoteAssets = useMemo(() => assets.filter((asset) => Boolean(asset.quoteAsOf)), [assets]);
+  const advCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change > 0).length, [verifiedQuoteAssets]);
+  const decCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change < 0).length, [verifiedQuoteAssets]);
+  const flatCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change === 0).length, [verifiedQuoteAssets]);
 
   const sentimentScore = useMemo(() => {
     const activeCount = advCount + decCount;
     if (activeCount === 0) return 50;
-
     const ratioScore = (advCount / activeCount) * 100;
-
-    const avgAssetChange = assets
-      .reduce((sum, a) => sum + Math.max(-4, Math.min(4, a.change)), 0);
-    const avgChg = assets.length > 0 ? (avgAssetChange / assets.length) : 0;
-
+    const avgAssetChange = verifiedQuoteAssets.reduce((sum, a) => sum + Math.max(-4, Math.min(4, a.change)), 0);
+    const avgChg = verifiedQuoteAssets.length > 0 ? avgAssetChange / verifiedQuoteAssets.length : 0;
     const finalScore = Math.max(5, Math.min(95, ratioScore * 0.7 + (50 + avgChg * 11) * 0.3));
     return Math.round(finalScore);
-  }, [assets, advCount, decCount]);
+  }, [verifiedQuoteAssets, advCount, decCount]);
 
   const sectorStats = useMemo(() => {
-    const sectorsMap: { [sec: string]: { sumChange: number; count: number } } = {};
-    assets.forEach(a => {
+    const sectorsMap: { [sec: string]: { sumChange: number; count: number } = {};
+    verifiedQuoteAssets.forEach(a => {
       const sectorName = a.sector || 'Other';
       if (!sectorsMap[sectorName]) {
         sectorsMap[sectorName] = { sumChange: 0, count: 0 };
@@ -245,9 +242,9 @@ export default function Dashboard({
       bottomSector: list[list.length - 1] || { name: 'N/A', avgChange: 0 },
       list
     };
-  }, [assets]);
+  }, [verifiedQuoteAssets]);
 
-  const [news, setNews] = useState<NewsArticle[]>([]);
+  const [news, setNews = useState<NewsArticle[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
   const [newsError, setNewsError] = useState<string | null>(null);
   const [selectedNews, setSelectedNews] = useState<NewsArticle | null>(null);
@@ -679,8 +676,8 @@ export default function Dashboard({
             <div className="flex justify-between items-baseline">
               <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono">Advance / Decline Proxy Scale</span>
               <span className="text-xl font-extrabold text-zinc-100 font-mono flex items-baseline gap-1">
-                {sentimentScore}
-                <span className="text-xs font-bold text-zinc-500">/ 100</span>
+                {verifiedQuoteAssets.length ? sentimentScore : 'N/A'}
+                <span className="text-xs font-bold text-zinc-500">{verifiedQuoteAssets.length ? '/ 100' : 'no quotes'}</span>
               </span>
             </div>
 
@@ -735,7 +732,7 @@ export default function Dashboard({
                     ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                     : 'bg-red-500/10 text-red-500 border border-red-500/20'
                 }`}>
-                  {sentimentScore >= 75
+                  {verifiedQuoteAssets.length === 0 ? 'Unavailable — no verified quotes' : sentimentScore >= 75
                     ? 'Strongly positive breadth'
                     : sentimentScore >= 55
                     ? 'Positive breadth'
@@ -761,12 +758,12 @@ export default function Dashboard({
                 <div>
                   <div className="flex justify-between text-[10px] pb-1">
                     <span className="text-emerald-400 font-bold flex items-center gap-1">▲ Advancers ({advCount})</span>
-                    <span className="text-zinc-400 font-semibold">{Math.round((advCount / (assets.length || 1)) * 100)}%</span>
+                    <span className="text-zinc-400 font-semibold">{Math.round((advCount / (verifiedQuoteAssets.length || 1)) * 100)}%</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-emerald-400 rounded-full transition-all duration-300"
-                      style={{ width: `${(advCount / (assets.length || 1)) * 100}%` }}
+                      style={{ width: `${(advCount / (verifiedQuoteAssets.length || 1)) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -775,12 +772,12 @@ export default function Dashboard({
                 <div>
                   <div className="flex justify-between text-[10px] pb-1">
                     <span className="text-rose-400 font-bold flex items-center gap-1">▼ Decliners ({decCount})</span>
-                    <span className="text-zinc-400 font-semibold">{Math.round((decCount / (assets.length || 1)) * 100)}%</span>
+                    <span className="text-zinc-400 font-semibold">{Math.round((decCount / (verifiedQuoteAssets.length || 1)) * 100)}%</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-rose-400 rounded-full transition-all duration-300"
-                      style={{ width: `${(decCount / (assets.length || 1)) * 100}%` }}
+                      style={{ width: `${(decCount / (verifiedQuoteAssets.length || 1)) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -789,12 +786,12 @@ export default function Dashboard({
                 <div>
                   <div className="flex justify-between text-[10px] pb-1">
                     <span className="text-zinc-500 font-semibold flex items-center gap-1">■ Neutral / Flat ({flatCount})</span>
-                    <span className="text-zinc-500">{Math.round((flatCount / (assets.length || 1)) * 100)}%</span>
+                    <span className="text-zinc-500">{Math.round((flatCount / (verifiedQuoteAssets.length || 1)) * 100)}%</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900/55 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-zinc-700 rounded-full transition-all duration-300"
-                      style={{ width: `${(flatCount / (assets.length || 1)) * 100}%` }}
+                      style={{ width: `${(flatCount / (verifiedQuoteAssets.length || 1)) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -1225,9 +1222,9 @@ export default function Dashboard({
                 <div>
                   <p className="text-xs font-semibold text-indigo-300">Watchlist Intelligence</p>
                   <p className="text-[10px] text-indigo-200/70 mt-1 leading-relaxed">
-                    {watchlistAssets.filter(a => a.change > 2).length > 0
-                      ? `${watchlistAssets.filter(a => a.change > 2).length} assets in your watchlist are showing unusually high bullish momentum today. Consider setting up price alerts.`
-                      : `Your tracked assets are showing standard market correlation. No unusual earnings or volatility detected today.`}
+                    {watchlistAssets.filter(a => a.quoteAsOf && a.change > 2).length > 0
+                      ? `${watchlistAssets.filter(a => a.quoteAsOf && a.change > 2).length} assets in your watchlist are showing unusually high bullish momentum today. Consider setting up price alerts.`
+                      : `No verified daily quote moves above 2% are present in the current watchlist. This does not assess earnings, correlation or volatility.`}
                   </p>
                 </div>
               </div>
