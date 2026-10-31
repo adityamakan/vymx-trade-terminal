@@ -43,6 +43,7 @@ export default function WatchlistCorrelation({ watchlist, assets }: WatchlistCor
     () => assets.filter((asset) => watchlist.includes(asset.symbol)).slice(0, 12),
     [watchlist, assets]
   );
+  const symbolKey = activeAssets.map((asset) => asset.symbol).join('|');
   const [matrix, setMatrix] = useState<CorrelationPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -138,7 +139,7 @@ export default function WatchlistCorrelation({ watchlist, assets }: WatchlistCor
       active = false;
       controller.abort();
     };
-  }, [activeAssets]);
+  }, [symbolKey]);
 
   if (activeAssets.length < 2) {
     return (
