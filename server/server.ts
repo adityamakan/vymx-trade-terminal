@@ -140,16 +140,24 @@ async function getPrices(symbols: string[]) {
 }
 
 app.get(['/health', '/api/health', '/api/status'], (_req: Request, res: Response) => {
+  const memory = process.memoryUsage();
   res.json({
-    status: 'ok', service: 'vymx-api', marketDataProvider: 'Yahoo Finance',
-    marketDataConfigured: true,
-    optionalProviders: {
-      gemini: Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY),
-      fred: Boolean(process.env.FRED_API_KEY),
-      finnhub: Boolean(process.env.FINNHUB_API_KEY),
+    status: 'ok',
+    service: 'vymx-api',
+    uptimeSeconds: Math.floor(process.uptime()),
+    processMemory: {
+      rssBytes: memory.rss,
+      heapUsedBytes: memory.heapUsed,
+      heapTotalBytes: memory.heapTotal
+    },
+    providers: {
+      marketData: { name: 'Yahoo Finance', configured: true, operationallyVerified: false },
+      gemini: { configured: Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) },
+      fred: { configured: Boolean(process.env.FRED_API_KEY) },
+      finnhub: { configured: Boolean(process.env.FINNHUB_API_KEY) }
     },
     checkedAt: new Date().toISOString(),
-    note: 'Health confirms API process availability, not market availability or execution capability.'
+    note: 'This endpoint confirms API process health and configuration only. It does not probe upstream providers, validate quote freshness, or indicate trading/execution availability.'
   });
 });
 
