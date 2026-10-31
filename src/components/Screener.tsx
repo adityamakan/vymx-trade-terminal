@@ -28,6 +28,7 @@ interface ScreenerProps {
   assets: Asset[];
   formatCurrency: (val: number, type?: string, country?: string) => string;
   isStrictHours?: boolean;
+  isDataOffline?: boolean;
 }
 
 export default function Screener({
@@ -37,6 +38,7 @@ export default function Screener({
   assets,
   formatCurrency: formatCurrencyProp,
   isStrictHours = false,
+  isDataOffline = false,
 }: ScreenerProps) {
   // Comparison slots states
   const [compareA, setCompareA] = useState<string>('AAPL');
@@ -156,6 +158,9 @@ export default function Screener({
 
   return (
     <div className="py-6 space-y-6">
+      <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-[11px] leading-relaxed text-amber-200">
+        {isDataOffline ? 'Market quotes are offline; bundled prices and daily changes are sample defaults and must not be treated as current.' : 'Quote prices update from the provider, but market-cap, P/E and other bundled fundamental metadata are reference values until verified instrument fundamentals are loaded. Confirm those fields before using fundamental filters.'}
+      </div>
 
       {/* Visual Hub Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-zinc-900 pb-4">
