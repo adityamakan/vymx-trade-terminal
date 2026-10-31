@@ -217,8 +217,7 @@ export default function Portfolio({
         quantity: item.quantity,
         averageCost: item.avgBuyPrice,
         currentPrice: typeof price === 'number' && Number.isFinite(price) ? price : null,
-        sector: asset?.sector || null,
-        currency: asset?.currency || null
+        sector: asset?.sector || null
       };
     });
 
