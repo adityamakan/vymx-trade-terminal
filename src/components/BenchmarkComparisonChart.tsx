@@ -20,9 +20,10 @@ export default function BenchmarkComparisonChart({ asset, timeframe }: Benchmark
   const { data: benchmarkHistory, loading: benchmarkLoading, error: benchmarkError } = useHistoricalData(benchmarkSymbol, timeframe);
 
   const comparison = useMemo(() => {
-    const benchmarkByDate = new Map(benchmarkHistory.map((point) => [point.date, point.value]));
+    const dateKey = (date: string) => timeframe === '1D' ? date.slice(0, 13) : date.slice(0, 10);
+    const benchmarkByDate = new Map(benchmarkHistory.map((point) => [dateKey(point.date), point.value]));
     const aligned = assetHistory.flatMap((point) => {
-      const benchmarkValue = benchmarkByDate.get(point.date);
+      const benchmarkValue = benchmarkByDate.get(dateKey(point.date));
       return benchmarkValue != null && benchmarkValue > 0
         ? [{ date: point.date, assetValue: point.value, benchmarkValue }]
         : [];
@@ -45,7 +46,7 @@ export default function BenchmarkComparisonChart({ asset, timeframe }: Benchmark
       const assetReturn = (point.assetValue / assetBase - 1) * 100;
       const benchmarkReturn = (point.benchmarkValue / benchmarkBase - 1) * 100;
       return {
-        time: point.date,
+        time: new Date(point.date).toLocaleString(),
         [asset.symbol]: Number(assetReturn.toFixed(3)),
         [benchmarkName]: Number(benchmarkReturn.toFixed(3)),
         Alpha: Number((assetReturn - benchmarkReturn).toFixed(3))
