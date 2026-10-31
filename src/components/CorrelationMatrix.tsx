@@ -7,7 +7,7 @@ interface CorrelationMatrixProps {
 
 export default function CorrelationMatrix({ assets }: CorrelationMatrixProps) {
   const symbols = useMemo(() => [...assets]
-    .sort((a, b) => a.symbol.localeCompare(b.symbol)
+    .sort((a, b) => a.symbol.localeCompare(b.symbol))
     .slice(0, 15)
     .map((asset) => asset.symbol), [assets]);
 
