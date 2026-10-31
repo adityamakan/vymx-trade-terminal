@@ -9,11 +9,14 @@ export interface DataSyncLog {
 }
 
 export interface BackendTelemetry {
-  memoryUsage?: any;
-  systemMemory?: any;
-  cpuLoad?: number[];
-  uptime?: number;
-  cache?: { size: number, capacity: number };
+  uptimeSeconds?: number;
+  processMemory?: { rssBytes: number; heapUsedBytes: number; heapTotalBytes: number };
+  providers?: {
+    marketData?: { name: string; configured: boolean; operationallyVerified: boolean };
+    gemini?: { configured: boolean };
+    fred?: { configured: boolean };
+    finnhub?: { configured: boolean };
+  };
 }
 
 interface DataIntegrityContextType {
@@ -48,61 +51,56 @@ export const DataIntegrityProvider = ({ children }: { children: ReactNode }) => 
 
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    let disposed = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     let retryCount = 0;
     const maxRetries = 3;
-    const baseDelay = 5000;
+
+    const schedule = (delay: number) => {
+      if (!disposed) timeoutId = setTimeout(pingHealth, delay);
+    };
 
     const pingHealth = async () => {
-      const start = Date.now();
-      let success = false;
+      const startTime = Date.now();
       try {
-        const res = await fetch('/api/health');
-        if (res.ok) {
-          const data = await res.json();
-          setTelemetry({
-            memoryUsage: data.memoryUsage,
-            systemMemory: data.systemMemory,
-            cpuLoad: data.cpuLoad,
-            uptime: data.uptime,
-            cache: data.cache
-          });
-          const ms = Date.now() - start;
-          addLog({
-            timestamp: new Date().toISOString(),
-            status: 'SUCCESS',
-            message: `Core Engine Sync (${data.aiBackend || 'connected'})`,
-            latencyMs: ms,
-          });
-          success = true;
-          retryCount = 0; // reset on success
-        } else {
-            throw new Error('API Error');
+        const response = await fetch('/api/health', { signal: AbortSignal.timeout(8_000) });
+        const data = await response.json();
+        if (!response.ok || data?.status !== 'ok' || data?.service !== 'vymx-api') {
+          throw new Error(data?.error || 'API health check failed');
         }
-      } catch (e) {
+        if (disposed) return;
+
+        setTelemetry({
+          uptimeSeconds: Number.isFinite(data.uptimeSeconds) ? data.uptimeSeconds : undefined,
+          processMemory: data.processMemory && typeof data.processMemory === 'object' ? data.processMemory : undefined,
+          providers: data.providers && typeof data.providers === 'object' ? data.providers : undefined
+        });
+        addLog({
+          timestamp: new Date().toISOString(),
+          status: 'SUCCESS',
+          message: 'API process healthy; upstream market-data availability is checked separately.',
+          latencyMs: Date.now() - startTime
+        });
+        retryCount = 0;
+        schedule(15_000);
+      } catch (error) {
+        if (disposed) return;
         addLog({
           timestamp: new Date().toISOString(),
           status: 'ERROR',
-          message: 'Connection to Core Engine Failed',
+          message: error instanceof Error ? error.message : 'API health check failed'
         });
-      }
-
-      if (success) {
-        timeoutId = setTimeout(pingHealth, 10000); // 10s poll when healthy
-      } else {
-        if (retryCount < maxRetries) {
-            const delay = baseDelay * Math.pow(2, retryCount); // 5s, 10s, 20s
-            retryCount++;
-            timeoutId = setTimeout(pingHealth, delay);
-        } else {
-            // max retries reached, maybe poll slower
-            timeoutId = setTimeout(pingHealth, 30000);
-        }
+        const delay = retryCount < maxRetries ? 5_000 * (2 ** retryCount) : 30_000;
+        retryCount = Math.min(retryCount + 1, maxRetries);
+        schedule(delay);
       }
     };
 
-    pingHealth();
-    return () => clearTimeout(timeoutId);
+    void pingHealth();
+    return () => {
+      disposed = true;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
 
