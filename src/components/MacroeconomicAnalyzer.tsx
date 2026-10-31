@@ -115,6 +115,7 @@ export default function MacroeconomicAnalyzer() {
   const [activeTab, setActiveTab] = useState<'indicators' | 'backtest' | 'sovereign' | 'ai_strategist'>('indicators');
   const [indicators, setIndicators] = useState<MacroIndicatorsData | null>(null);
   const [isLoadingIndicators, setIsLoadingIndicators] = useState(false);
+  const [indicatorError, setIndicatorError] = useState<string | null>(null);
 
   // Backtester states
   const [selectedRegime, setSelectedRegime] = useState('2022_2024_hikes');
@@ -131,6 +132,7 @@ export default function MacroeconomicAnalyzer() {
 
   const [backtestResult, setBacktestResult] = useState<BacktestResult | null>(null);
   const [isRunningBacktest, setIsRunningBacktest] = useState(false);
+  const [backtestError, setBacktestError] = useState<string | null>(null);
 
   // AI Strategist & Indicator Summary States
   const [aiPrompt, setAiPrompt] = useState('');
@@ -152,6 +154,7 @@ export default function MacroeconomicAnalyzer() {
       });
     } catch (err: any) {
       console.warn('Indicator summary error:', err);
+      setIndicatorSummary('AI commentary unavailable. Configure GEMINI_API_KEY to enable server-side macro commentary.');
     } finally {
       setIsGeneratingIndicatorSummary(false);
     }
@@ -161,19 +164,20 @@ export default function MacroeconomicAnalyzer() {
   const fetchIndicators = async () => {
     try {
       setIsLoadingIndicators(true);
-      const res = await fetch('/api/macro/indicators');
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.success && data.indicators && typeof data.indicators === 'object') {
-          setIndicators(data);
-          // AI commentary is based only on provider-returned market proxies.
-          generateMacroSummary(data);
-        } else {
-          setIndicators(null);
-        }
+      setIndicatorError(null);
+      const res = await fetch('/api/macro/indicators', { signal: AbortSignal.timeout(15_000) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.success || !data.indicators || typeof data.indicators !== 'object') {
+        setIndicators(null);
+        setIndicatorError(data?.error || 'No provider market-proxy observations are currently available.');
+        return;
       }
-    } catch (err) {
-      console.error('Failed to load macro indicators', err);
+      setIndicators(data);
+      // AI commentary is based only on provider-returned market proxies.
+      void generateMacroSummary(data);
+    } catch (err: any) {
+      setIndicators(null);
+      setIndicatorError(err?.message || 'Failed to load provider market proxies.');
     } finally {
       setIsLoadingIndicators(false);
     }
@@ -191,6 +195,7 @@ export default function MacroeconomicAnalyzer() {
         );
       }
 
+      setBacktestError(null);
       const res = await fetch('/api/macro/backtest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -200,9 +205,11 @@ export default function MacroeconomicAnalyzer() {
           weights: payloadWeights
         })
       });
-
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        setBacktestResult(null);
+        setBacktestError(data?.error || 'Backtesting is disabled until validated historical data and realistic execution costs are implemented.');
+      } else {
         setBacktestResult(data);
       }
     } catch (err) {
