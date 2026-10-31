@@ -26,7 +26,7 @@ import { Layers, GraduationCap, Globe, BarChart3, TrendingUp, AlertTriangle } fr
 import { motion, AnimatePresence } from 'motion/react';
 import { calculateIntegritySignature } from './utils/security';
 import { getAssetMarketStatus } from './utils/market';
-import { auth, onAuthStateChanged, signOut, db, doc, getDoc, setDoc, collection, getDocs } from './lib/firebase';
+import { auth, onAuthStateChanged, signOut, db, doc, getDoc, setDoc, collection, getDocs, Timestamp } from './lib/firebase';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useDataIntegrity } from './contexts/DataIntegrityContext';
 
@@ -471,7 +471,11 @@ export default function App() {
         const dailyId = new Date(capturedAt).toISOString().slice(0, 10);
         const dailySnapshot = { ...snapshot, id: dailyId };
         await setDoc(doc(db, 'users', uid, 'portfolioSnapshots', dailyId), dailySnapshot);
-        await setDoc(doc(db, 'users', uid, 'portfolioIntradaySnapshots', String(bucket)), { ...snapshot, id: String(bucket) });
+        await setDoc(doc(db, 'users', uid, 'portfolioIntradaySnapshots', String(bucket)), {
+          ...snapshot,
+          id: String(bucket),
+          expiresAt: Timestamp.fromDate(new Date(capturedAt + 90 * 24 * 60 * 60 * 1000))
+        });
         if (auth.currentUser?.uid !== uid) return;
         lastSnapshotBucketRef.current = bucket;
         setPortfolioSnapshots((previous) => [...previous.filter((item) => item.id !== dailyId), dailySnapshot].sort((a, b) => a.capturedAt - b.capturedAt).slice(-500));
