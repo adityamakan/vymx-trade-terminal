@@ -68,23 +68,40 @@ export default function VymxIntelligencePanel({ mode }: Props) {
   // Fetch real data from our new pipeline
   useEffect(() => {
     let isActive = true;
+    let inFlight = false;
+    const clearQuoteData = () => {
+      setRealtimeData((previous: any) => ({
+        ...previous,
+        spxPrice: null, spxChange: null,
+        niftyPrice: null, niftyChange: null,
+        sensexPrice: null, sensexChange: null,
+        btcPrice: null, btcHigh: null, btcLow: null,
+        vixPrice: null, vixChange: null,
+        sectors: {}, commodities: {}, currencies: {}, bonds: {}
+      }));
+    };
     const fetchLiveIntelligence = async () => {
+      if (inFlight) return;
+      inFlight = true;
       try {
-        const res = await fetch('/api/ai/vymx-intelligence');
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && isActive) {
-            setRealtimeData((previous: any) => ({ ...previous, ...json.data }));
-            setQuoteFeedStatus('connected');
-          } else if (isActive) {
-            setQuoteFeedStatus('unavailable');
-          }
-        } else if (isActive) {
+        const res = await fetch('/api/ai/vymx-intelligence', { signal: AbortSignal.timeout(20_000) });
+        const json = await res.json().catch(() => ({}));
+        if (!isActive) return;
+        if (res.ok && json.success && json.data) {
+          setRealtimeData((previous: any) => ({ ...previous, ...json.data }));
+          setQuoteFeedStatus('connected');
+        } else {
+          clearQuoteData();
           setQuoteFeedStatus('unavailable');
         }
       } catch (e) {
-        setQuoteFeedStatus('unavailable');
-        console.warn('Vymx Intelligence fetch failed', e);
+        if (isActive) {
+          clearQuoteData();
+          setQuoteFeedStatus('unavailable');
+          console.warn('Vymx Intelligence fetch failed', e);
+        }
+      } finally {
+        inFlight = false;
       }
     };
 
