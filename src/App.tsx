@@ -63,6 +63,7 @@ export default function App() {
         // Firebase identity. A newly created account starts with an empty ledger.
         setVirtualBalance(100000);
         setWatchlist(['AAPL', 'BTC', 'SOL', 'GC=F']);
+        setPriceAlerts([]);
         setPortfolio([]);
         setTransactions([]);
 
@@ -92,6 +93,14 @@ export default function App() {
         setLedgerHydrated(false);
         setIsAuthenticated(false);
         setAuthUser(null);
+        // No Firebase identity is active. Clear any previous account's
+        // browser-side ledger so guest access cannot inherit another user's data.
+        setVirtualBalance(100000);
+        setWatchlist(['AAPL', 'BTC', 'SOL', 'GC=F']);
+        setPriceAlerts([]);
+        setPortfolio([]);
+        setTransactions([]);
+        ['finova_watchlist', 'finova_balance', 'finova_price_alerts', 'finova_portfolio', 'finova_transactions'].forEach((key) => localStorage.removeItem(key));
       }
     });
     return () => unsubscribe();
@@ -118,8 +127,13 @@ export default function App() {
     }
     setIsAuthenticated(false);
     setAuthUser(null);
-    localStorage.removeItem('vymx_auth_user');
-    localStorage.removeItem('vymx_integrity_signature');
+    setLedgerHydrated(false);
+    setVirtualBalance(100000);
+    setWatchlist(['AAPL', 'BTC', 'SOL', 'GC=F']);
+    setPriceAlerts([]);
+    setPortfolio([]);
+    setTransactions([]);
+    ['finova_watchlist', 'finova_balance', 'finova_price_alerts', 'finova_portfolio', 'finova_transactions', 'vymx_auth_user', 'vymx_integrity_signature'].forEach((key) => localStorage.removeItem(key));
   };
 
   // --- THEME STATE MANAGEMENT & PERSISTENCE ---
