@@ -63,6 +63,7 @@ export default function FinancialChatbot({ activeAsset, portfolio, userId }: Fin
 
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
   const activeStorageKeyRef = useRef(storageKey);
+  if (activeStorageKeyRef.current !== storageKey) activeStorageKeyRef.current = storageKey;
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
