@@ -28,6 +28,26 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
 
+    // Timestamped portfolio observations are private to the owning Firebase user.
+    // Prices are stored per instrument in provider-native quote currency; rules do
+    // not permit cross-user access or arbitrary unbounded snapshot payloads.
+    match /users/{userId}/portfolioSnapshots/{snapshotId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'id', 'capturedAt', 'cashBalance', 'positions', 'source', 'currencyNormalization'
+        ])
+        && request.resource.data.id == snapshotId
+        && request.resource.data.capturedAt is int
+        && request.resource.data.cashBalance is number
+        && request.resource.data.cashBalance >= 0
+        && request.resource.data.positions is list
+        && request.resource.data.positions.size() <= 100
+        && request.resource.data.source == 'provider-quote-snapshot'
+        && request.resource.data.currencyNormalization == 'not-applied';
+      allow delete: if isOwner(userId);
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
