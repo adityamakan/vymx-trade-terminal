@@ -8,6 +8,7 @@ import { streamFinancialChat } from '../lib/gemini';
 interface FinancialChatbotProps {
   activeAsset?: Asset | null;
   portfolio?: PortfolioItem[];
+  userId?: string;
 }
 
 const TypingMessage = ({ content, isNew }: { content: string, isNew?: boolean }) => {
@@ -35,9 +36,10 @@ const TypingMessage = ({ content, isNew }: { content: string, isNew?: boolean })
   return <ReactMarkdown>{displayed}</ReactMarkdown>;
 };
 
-export default function FinancialChatbot({ activeAsset, portfolio }: FinancialChatbotProps) {
+export default function FinancialChatbot({ activeAsset, portfolio, userId }: FinancialChatbotProps) {
+  const storageKey = `vymx_chatbot_history_${userId || 'guest'}`;
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant', text: string, isNew?: boolean }[]>(() => {
-    const saved = localStorage.getItem('vymx_chatbot_history');
+    const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -114,8 +116,8 @@ export default function FinancialChatbot({ activeAsset, portfolio }: FinancialCh
   };
 
   useEffect(() => {
-    localStorage.setItem('vymx_chatbot_history', JSON.stringify(messages));
-  }, [messages]);
+    localStorage.setItem(storageKey, JSON.stringify(messages));
+  }, [messages, storageKey]);
 
   useEffect(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
