@@ -1,9 +1,9 @@
 /**
  * Vymx Trade Secure Cryto-Simulation Ledger and session integrity helpers
- * Handcrafted to enforce "uneditable" secure attributes and protect localStorage.
+ * Browser-local activity history helpers. These are not cryptographic security controls.
  */
 
-// Simple deterministic integrity checksum to prevent users modifying JSON state in the browser dev tools
+// Non-cryptographic consistency marker for accidental local-data corruption only; not tamper protection.
 export function calculateIntegritySignature(dataStr: string): string {
   let hash = 0;
   for (let i = 0; i < dataStr.length; i++) {
@@ -53,62 +53,29 @@ export function getSecurityLogs(): SecurityEvent[] {
     }
   }
 
-  // Pre-populate with high security default logs
-  const initialLogs: SecurityEvent[] = [
-    {
-      id: 'evt-001',
-      timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
-      event: 'TLS 1.3 Key Exchange Handshake Initialized',
-      ipAddress: '157.48.112.59',
-      fingerprint: 'fp_a98f12c290',
-      status: 'ALIGNED',
-      severity: 'low'
-    },
-    {
-      id: 'evt-002',
-      timestamp: new Date(Date.now() - 3600000 * 23).toISOString(),
-      event: 'Google Identity Security Policy Verified',
-      ipAddress: '157.48.112.59',
-      fingerprint: 'fp_a98f12c290',
-      status: 'ALIGNED',
-      severity: 'low'
-    },
-    {
-      id: 'evt-003',
-      timestamp: new Date(Date.now() - 1800000 * 4).toISOString(),
-      event: 'MFA Double-factor Authentication Pool Synced',
-      ipAddress: '157.48.112.59',
-      fingerprint: 'fp_a98f12c290',
-      status: 'SUCCESS',
-      severity: 'medium'
-    }
-  ];
-
+  // Start empty. Never seed the activity history with fabricated security events.
+  const initialLogs: SecurityEvent[] = [];
   saveSecurityLogs(initialLogs);
   return initialLogs;
 }
 
-// Save security logs with cryptographic lock
+// Save browser-local activity entries. Local storage is user-editable.
 export function saveSecurityLogs(logs: SecurityEvent[]): void {
   const dataStr = JSON.stringify(logs);
   localStorage.setItem('vymx_security_logs', dataStr);
   localStorage.setItem('vymx_security_logs_sig', calculateIntegritySignature(dataStr));
 }
 
-// Add a log to the immutable ledger
+// Add a browser-local activity entry; this is not an immutable audit event.
 export function logSecurityEvent(event: string, status: SecurityEvent['status'], severity: SecurityEvent['severity']): SecurityEvent {
   const logs = getSecurityLogs();
-
-  // Simulated dynamic but stable IP & Fingerprint
-  const ipAddress = "172.56.221." + Math.floor(Math.random() * 254 + 1);
-  const fingerprint = "fp_" + simulateSHA256(navigator.userAgent).substring(0, 10);
 
   const newLog: SecurityEvent = {
     id: `evt-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     timestamp: new Date().toISOString(),
     event,
-    ipAddress,
-    fingerprint,
+    ipAddress: 'Not collected',
+    fingerprint: 'Not collected',
     status,
     severity
   };
