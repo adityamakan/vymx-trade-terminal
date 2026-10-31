@@ -188,12 +188,14 @@ export default function MarketGlobe3D() {
   const [chainReaction, setChainReaction] = useState<string | null>(null);
   
   const [quizData, setQuizData] = useState<any>(null);
+  const quizRequestStarted = useRef(false);
   const [narrativeText, setNarrativeText] = useState("Market narrative unavailable until verified event and flow feeds are connected.");
   const [liveExchangeData, setLiveExchangeData] = useState<any>(null);
   const [loadingExchangeData, setLoadingExchangeData] = useState(false);
 
   useEffect(() => {
-    if (quizActive && !quizData) {
+    if (quizActive && !quizData && !quizRequestStarted.current) {
+      quizRequestStarted.current = true;
       fetch('/api/ai/quiz').then(r => r.json()).then(data => setQuizData(data?.success && Array.isArray(data.options) ? data : null)).catch(() => setQuizData(null));
     }
   }, [quizActive, quizData]);
