@@ -105,6 +105,7 @@ Configure these in the hosting provider's environment settings. Do not commit se
 - `GET /api/fred/series/:seriesId` — real FRED observations when configured.
 - `GET /api/finnhub/news?category=general` — provider-sourced news when configured.
 - `POST /api/ai/:feature` — Gemini-generated analysis when configured; output is AI-generated and must not be treated as verified market fact.
+- `GET/POST /api/ai/live-news` — real Finnhub headlines when `FINNHUB_API_KEY` is configured; this route does not require Gemini.
 
 ### Explicitly disabled capabilities
 
