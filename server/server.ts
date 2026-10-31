@@ -78,23 +78,25 @@ async function fetchQuote(symbol: string): Promise<PriceQuote> {
   const price = rawPrice * unitScale;
   if (!Number.isFinite(price) || price <= 0) throw new Error(`Provider returned no valid price for ${symbol}`);
 
-  const previousClose = Number(quote?.regularMarketPreviousClose) * unitScale;
-  const changeAbs = Number.isFinite(Number(quote?.regularMarketChange))
+  const previousClose = quote?.regularMarketPreviousClose == null
+    ? Number.NaN
+    : Number(quote.regularMarketPreviousClose) * unitScale;
+  const changeAbs = quote?.regularMarketChange != null && Number.isFinite(Number(quote.regularMarketChange))
     ? Number(quote.regularMarketChange) * unitScale
     : (Number.isFinite(previousClose) ? price - previousClose : 0);
-  const change = Number.isFinite(Number(quote?.regularMarketChangePercent))
+  const change = quote?.regularMarketChangePercent != null && Number.isFinite(Number(quote.regularMarketChangePercent))
     ? Number(quote.regularMarketChangePercent)
     : (previousClose > 0 ? (changeAbs / previousClose) * 100 : 0);
 
   const result: PriceQuote = {
     price, change, changeAbs,
-    low52w: Number.isFinite(Number(quote?.fiftyTwoWeekLow)) ? Number(quote.fiftyTwoWeekLow) * unitScale : null,
-    high52w: Number.isFinite(Number(quote?.fiftyTwoWeekHigh)) ? Number(quote.fiftyTwoWeekHigh) * unitScale : null,
+    low52w: quote?.fiftyTwoWeekLow != null && Number.isFinite(Number(quote.fiftyTwoWeekLow)) ? Number(quote.fiftyTwoWeekLow) * unitScale : null,
+    high52w: quote?.fiftyTwoWeekHigh != null && Number.isFinite(Number(quote.fiftyTwoWeekHigh)) ? Number(quote.fiftyTwoWeekHigh) * unitScale : null,
     prevClose: Number.isFinite(previousClose) && previousClose > 0 ? previousClose : null,
     currency: typeof quote?.currency === 'string' ? quote.currency : null,
     marketState: typeof quote?.marketState === 'string' ? quote.marketState : null,
-    dayHigh: Number.isFinite(Number(quote?.regularMarketDayHigh)) ? Number(quote.regularMarketDayHigh) * unitScale : null,
-    dayLow: Number.isFinite(Number(quote?.regularMarketDayLow)) ? Number(quote.regularMarketDayLow) * unitScale : null,
+    dayHigh: quote?.regularMarketDayHigh != null && Number.isFinite(Number(quote.regularMarketDayHigh)) ? Number(quote.regularMarketDayHigh) * unitScale : null,
+    dayLow: quote?.regularMarketDayLow != null && Number.isFinite(Number(quote.regularMarketDayLow)) ? Number(quote.regularMarketDayLow) * unitScale : null,
     asOf: new Date().toISOString(), source: 'Yahoo Finance'
   };
   quoteCache.set(symbol, { value: result, expiresAt: now + CACHE_TTL_MS });
