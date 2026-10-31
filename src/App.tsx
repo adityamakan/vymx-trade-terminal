@@ -66,6 +66,7 @@ export default function App() {
         setPortfolio([]);
         setTransactions([]);
 
+        let ledgerReadSucceeded = !db;
         try {
           if (db) {
             const ledgerRef = doc(db, 'users', user.uid, 'ledger', 'data');
@@ -78,11 +79,14 @@ export default function App() {
               if (Array.isArray(data.portfolio)) setPortfolio(data.portfolio);
               if (Array.isArray(data.transactions)) setTransactions(data.transactions);
             }
+            ledgerReadSucceeded = true;
           }
         } catch (e) {
-          console.warn('Ledger fetch issue:', e);
+          // Do not enable cloud writes after a failed read: doing so could
+          // overwrite an existing remote ledger with local demo defaults.
+          console.warn('Ledger fetch issue; cloud writes remain paused:', e);
         } finally {
-          if (auth.currentUser?.uid === user.uid) setLedgerHydrated(true);
+          if (auth.currentUser?.uid === user.uid && ledgerReadSucceeded) setLedgerHydrated(true);
         }
       } else if (!guestSessionRef.current) {
         setLedgerHydrated(false);
