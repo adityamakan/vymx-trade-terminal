@@ -1,4 +1,8 @@
+# Dependencies used by scripts/python/fetch_live_feeds.py
+yfinance
+vaderSentiment
 
+# Optional quantitative research tooling (not currently served by the API)
 pandas-ta
 PyPortfolioOpt
 quantstats
