@@ -71,7 +71,11 @@ export default function VymxIntelligencePanel({ mode }: Props) {
           if (json.success && isActive) {
             setRealtimeData((previous: any) => ({ ...previous, ...json.data }));
             setQuoteFeedStatus('connected');
+          } else if (isActive) {
+            setQuoteFeedStatus('unavailable');
           }
+        } else if (isActive) {
+          setQuoteFeedStatus('unavailable');
         }
       } catch (e) {
         setQuoteFeedStatus('unavailable');
