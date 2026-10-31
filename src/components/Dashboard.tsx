@@ -25,7 +25,7 @@ import {
 } from 'recharts';
 import { ChartContainer } from './ChartContainer';
 import { Asset, NewsArticle, PortfolioItem, PriceAlert } from '../types';
-import { newsArticles } from '../data';
+import { useHistoricalData } from '../hooks/useHistoricalData';
 import SentimentGauge from './SentimentGauge';
 import PrecisionMetrics from './PrecisionMetrics';
 import { useMarketState } from '../contexts/MarketStateContext';
@@ -42,6 +42,7 @@ interface DashboardProps {
   setIsStrictHours: React.Dispatch<React.SetStateAction<boolean>>;
   priceAlerts: PriceAlert[];
   setPriceAlerts: React.Dispatch<React.SetStateAction<PriceAlert[]>>;
+  isDataOffline: boolean;
 }
 
 import { motion } from 'motion/react';
@@ -54,10 +55,10 @@ import DashboardNewsWidget from './DashboardNewsWidget';
 import MarketTicker from './MarketTicker';
 import DataIntegrityWidget from './DataIntegrityWidget';
 
-// Mathematical utility to calculate the Pearson Correlation coefficient (r) between two arrays
-function calculateCorrelation(x: number[], y: number[]): number {
+// Pearson correlation on aligned return series, not raw price levels.
+function calculateCorrelation(x: number[], y: number[]): number | null {
   const n = x.length;
-  if (n === 0 || n !== y.length) return 0;
+  if (n < 5 || n !== y.length) return null;
   const meanX = x.reduce((a, b) => a + b, 0) / n;
   const meanY = y.reduce((a, b) => a + b, 0) / n;
   let num = 0;
@@ -70,7 +71,7 @@ function calculateCorrelation(x: number[], y: number[]): number {
     denX += dx * dx;
     denY += dy * dy;
   }
-  if (denX === 0 || denY === 0) return 0;
+  if (denX === 0 || denY === 0) return null;
   return num / Math.sqrt(denX * denY);
 }
 
@@ -134,6 +135,7 @@ export default function Dashboard({
   setIsStrictHours,
   priceAlerts,
   setPriceAlerts,
+  isDataOffline,
 }: DashboardProps) {
   const [timeTick, setTimeTick] = useState<number>(0);
 
@@ -245,23 +247,53 @@ export default function Dashboard({
     };
   }, [assets]);
 
-  const [news, setNews] = useState<NewsArticle[]>(newsArticles);
+  const [news, setNews] = useState<NewsArticle[]>([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+  const [newsError, setNewsError] = useState<string | null>(null);
   const [selectedNews, setSelectedNews] = useState<NewsArticle | null>(null);
-  const [showBriefing, setShowBriefing] = useState(true);
-  const [aiBriefingContent, setAiBriefingContent] = useState<string | null>(null);
 
-  // Generate basic mock AI briefing
+  // Headlines are loaded from Finnhub through the server. No static or invented
+  // news is substituted when the provider key/feed is unavailable.
   React.useEffect(() => {
-    const adv = assets.filter(a => a.change > 0).length;
-    const dec = assets.filter(a => a.change < 0).length;
-    const isBull = adv > dec;
-    let b = `Good morning. The market is currently **${isBull ? 'positive' : 'negative'}**, with ${adv} advancing and ${dec} declining assets.\n\n`;
-    if (assets.find(a => a.symbol === 'AAPL')?.change > 0) {
-      b += `US tech stocks demonstrated resilience as AAPL drives momentum.\n`;
-    }
-    b += `The critical event tomorrow is the Fed's preliminary inflation data rate reading.`;
-    setAiBriefingContent(b);
-  }, [assets]);
+    let active = true;
+    const loadNews = async () => {
+      setNewsLoading(true);
+      setNewsError(null);
+      try {
+        const response = await fetch('/api/finnhub/news?category=general', { signal: AbortSignal.timeout(15_000) });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !Array.isArray(payload.news)) {
+          throw new Error(payload?.error || 'Verified news feed unavailable. Configure FINNHUB_API_KEY.');
+        }
+        const mapped: NewsArticle[] = payload.news.flatMap((item: any, index: number) => {
+          const title = String(item?.headline || '').trim();
+          if (!title) return [];
+          const timestamp = Number(item.datetime);
+          return [{
+            id: String(item.id ?? item.url ?? index),
+            title,
+            source: String(item.source || 'Finnhub'),
+            time: Number.isFinite(timestamp) && timestamp > 0 ? new Date(timestamp * 1000).toLocaleString() : 'Time unavailable',
+            summary: String(item.summary || 'No provider summary supplied.'),
+            sentiment: 'neutral' as const,
+            url: typeof item.url === 'string' ? item.url : undefined,
+            symbolAffected: typeof item.related === 'string' ? item.related : undefined
+          }];
+        });
+        if (active) setNews(mapped.slice(0, 20));
+        if (active && mapped.length === 0) setNewsError('Finnhub returned no general-market headlines.');
+      } catch (error: any) {
+        if (active) {
+          setNews([]);
+          setNewsError(error?.message || 'Verified news feed unavailable.');
+        }
+      } finally {
+        if (active) setNewsLoading(false);
+      }
+    };
+    void loadNews();
+    return () => { active = false; };
+  }, []);
   const [aiSummary, setAiSummary] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
 
@@ -317,39 +349,39 @@ export default function Dashboard({
     return assets.filter(a => combined.includes(a.symbol));
   }, [portfolio, watchlist]);
 
-  // Calculated coordinates data for correlation
+  const { data: historyA, loading: historyALoading, error: historyAError } = useHistoricalData(symbolA, timeframe);
+  const { data: historyB, loading: historyBLoading, error: historyBError } = useHistoricalData(symbolB, timeframe);
+  const correlationLoading = historyALoading || historyBLoading;
+  const correlationError = historyAError || historyBError;
+
+  // Align provider-backed observations by calendar date, then correlate returns
+  // rather than price levels to avoid spurious co-trending correlations.
   const correlationData = useMemo(() => {
-    const assetX = assets.find(a => a.symbol === symbolA);
-    const assetY = assets.find(a => a.symbol === symbolB);
-
-    if (!assetX || !assetY) return [];
-
-    const historyX = assetX.history[timeframe] || [];
-    const historyY = assetY.history[timeframe] || [];
-
-    const points: any[] = [];
-    const minLength = Math.min(historyX.length, historyY.length);
-
-    for (let i = 0; i < minLength; i++) {
-      points.push({
-        date: historyX[i].date,
-        xVal: historyX[i].value,
-        yVal: historyY[i].value,
-        xValFormatted: getFormatValueForAsset(symbolA, historyX[i].value),
-        yValFormatted: getFormatValueForAsset(symbolB, historyY[i].value),
+    const historyBByDate = new Map(historyB.map((point) => [point.date.slice(0, 10), point.value]));
+    const aligned = historyA.flatMap((point) => {
+      const otherValue = historyBByDate.get(point.date.slice(0, 10));
+      return otherValue != null && otherValue > 0 ? [{ date: point.date, xPrice: point.value, yPrice: otherValue }] : [];
+    });
+    return aligned.slice(1).flatMap((point, index) => {
+      const previous = aligned[index];
+      if (previous.xPrice <= 0 || previous.yPrice <= 0) return [];
+      const xReturn = ((point.xPrice / previous.xPrice) - 1) * 100;
+      const yReturn = ((point.yPrice / previous.yPrice) - 1) * 100;
+      return [{
+        date: new Date(point.date).toLocaleDateString(),
+        xVal: xReturn,
+        yVal: yReturn,
+        xValFormatted: `${xReturn.toFixed(2)}%`,
+        yValFormatted: `${yReturn.toFixed(2)}%`,
         assetXName: symbolA,
-        assetYName: symbolB,
-      });
-    }
+        assetYName: symbolB
+      }];
+    });
+  }, [historyA, historyB, symbolA, symbolB]);
 
-    return points;
-  }, [symbolA, symbolB, timeframe]);
-
-  // Pearson logic computed memo
   const pearsonCoefficient = useMemo(() => {
-    if (correlationData.length < 2) return 0;
-    const xValues = correlationData.map(d => d.xVal);
-    const yValues = correlationData.map(d => d.yVal);
+    const xValues = correlationData.map((point) => point.xVal);
+    const yValues = correlationData.map((point) => point.yVal);
     return calculateCorrelation(xValues, yValues);
   }, [correlationData]);
 
