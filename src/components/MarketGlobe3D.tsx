@@ -5,127 +5,38 @@ import { X, Info, TrendingUp, TrendingDown, Activity, Newspaper, BarChart3, Glob
 import VymxIntelligencePanel from './VymxIntelligencePanel';
 import { useMarketState } from '../contexts/MarketStateContext';
 
-    const EXCHANGE_DETAILS: Record<string, any> = {
-  'NYSE': {
-    name: 'New York Stock Exchange',
-    indices: [{ name: 'S&P 500', value: '5,123.41', change: '+1.2%' }],
-    sentiment: 'Bullish (Risk On)',
-    fearAndGreed: 76,
-    gainers: ['NVDA (+4.2%)', 'MSFT (+1.8%)', 'META (+2.1%)'],
-    news: 'Fed signals potential rate cut in upcoming quarter.',
-    volume: '3.8B Shares',
-    topSector: 'Technology'
-  },
-  'NSE': {
-    name: 'National Stock Exchange of India',
-    indices: [{ name: 'Nifty 50', value: '24,850.10', change: '+0.8%' }],
-    sentiment: 'Cautiously Optimistic',
-    fearAndGreed: 62,
-    gainers: ['RELIANCE (+2.3%)', 'TCS (+1.1%)', 'HDFCBANK (+0.9%)'],
-    news: 'Indian GDP growth exceeds expectations at 8.4%.',
-    volume: '2.1B Shares',
-    topSector: 'Financials'
-  },
-  'LSE': {
-    name: 'London Stock Exchange',
-    indices: [{ name: 'FTSE 100', value: '7,952.62', change: '-0.3%' }],
-    sentiment: 'Neutral',
-    fearAndGreed: 51,
-    gainers: ['AZN (+1.2%)', 'SHEL (+0.5%)'],
-    news: 'Bank of England maintains interest rates at 5.25%.',
-    volume: '950M Shares',
-    topSector: 'Energy'
-  },
-  'TSE': {
-    name: 'Tokyo Stock Exchange',
-    indices: [{ name: 'Nikkei 225', value: '39,120.50', change: '+1.4%' }],
-    sentiment: 'Strongly Bullish',
-    fearAndGreed: 84,
-    gainers: ['TOYOTA (+3.5%)', 'SONY (+2.1%)'],
-    news: 'BOJ hints at ending negative interest rate policy.',
-    volume: '1.4B Shares',
-    topSector: 'Consumer Cyclical'
-  },
-  'HKEX': {
-    name: 'Hong Kong Exchange',
-    indices: [{ name: 'Hang Seng', value: '16,589.44', change: '-1.1%' }],
-    sentiment: 'Bearish',
-    fearAndGreed: 35,
-    gainers: ['TENCENT (+0.8%)', 'ALIBABA (-2.1%)'],
-    news: 'Tech sector faces renewed regulatory pressures.',
-    volume: '1.2B Shares',
-    topSector: 'Technology'
-  },
-  'SGX': {
-    name: 'Singapore Exchange',
-    indices: [{ name: 'STI', value: '3,137.66', change: '+0.4%' }],
-    sentiment: 'Neutral',
-    fearAndGreed: 55,
-    gainers: ['DBS (+1.1%)', 'SINGTEL (+0.6%)'],
-    news: 'Monetary Authority of Singapore targets core inflation.',
-    volume: '300M Shares',
-    topSector: 'Financials'
-  },
-  'ASX': {
-    name: 'Australian Securities Exchange',
-    indices: [{ name: 'ASX 200', value: '7,733.50', change: '+0.7%' }],
-    sentiment: 'Moderate Bullish',
-    fearAndGreed: 65,
-    gainers: ['BHP (+1.4%)', 'RIO (+1.1%)'],
-    news: 'Commodity prices boost mining sector performance.',
-    volume: '600M Shares',
-    topSector: 'Basic Materials'
-  },
-  'DIFC': {
-    name: 'Dubai Financial Market',
-    indices: [{ name: 'DFMGI', value: '4,215.11', change: '+0.9%' }],
-    sentiment: 'Optimistic',
-    fearAndGreed: 68,
-    gainers: ['EMIRATES NBD (+1.5%)', 'EMAAR (+1.2%)'],
-    news: 'Real estate sector drives market rally to multi-year highs.',
-    volume: '450M Shares',
-    topSector: 'Real Estate'
-  },
-  'B3': {
-    name: 'B3 - Brasil Bolsa Balcão',
-    indices: [{ name: 'Ibovespa', value: '128,100.20', change: '+0.4%' }],
-    sentiment: 'Neutral Bearish',
-    fearAndGreed: 45,
-    gainers: ['PETR4 (+0.5%)', 'VALE3 (-1.2%)'],
-    news: 'Fiscal concerns weigh on investor sentiment.',
-    volume: '750M Shares',
-    topSector: 'Energy'
-  },
-  'JSE': {
-    name: 'Johannesburg Stock Exchange',
-    indices: [{ name: 'JSE Top 40', value: '68,200.40', change: '+0.1%' }],
-    sentiment: 'Neutral',
-    fearAndGreed: 50
-  }
+const EXCHANGE_DETAILS: Record<string, { name: string }> = {
+  NYSE: { name: 'New York Stock Exchange' },
+  NSE: { name: 'National Stock Exchange of India' },
+  LSE: { name: 'London Stock Exchange' },
+  TSE: { name: 'Tokyo Stock Exchange' },
+  HKEX: { name: 'Hong Kong Exchange' },
+  SGX: { name: 'Singapore Exchange' },
+  ASX: { name: 'Australian Securities Exchange' },
+  DIFC: { name: 'Dubai Financial Market' },
+  B3: { name: 'B3 - Brasil Bolsa Balcão' },
+  JSE: { name: 'Johannesburg Stock Exchange' },
+  TSX: { name: 'Toronto Stock Exchange' }
 };
-    
-
 
 const MARKERS = [
-  { label: 'NYSE', lat: 40.7128, lng: -74.0060, risk: 'extreme' },
-  { label: 'LSE', lat: 51.5074, lng: -0.1278, risk: 'high' },
-  { label: 'TSE', lat: 35.6895, lng: 139.6917, risk: 'medium' },
-  { label: 'NSE', lat: 19.0760, lng: 72.8777, risk: 'low' },
-  { label: 'HKEX', lat: 22.3193, lng: 114.1694, risk: 'high' },
-  { label: 'SGX', lat: 1.3521, lng: 103.8198, risk: 'low' },
-  { label: 'ASX', lat: -33.8688, lng: 151.2093, risk: 'medium' },
-  { label: 'DIFC', lat: 25.2048, lng: 55.2708, risk: 'high' },
-  { label: 'B3', lat: -23.5505, lng: -46.6333, risk: 'medium' },
-  { label: 'JSE', lat: -26.2041, lng: 28.0473, risk: 'low' },
-  { label: 'TSX', lat: 43.6532, lng: -79.3832, risk: 'low' },
-].map(m => {
-  const isBullish = EXCHANGE_DETAILS[m.label]?.indices[0]?.change.startsWith('+');
-  return {
-    ...m,
-    isBullish,
-    color: isBullish ? '#10b981' : '#ef4444' // Green for bullish, Red for bearish
-  };
-});
+  { label: 'NYSE', lat: 40.7128, lng: -74.0060 },
+  { label: 'LSE', lat: 51.5074, lng: -0.1278 },
+  { label: 'TSE', lat: 35.6895, lng: 139.6917 },
+  { label: 'NSE', lat: 19.0760, lng: 72.8777 },
+  { label: 'HKEX', lat: 22.3193, lng: 114.1694 },
+  { label: 'SGX', lat: 1.3521, lng: 103.8198 },
+  { label: 'ASX', lat: -33.8688, lng: 151.2093 },
+  { label: 'DIFC', lat: 25.2048, lng: 55.2708 },
+  { label: 'B3', lat: -23.5505, lng: -46.6333 },
+  { label: 'JSE', lat: -26.2041, lng: 28.0473 },
+  { label: 'TSX', lat: 43.6532, lng: -79.3832 }
+].map((marker) => ({
+  ...marker,
+  risk: 'not assessed',
+  isBullish: false,
+  color: '#64748b'
+}));
 
 type GlobeMode = 'default' | 'capitalFlows' | 'geoRisk' | 'supplyChain' | 'commodities' | 'sectorRotation' | 'holdings' | 'earningsSeason' | 'timeMachine' | 'correlationWeb' | 'dominoQuiz' | 'currencySwap';
 
@@ -195,8 +106,8 @@ export default function MarketGlobe3D() {
   }, []);
 
   const activeExchangeData = selectedExchange ? EXCHANGE_DETAILS[selectedExchange] : null;
-  const exchangeIndices = liveExchangeData?.indices?.length ? liveExchangeData.indices : activeExchangeData?.indices || [];
-  const fearGreedValue = liveExchangeData ? (typeof liveExchangeData.fearAndGreed === 'number' ? liveExchangeData.fearAndGreed : null) : (activeExchangeData?.fearAndGreed ?? null);
+  const exchangeIndices = Array.isArray(liveExchangeData?.indices) ? liveExchangeData.indices : [];
+  const fearGreedValue = typeof liveExchangeData?.fearAndGreed === 'number' ? liveExchangeData.fearAndGreed : null;
 
   useEffect(() => {
      if (selectedExchange) {
@@ -379,11 +290,6 @@ export default function MarketGlobe3D() {
       }
     }
 
-    // Whale Tracker sporadic random massive rings
-    if (mode === 'default' && timeplay % 15 === 0) { // Using timeplay as a simple counter mock
-       const whale = MARKERS[Math.floor(Math.random() * MARKERS.length)];
-       r.push({ ...whale, maxR: 25, propagationSpeed: 4, repeatPeriod: 1000, color: '#a855f7' });
-    }
 
     return { points: p, arcs: a, rings: r };
   }, [mode, chainReaction, timeplay]);
@@ -750,7 +656,7 @@ export default function MarketGlobe3D() {
                     <button onClick={() => setChainReaction(null)} className="text-rose-500 hover:text-rose-400"><X className="w-4 h-4"/></button>
                  </div>
                  <p className="text-xs text-rose-100/90 leading-relaxed font-medium">
-                   "A massive shock originating in {chainReaction} is generating correlated drawdowns across emerging markets. Predict: Severe capital flight hurting Brazilian Real and Indian IT exports over the next 48 hours."
+                   {`Scenario selection: ${chainReaction}. This is an educational scenario only; no live event attribution, causal relationship, or 48-hour forecast is available from the connected data.`}
                  </p>
                  <div className="mt-3 flex gap-2">
                     <button className="flex-1 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-rose-300 text-[10px] font-bold py-1.5 rounded transition-colors uppercase tracking-widest">Generate Hedge Portfolio</button>
@@ -862,8 +768,8 @@ export default function MarketGlobe3D() {
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2.5 rounded-xl flex flex-col gap-1">
                   <span className="text-[10px] text-zinc-500 font-medium">{liveExchangeData ? 'Sentiment (not supplied)' : 'Sample sentiment (not live)'}</span>
-                  <span className={`font-bold tracking-tight ${activeExchangeData.sentiment.includes('Bullish') ? 'text-emerald-400' : activeExchangeData.sentiment.includes('Bearish') ? 'text-rose-400' : 'text-amber-400'}`}>
-                    {liveExchangeData ? liveExchangeData.sentiment : activeExchangeData.sentiment}
+                  <span className={`font-bold tracking-tight $text-amber-400`}>
+                    {liveExchangeData?.sentiment || 'Not calculated from index quotes'}
                   </span>
                 </div>
                 <div className="bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2.5 rounded-xl flex flex-col gap-1">
@@ -873,16 +779,16 @@ export default function MarketGlobe3D() {
                     <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                        <div className={`h-full ${fearGreedValue !== null && fearGreedValue > 70 ? 'bg-emerald-400' : 'bg-amber-400'}`} style={{ width: `${fearGreedValue ?? 0}%` }}></div>
                     </div>
-                    <span className="font-mono font-bold text-zinc-300 text-[10px]">{liveExchangeData ? 'N/A' : activeExchangeData.fearAndGreed}</span>
+                    <span className="font-mono font-bold text-zinc-300 text-[10px]">{fearGreedValue == null ? 'Not supplied' : fearGreedValue}</span>
                   </div>
                 </div>
                 <div className="bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2.5 rounded-xl flex flex-col gap-1">
                   <span className="text-[10px] text-zinc-500 font-medium">Daily Volume</span>
-                  <span className="font-mono font-bold text-zinc-200">{liveExchangeData ? 'Not supplied' : activeExchangeData.volume}</span>
+                  <span className="font-mono font-bold text-zinc-200">{liveExchangeData?.volume || 'Not supplied'}</span>
                 </div>
                 <div className="bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2.5 rounded-xl flex flex-col gap-1">
                   <span className="text-[10px] text-zinc-500 font-medium">Leading Sector</span>
-                  <span className="font-bold text-zinc-200 truncate">{liveExchangeData ? (liveExchangeData.topSector || 'Not supplied') : activeExchangeData.topSector}</span>
+                  <span className="font-bold text-zinc-200 truncate">{liveExchangeData?.topSector || 'Not supplied'}</span>
                 </div>
               </div>
 
@@ -891,7 +797,7 @@ export default function MarketGlobe3D() {
                   <TrendingUp className="w-3 h-3 text-emerald-400" /> {liveExchangeData ? 'Top Gainers (not supplied)' : 'Sample Gainers (not live)'}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {(liveExchangeData?.gainers || (liveExchangeData ? [] : activeExchangeData.gainers)).map((gainer: string, i: number) => (
+                  {(Array.isArray(liveExchangeData?.gainers) ? liveExchangeData.gainers : []).map((gainer: string, i: number) => (
                     <span key={i} className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-1.5 rounded-md shadow-sm">
                       {gainer}
                     </span>
@@ -904,7 +810,7 @@ export default function MarketGlobe3D() {
                   <Newspaper className="w-3 h-3" /> {liveExchangeData ? 'Event feed unavailable' : 'Sample event text (not live)'}
                 </div>
                 <p className="text-xs text-zinc-300 leading-relaxed font-medium bg-zinc-950/50 p-2.5 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 mt-2">
-                  "{liveExchangeData ? (liveExchangeData.news || 'No verified event feed is connected.') : activeExchangeData.news}"
+                  "{liveExchangeData?.news || 'No verified exchange-specific news feed is connected.'}"
                 </p>
               </div>
             </div>
