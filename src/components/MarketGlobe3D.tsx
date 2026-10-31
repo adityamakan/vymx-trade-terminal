@@ -205,6 +205,7 @@ export default function MarketGlobe3D() {
   }, []);
 
   const activeExchangeData = selectedExchange ? EXCHANGE_DETAILS[selectedExchange] : null;
+  const exchangeIndices = liveExchangeData?.indices?.length ? liveExchangeData.indices : activeExchangeData?.indices || [];
 
   useEffect(() => {
      if (selectedExchange) {
@@ -804,6 +805,7 @@ export default function MarketGlobe3D() {
                   <span className="text-xs font-bold font-mono tracking-wider">{selectedExchange} {loadingExchangeData && <span className="text-[9px] text-zinc-500 animate-pulse ml-2">(Fetching Live Data...)</span>}</span>
                 </div>
                 <h3 className="text-base font-bold text-white leading-tight">{activeExchangeData.name}</h3>
+                <span className={`mt-1 inline-flex rounded border px-2 py-0.5 text-[8px] font-mono font-bold tracking-widest ${liveExchangeData ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400' : 'border-amber-500/20 bg-amber-500/5 text-amber-300'}`}>{liveExchangeData ? 'PROVIDER INDEX QUOTE' : 'ILLUSTRATIVE SAMPLE — NOT LIVE'}</span>
               </div>
               <button 
                 onClick={() => { setSelectedExchange(null); setChainReaction(null); }}
@@ -816,7 +818,7 @@ export default function MarketGlobe3D() {
             <div className="space-y-4">
               {/* Indices */}
               <div className="space-y-2">
-                {activeExchangeData.indices.map((idx: any, i: number) => (
+                {exchangeIndices.map((idx: any, i: number) => (
                   <div key={i} className="flex items-center justify-between bg-zinc-950/80 p-3 rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 shadow-inner">
                     <span className="text-xs font-semibold text-zinc-300">{idx.name}</span>
                     <div className="flex items-center gap-3">
@@ -846,37 +848,37 @@ export default function MarketGlobe3D() {
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2.5 rounded-xl flex flex-col gap-1">
-                  <span className="text-[10px] text-zinc-500 font-medium">Sentiment Aura</span>
+                  <span className="text-[10px] text-zinc-500 font-medium">{liveExchangeData ? 'Sentiment (not supplied)' : 'Sample sentiment (not live)'}</span>
                   <span className={`font-bold tracking-tight ${activeExchangeData.sentiment.includes('Bullish') ? 'text-emerald-400' : activeExchangeData.sentiment.includes('Bearish') ? 'text-rose-400' : 'text-amber-400'}`}>
                     {liveExchangeData ? liveExchangeData.sentiment : activeExchangeData.sentiment}
                   </span>
                 </div>
                 <div className="bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2.5 rounded-xl flex flex-col gap-1">
-                  <span className="text-[10px] text-zinc-500 font-medium">Fear / Greed</span>
+                  <span className="text-[10px] text-zinc-500 font-medium">{liveExchangeData ? 'Fear / Greed (not supplied)' : 'Sample Fear / Greed (not live)'}</span>
                   <div className="flex items-center gap-1.5">
                     {activeExchangeData.fearAndGreed > 70 ? <ThermometerSun className="w-3.5 h-3.5 text-emerald-400" /> : <ThermometerSnowflake className="w-3.5 h-3.5 text-amber-400" />}
                     <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                        <div className={`h-full ${activeExchangeData.fearAndGreed > 70 ? 'bg-emerald-400' : 'bg-amber-400'}`} style={{ width: `${activeExchangeData.fearAndGreed}%` }}></div>
                     </div>
-                    <span className="font-mono font-bold text-zinc-300 text-[10px]">{activeExchangeData.fearAndGreed}</span>
+                    <span className="font-mono font-bold text-zinc-300 text-[10px]">{liveExchangeData ? 'N/A' : activeExchangeData.fearAndGreed}</span>
                   </div>
                 </div>
                 <div className="bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2.5 rounded-xl flex flex-col gap-1">
                   <span className="text-[10px] text-zinc-500 font-medium">Daily Volume</span>
-                  <span className="font-mono font-bold text-zinc-200">{activeExchangeData.volume}</span>
+                  <span className="font-mono font-bold text-zinc-200">{liveExchangeData ? 'Not supplied' : activeExchangeData.volume}</span>
                 </div>
                 <div className="bg-zinc-950/50 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-2.5 rounded-xl flex flex-col gap-1">
                   <span className="text-[10px] text-zinc-500 font-medium">Leading Sector</span>
-                  <span className="font-bold text-zinc-200 truncate">{liveExchangeData ? liveExchangeData.topSector : activeExchangeData.topSector}</span>
+                  <span className="font-bold text-zinc-200 truncate">{liveExchangeData ? (liveExchangeData.topSector || 'Not supplied') : activeExchangeData.topSector}</span>
                 </div>
               </div>
 
               <div className="space-y-2 pt-1 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
                 <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                  <TrendingUp className="w-3 h-3 text-emerald-400" /> Top Gainers
+                  <TrendingUp className="w-3 h-3 text-emerald-400" /> {liveExchangeData ? 'Top Gainers (not supplied)' : 'Sample Gainers (not live)'}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {activeExchangeData.gainers.map((gainer: string, i: number) => (
+                  {(liveExchangeData?.gainers || (liveExchangeData ? [] : activeExchangeData.gainers)).map((gainer: string, i: number) => (
                     <span key={i} className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-1.5 rounded-md shadow-sm">
                       {gainer}
                     </span>
@@ -886,10 +888,10 @@ export default function MarketGlobe3D() {
 
               <div className="space-y-1.5 pt-2 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300">
                 <div className="flex items-center gap-1.5 text-[10px] text-indigo-400 font-bold uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded w-fit">
-                  <Newspaper className="w-3 h-3" /> {liveExchangeData ? 'Live Event Intelligence' : 'Event Intelligence'}
+                  <Newspaper className="w-3 h-3" /> {liveExchangeData ? 'Event feed unavailable' : 'Sample event text (not live)'}
                 </div>
                 <p className="text-xs text-zinc-300 leading-relaxed font-medium bg-zinc-950/50 p-2.5 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 mt-2">
-                  "{liveExchangeData ? liveExchangeData.news : activeExchangeData.news}"
+                  "{liveExchangeData ? (liveExchangeData.news || 'No verified event feed is connected.') : activeExchangeData.news}"
                 </p>
               </div>
             </div>
