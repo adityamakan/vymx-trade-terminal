@@ -111,11 +111,15 @@ jobs:
 
   dependency-candidate:
     name: Validate non-breaking dependency update candidate
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Check out source
+      - name: Check out PR head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -123,7 +127,7 @@ jobs:
           node-version: '22.19.0'
           cache: npm
 
-      # Generate a candidate only. No --force and no repository mutation.
+      # Generate a candidate only. No --force and no package.json mutation.
       - name: Apply compatible audit fixes to candidate lockfile
         run: npm audit fix --package-lock-only --ignore-scripts || true
 
@@ -163,6 +167,34 @@ jobs:
           ];
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\\n') + '\\n');
           NODE
+
+      - name: Require zero critical advisories and a reduced total
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const report = JSON.parse(fs.readFileSync('candidate-audit.json', 'utf8'));
+          const counts = report.metadata?.vulnerabilities;
+          if (!counts) throw new Error('Candidate audit report is unavailable.');
+          if ((counts.critical ?? 0) !== 0) throw new Error('Candidate still contains critical advisories.');
+          if ((counts.total ?? Infinity) >= 27) throw new Error('Candidate did not reduce the baseline of 27 advisories.');
+          NODE
+
+      # Commit only after install, typecheck, tests, build, and audit all pass.
+      # Fork PRs are never written to.
+      - name: Commit validated dependency lockfile
+        if: success() && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "No compatible lockfile updates to commit."
+            exit 0
+          fi
+          git commit -m "chore(deps): apply validated non-breaking security updates"
+          git push origin "HEAD:${BRANCH_NAME}"
 
       - name: Upload dependency lockfile candidate and audit
         if: always()
