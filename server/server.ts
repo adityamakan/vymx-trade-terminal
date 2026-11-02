@@ -1,4 +1,7 @@
 import express, { Request, Response } from 'express';
+import helmet from 'helmet';
+import compression from 'compression';
+import { rateLimit } from 'express-rate-limit';
 import path from 'path';
 import { createServer } from 'http';
 import { WebSocket, WebSocketServer } from 'ws';
@@ -13,8 +16,27 @@ const CACHE_TTL_MS = 30_000;
 const MAX_CACHE_ENTRIES = 500;
 const DEFAULT_SYMBOLS = ['AAPL', 'MSFT', 'NVDA', '^GSPC', '^IXIC', '^NSEI', '^BSESN', 'BTC-USD', 'GC=F'];
 
+app.set('trust proxy', 1); // Render terminates one trusted reverse-proxy hop.
 app.disable('x-powered-by');
+app.use(helmet({
+  contentSecurityPolicy: false, // External market widgets require a separately reviewed CSP.
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: false
+}));
+app.use(compression());
 app.use(express.json({ limit: '32kb' }));
+
+const configuredApiLimit = Number.parseInt(process.env.API_RATE_LIMIT_PER_MINUTE || '240', 10);
+const apiRateLimit = Number.isFinite(configuredApiLimit) && configuredApiLimit > 0 ? configuredApiLimit : 240;
+app.use('/api', rateLimit({
+  windowMs: 60_000,
+  limit: apiRateLimit,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  skip: (req) => req.path === '/health' || req.path === '/status',
+  message: { success: false, code: 'API_RATE_LIMITED', error: 'Too many API requests. Please retry shortly.' }
+}));
+
 app.use('/api', (_req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
@@ -531,7 +553,13 @@ app.get('/api/ai/exchange-latest', async (req: Request, res: Response) => {
 
 // AI routes share a single server-side Gemini integration. If no key exists,
 // return an explicit unavailable response rather than invented fallback content.
-const aiRequestWindow = new Map<string, number[]>();
+const aiRequestLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 15,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { success: false, code: 'AI_RATE_LIMITED', error: 'AI request rate limit exceeded.' }
+});
 // These panels require specialized external datasets. Do not let a generic
 // language model invent geopolitical events, institutional transactions or
 // scheduled economic releases when those feeds are not configured.
@@ -553,7 +581,7 @@ const supportedAiFeatures = new Set([
   'quiz', 'narrative', 'exchange-latest', 'market-auras', 'institutional-flows',
   'economic-calendar', 'vymx-intelligence'
 ]);
-app.all('/api/ai/:feature', async (req: Request, res: Response) => {
+app.all('/api/ai/:feature', aiRequestLimiter, async (req: Request, res: Response) => {
   if (!supportedAiFeatures.has(req.params.feature)) return res.status(404).json({ success: false, error: 'AI feature not found' });
   if (!['GET', 'POST'].includes(req.method)) return res.status(405).json({ success: false, error: 'Method not allowed' });
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
@@ -562,18 +590,6 @@ app.all('/api/ai/:feature', async (req: Request, res: Response) => {
     error: 'AI analysis is unavailable until a server-side Gemini API key is configured.',
     generated: false
   });
-  const ip = req.ip || 'unknown';
-  const now = Date.now();
-  const recent = (aiRequestWindow.get(ip) || []).filter((time) => now - time < 60_000);
-  if (aiRequestWindow.size > 1_000) {
-    for (const [knownIp, timestamps] of aiRequestWindow) {
-      if (!timestamps.some((time) => now - time < 60_000)) aiRequestWindow.delete(knownIp);
-    }
-  }
-  if (recent.length >= 15) return res.status(429).json({ success: false, error: 'AI request rate limit exceeded' });
-  recent.push(now);
-  aiRequestWindow.set(ip, recent);
-
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   if (req.params.feature === 'live-news') {
     const newsKey = process.env.FINNHUB_API_KEY;
