@@ -275,7 +275,7 @@ export default function MacroeconomicAnalyzer() {
           <div className="flex items-center gap-2 mb-1">
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${indicators ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-300 border-amber-500/20'}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${indicators ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-              {indicators ? 'PROVIDER PROXIES RECEIVED' : isLoadingIndicators ? 'CONNECTING' : 'PROXY FEED UNAVAILABLE'}
+              {indicators ? 'MACRO DATA AVAILABLE' : isLoadingIndicators ? 'CONNECTING' : 'PROXY FEED UNAVAILABLE'}
             </span>
             <span className="text-xs text-zinc-500 font-mono">Yahoo Finance · Optional FRED</span>
           </div>
@@ -829,7 +829,7 @@ export default function MacroeconomicAnalyzer() {
         </div>
       )}
 
-      {/* TAB 3: AI MACRO STRATEGIST (Gemini 3.8 Flash) */}
+      {/* TAB 3: AI MACRO STRATEGIST (Gemini AI) */}
       {activeTab === 'ai_strategist' && (
         <div className="space-y-6">
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5">
