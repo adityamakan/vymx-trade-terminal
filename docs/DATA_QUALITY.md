@@ -6,7 +6,7 @@ This document describes what VYMX may claim about its data. A visualized value i
 
 Every provider-backed observation should be treated as one of:
 
-- **Available:** a provider returned a finite, valid observation with a source and retrieval timestamp.
+- **Available:** a provider returned a finite, valid observation with a source. Freshness-sensitive features additionally require a valid provider observation timestamp; server retrieval time alone is not proof of fresh market data.
 - **Stale:** the observation exists but is older than the consuming feature's freshness threshold.
 - **Partial:** some requested symbols or fields were returned while others failed or were omitted.
 - **Unavailable:** no valid observation exists, the provider is not configured, or the request failed.
@@ -47,9 +47,9 @@ Before presenting performance as investment-grade:
 
 ## Freshness and failure handling
 
-A consumer must define a freshness threshold appropriate to the instrument and market session. A quote retrieved recently can still contain an old provider market timestamp, particularly outside market hours. Prefer provider event timestamps when supplied; distinguish them from the server retrieval timestamp.
+A consumer must define a freshness threshold appropriate to the instrument and market session. A quote retrieved recently can still contain an old provider market timestamp, particularly outside market hours. Use the provider's market-observation timestamp for freshness decisions and expose server retrieval time separately as `fetchedAt`. If the provider timestamp is absent or invalid, keep `quoteAsOf` null; do not manufacture a timestamp from the API response time.
 
-- Market-closed is not the same as stale.
+- Market-closed is not the same as provider failure. Under the current strict 120-second live-metric gate, an old last-close quote is not counted as a fresh live observation; the UI should label it as the latest close rather than imply that the market is trading.
 - A server health response is not an upstream provider health check.
 - Partial quote batches must expose the unavailable symbols.
 - Provider timeouts and rate limits should return bounded, explicit errors.
