@@ -732,7 +732,7 @@ server.on('upgrade', (request, socket, head) => {
 
   const activeSymbols = new Set([...subscriptions.values()].flatMap((symbols) => symbols));
   if (new Set([...activeSymbols, ...DEFAULT_SYMBOLS]).size > MAX_ACTIVE_WEBSOCKET_SYMBOLS) {
-    socket.write('HTTP/1.1 503 Service Unavailable\\r\\nConnection: close\\r\\n\\r\\n');
+    socket.write('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n\r\n');
     socket.destroy();
     return;
   }
