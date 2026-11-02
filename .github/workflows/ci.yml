@@ -77,6 +77,28 @@ jobs:
             --data '{"symbols":"AAPL"}' http://127.0.0.1:4179/api/prices)
           test "$limited_status" = "429"
 
+          node --input-type=module <<'NODE'
+          import WebSocket from 'ws';
+          const ws = new WebSocket('ws://127.0.0.1:4179/api/prices', {
+            headers: { Origin: 'http://127.0.0.1:4179' }
+          });
+          await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('WebSocket smoke test timed out')), 5000);
+            ws.once('open', () => ws.send('ping'));
+            ws.on('message', (data) => {
+              if (data.toString() === 'pong') {
+                clearTimeout(timeout);
+                ws.close();
+                resolve();
+              }
+            });
+            ws.once('error', (error) => {
+              clearTimeout(timeout);
+              reject(error);
+            });
+          });
+          NODE
+
       # Report-only initially: the repository's known advisories must be
       # triaged package-by-package before turning this into a blocking gate.
       - name: Generate dependency vulnerability report
