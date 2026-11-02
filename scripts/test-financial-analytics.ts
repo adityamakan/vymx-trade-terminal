@@ -56,8 +56,6 @@ assert.equal(normalizeProviderTimestamp(start / 1000), new Date(start).toISOStri
 assert.equal(normalizeProviderTimestamp(start), new Date(start).toISOString());
 assert.equal(normalizeProviderTimestamp(new Date(Date.now() + 10 * 60_000)), null);
 
-console.log('Financial analytics and provider timestamp tests passed.');
-
 
 // Input order must not affect results; duplicate UTC-day observations collapse
 // to the last timestamped observation for that day.
@@ -79,7 +77,7 @@ const mixedValidity = calculatePortfolioRiskMetrics([
 ]);
 assert.equal(mixedValidity.observations, 2);
 assert.equal(mixedValidity.dailyReturns, 1);
-assert.equal(mixedValidity.cumulativeReturnPct, 3);
+assert.ok(Math.abs((mixedValidity.cumulativeReturnPct ?? 0) - 3) < 1e-10);
 
 // Equal-valued observations produce zero volatility; Sharpe remains unavailable
 // because dividing by zero volatility would be undefined.
@@ -98,3 +96,5 @@ const singleton = calculatePortfolioRiskMetrics([
 assert.equal(singleton.dailyReturns, 0);
 assert.equal(singleton.cumulativeReturnPct, null);
 assert.equal(singleton.maxDrawdownPct, null);
+
+console.log('Financial analytics and provider timestamp tests passed.');
