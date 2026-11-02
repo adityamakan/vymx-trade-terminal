@@ -73,6 +73,13 @@ Therefore, a Netlify static preview can build the frontend but will not automati
 
 A Netlify Deploy Preview failure is a separate check from the Render production deployment. Inspect its Netlify build log independently; do not interpret it as proof that Render production is down.
 
+
+## API edge protections
+
+The Express service now enables Helmet headers (CSP remains disabled pending an explicit external-widget allowlist), compression, a 32 KB JSON body limit, one trusted Render proxy hop, a default 240-request/minute per-IP API limit, and a 15-request/minute AI-route limit. Health/status probes are excluded from the general API limit. CI smoke tests assert the security header and verify that malformed API input returns 400 and a second request at a deliberately low test limit returns 429.
+
+The rate-limit store is process-local. It must be replaced with a shared store before horizontally scaling the service. WebSocket upgrades bypass Express middleware; per-connection and aggregate subscription caps remain a separate hardening item.
+
 ## Firebase operations are separate
 
 - Deploying the Node service does not deploy Firestore security rules.
