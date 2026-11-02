@@ -40,6 +40,36 @@ jobs:
       - name: Build production artifacts
         run: npm run build
 
+      # Exercise the exact Node entry point Render starts, not only the bundler.
+      - name: Smoke test production server
+        run: |
+          PORT=4179 node dist/server.cjs > server-smoke.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          for attempt in $(seq 1 30); do
+            if curl --silent --show-error --fail http://127.0.0.1:4179/health > health.json; then
+              node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const health = JSON.parse(fs.readFileSync('health.json', 'utf8'));
+          if (health.status !== 'ok' || health.service !== 'vymx-api') {
+            throw new Error('Unexpected production health response');
+          }
+          NODE
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              cat server-smoke.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          invalid_status=$(curl --silent --output /tmp/vymx-invalid.json --write-out '%{http_code}' \
+            -H 'Content-Type: application/json' \
+            --data '{"symbols":"AAPL"}' http://127.0.0.1:4179/api/prices)
+          test "$invalid_status" = "400"
+
       # Report-only initially: the repository's known advisories must be
       # triaged package-by-package before turning this into a blocking gate.
       - name: Generate dependency vulnerability report
