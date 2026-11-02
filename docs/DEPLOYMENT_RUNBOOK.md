@@ -61,6 +61,18 @@ A candidate revision must pass, in order:
 - Render Free instances may sleep. Distinguish cold starts from crashes and failed builds.
 - Check Render deploy logs, runtime logs, and the health endpoint separately. A successful build does not prove that all providers are operational.
 
+
+## Netlify preview versus Render backend
+
+The GitHub repository also reports Netlify Deploy Preview checks. The frontend currently calls same-origin `/api/*` REST routes and opens a same-origin `/api/prices` WebSocket. The repository does not contain a Netlify Functions or proxy configuration, while the Express API and WebSocket server are started by `server/server.ts` on Render.
+
+Therefore, a Netlify static preview can build the frontend but will not automatically provide the Express API or WebSocket service. Unless the Netlify project dashboard has an external proxy/function configuration not represented in this repository, API-backed features in a Netlify preview will not work. Choose one explicit approach:
+
+- Use Render as the single full-stack deployment and treat Netlify preview as non-production/disabled; or
+- Configure a documented REST proxy to Render and a separately supported WebSocket route, then test both. A REST-only rewrite is not sufficient for live WebSocket quotes.
+
+A Netlify Deploy Preview failure is a separate check from the Render production deployment. Inspect its Netlify build log independently; do not interpret it as proof that Render production is down.
+
 ## Firebase operations are separate
 
 - Deploying the Node service does not deploy Firestore security rules.
