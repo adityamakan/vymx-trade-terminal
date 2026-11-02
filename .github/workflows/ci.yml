@@ -108,3 +108,40 @@ jobs:
           path: npm-audit.json
           if-no-files-found: warn
           retention-days: 14
+
+  dependency-candidate:
+    name: Validate non-breaking dependency update candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.19.0'
+          cache: npm
+
+      # Generate a candidate only. No --force and no repository mutation.
+      - name: Apply compatible audit fixes to candidate lockfile
+        run: npm audit fix --package-lock-only --ignore-scripts || true
+
+      - name: Install candidate lockfile
+        run: npm ci
+
+      - name: Typecheck candidate dependencies
+        run: npm run lint
+
+      - name: Test candidate dependencies
+        run: npm test
+
+      - name: Build candidate dependencies
+        run: npm run build
+
+      - name: Upload dependency lockfile candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-lockfile-candidate
+          path: package-lock.json
+          retention-days: 7
