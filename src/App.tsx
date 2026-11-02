@@ -248,7 +248,7 @@ export default function App() {
         return {
           ...asset,
           currency: typeof newPriceData.currency === 'string' ? newPriceData.currency.toUpperCase() : asset.currency ?? null,
-          quoteAsOf: typeof newPriceData.asOf === 'string' ? newPriceData.asOf : new Date().toISOString(),
+          quoteAsOf: typeof newPriceData.asOf === 'string' ? newPriceData.asOf : null,
           volume: Number.isFinite(newPriceData.volume) ? newPriceData.volume : 0,
           volumeDisplay: typeof newPriceData.volumeDisplay === 'string' ? newPriceData.volumeDisplay : 'N/A',
           price: (newPriceData.price !== undefined && !isNaN(newPriceData.price)) ? newPriceData.price : asset.price,
