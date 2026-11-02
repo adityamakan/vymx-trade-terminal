@@ -51,7 +51,12 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
-          const report = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'));
+          let report = {};
+          try {
+            report = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'));
+          } catch {
+            report = { error: 'npm audit did not return valid JSON (network, registry, or npm failure).' };
+          }
           const counts = report.metadata?.vulnerabilities ?? {};
           const lines = [
             '## Dependency audit (report-only)',
@@ -60,7 +65,7 @@ jobs:
             '|---|---:|',
             ...['critical', 'high', 'moderate', 'low', 'info'].map(level => `| ${level} | ${counts[level] ?? 0} |`),
             '',
-            'This report does not automatically upgrade dependencies. Review each advisory, affected path, fix availability and compatibility before changing the lockfile.'
+            report.error ?? 'This report does not automatically upgrade dependencies. Review each advisory, affected path, fix availability and compatibility before changing the lockfile.'
           ];
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
           NODE
