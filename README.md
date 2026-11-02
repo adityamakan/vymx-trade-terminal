@@ -4,6 +4,16 @@ VYMX is a research-oriented, multi-asset market dashboard and simulated trading 
 
 > **Data integrity notice:** Market observations are requested from Yahoo Finance and may be delayed, unavailable, incomplete, or subject to provider limits. Sector scores are ETF momentum proxies, not institutional-flow measurements. The application is for education and research; it is not a broker, exchange, investment adviser, or live execution venue. Independently verify all data before making financial decisions.
 
+## Repository guide
+
+- [System architecture and trust boundaries](docs/ARCHITECTURE.md)
+- [Contribution and review standards](CONTRIBUTING.md)
+- [Data quality contract](docs/DATA_QUALITY.md)
+- [Security policy](SECURITY.md)
+- [Deployment runbook](docs/DEPLOYMENT_RUNBOOK.md)
+- [Dependency risk register](docs/DEPENDENCY_RISK_REGISTER.md)
+- [Inspiration archive review](docs/INSPIRATION_ARCHIVE_REVIEW.md)
+
 ## Current architecture
 
 - React 19 + TypeScript frontend.
