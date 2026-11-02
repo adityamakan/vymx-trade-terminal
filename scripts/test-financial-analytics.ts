@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { calculatePortfolioRiskMetrics } from '../src/utils/financialAnalytics';
 
 const start = Date.UTC(2026, 0, 1);
+const DAY_MS = 24 * 60 * 60 * 1000;
 const rising = Array.from({ length: 40 }, (_, index) => ({
   capturedAt: start + index * 24 * 60 * 60 * 1000,
   totalEquityUSD: 100_000 * (1 + index * 0.001)
