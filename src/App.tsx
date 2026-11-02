@@ -893,7 +893,7 @@ export default function App() {
                 Latency: <span className="text-zinc-400 font-bold">{latencyMs}ms</span>
               </span>
             )}
-            <span className="text-emerald-500/80 uppercase font-bold bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/15">Full-Stack Active</span>
+            <span className="text-emerald-500/80 uppercase font-bold bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/15">Paper Trading · No Live Execution</span>
             <span>Local Simulation Sandbox (No Financial Risks involved)</span>
           </div>
         </div>
