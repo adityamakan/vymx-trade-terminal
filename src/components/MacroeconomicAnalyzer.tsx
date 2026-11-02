@@ -37,7 +37,7 @@ interface MacroQuote {
   changeAbs: number;
   currency: string | null;
   marketState: string | null;
-  asOf: string;
+  asOf: string | null;
   source: string;
 }
 
@@ -48,6 +48,7 @@ interface MacroIndicatorsData {
   source: string;
   note: string;
   fetchedAt: string;
+  officialSeries?: Array<{ id: string; label: string; units: string; frequency: string; value: number | null; observationDate: string | null; previousValue: number | null; status: 'available' | 'unavailable'; source: string; reason?: string; fetchedAt: string }>;
 }
 
 interface BacktestResult {
@@ -300,7 +301,7 @@ export default function MacroeconomicAnalyzer() {
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            Backtesting (Disabled)
+            Backtesting (Unavailable)
           </button>
           <button
             onClick={() => setActiveTab('indicators')}
@@ -714,7 +715,7 @@ export default function MacroeconomicAnalyzer() {
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
                     AI Macroeconomic Synthesis
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold">
-                      Gemini 3.8 Flash
+                      Gemini AI
                     </span>
                   </h3>
                   <p className="text-xs text-zinc-400">AI commentary based on current provider market proxies; not official macroeconomic releases</p>
@@ -774,7 +775,7 @@ export default function MacroeconomicAnalyzer() {
                   return (
                     <div key={symbol} className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 font-mono">
                       <span className="text-[10px] text-zinc-500 block uppercase tracking-wider">{labels[symbol] || symbol}</span>
-                      <span className="text-xl font-bold text-white block mt-1">{(symbol === '^TNX' ? quote.price / 10 : quote.price).toLocaleString(undefined, { maximumFractionDigits: 4 })}{symbol === '^TNX' ? '%' : ''}</span>
+                      <span className="text-xl font-bold text-white block mt-1">{quote.price.toLocaleString(undefined, { maximumFractionDigits: 4 })}{symbol === '^TNX' ? '%' : ''}</span>
                       <span className={`text-xs font-semibold ${quote.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {quote.change >= 0 ? '+' : ''}{quote.change.toFixed(2)}%
                       </span>
@@ -786,6 +787,38 @@ export default function MacroeconomicAnalyzer() {
                 <p className="text-[10px] text-amber-400">Unavailable symbols: {indicators.unavailable.join(', ')}</p>
               )}
             </div>
+          )}
+          {indicators?.officialSeries && (
+            <section className="rounded-2xl border border-cyan-500/20 bg-zinc-900/60 p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+                <div>
+                  <span className="text-xs font-mono uppercase tracking-wider text-cyan-300">Official economic observations</span>
+                  <h3 className="mt-1 text-lg font-bold text-white">US rates, prices & monetary aggregates</h3>
+                  <p className="mt-1 text-xs text-zinc-400">Federal Reserve Economic Data (FRED). Values retain the source observation date; CPI figures are index levels, not year-over-year inflation.</p>
+                </div>
+                <span className="text-[10px] text-zinc-500">Source: Federal Reserve Bank of St. Louis</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                {indicators.officialSeries.map((series) => (
+                  <article key={series.id} className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs font-semibold text-zinc-300">{series.label}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${series.status === 'available' ? 'bg-emerald-500/10 text-emerald-300' : 'bg-amber-500/10 text-amber-300'}`}>
+                        {series.status}
+                      </span>
+                    </div>
+                    <div className="mt-3 text-2xl font-bold tracking-tight text-white">
+                      {series.value == null ? '—' : series.value.toLocaleString(undefined, { maximumFractionDigits: 3 })}
+                    </div>
+                    <div className="mt-1 text-[10px] text-zinc-500">{series.units} · {series.frequency}</div>
+                    <div className="mt-2 border-t border-zinc-800 pt-2 text-[10px] text-zinc-400">
+                      Observation date: {series.observationDate || 'Unavailable'}
+                    </div>
+                    {series.reason && <div className="mt-1 text-[10px] text-amber-300">{series.reason}</div>}
+                  </article>
+                ))}
+              </div>
+            </section>
           )}
           {!indicators && !isLoadingIndicators && (
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-200">
@@ -805,7 +838,7 @@ export default function MacroeconomicAnalyzer() {
               <h3 className="text-base font-bold text-white">AI Macroeconomic Scenario & Regime Reasoning</h3>
             </div>
             <p className="text-xs text-zinc-400 mb-4">
-              Powered by Gemini 3.8 Flash. Ask complex questions regarding interest rate cycles, tariff impacts, monetary policy transmission, or sovereign debt crises.
+              Powered by Gemini AI. Ask complex questions regarding interest rate cycles, tariff impacts, monetary policy transmission, or sovereign debt crises.
             </p>
 
             {/* Quick Prompts */}
