@@ -43,7 +43,7 @@ jobs:
       # Exercise the exact Node entry point Render starts, not only the bundler.
       - name: Smoke test production server
         run: |
-          PORT=4179 node dist/server.cjs > server-smoke.log 2>&1 &
+          PORT=4179 API_RATE_LIMIT_PER_MINUTE=1 node dist/server.cjs > server-smoke.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
 
@@ -65,10 +65,17 @@ jobs:
             sleep 1
           done
 
+          curl --silent --show-error --head http://127.0.0.1:4179/health | grep --ignore-case --quiet '^x-content-type-options: nosniff'
+
           invalid_status=$(curl --silent --output /tmp/vymx-invalid.json --write-out '%{http_code}' \
             -H 'Content-Type: application/json' \
             --data '{"symbols":"AAPL"}' http://127.0.0.1:4179/api/prices)
           test "$invalid_status" = "400"
+
+          limited_status=$(curl --silent --output /tmp/vymx-limited.json --write-out '%{http_code}' \
+            -H 'Content-Type: application/json' \
+            --data '{"symbols":"AAPL"}' http://127.0.0.1:4179/api/prices)
+          test "$limited_status" = "429"
 
       # Report-only initially: the repository's known advisories must be
       # triaged package-by-package before turning this into a blocking gate.
