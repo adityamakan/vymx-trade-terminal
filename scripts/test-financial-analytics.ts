@@ -57,7 +57,8 @@ const duplicateDay = calculatePortfolioRiskMetrics([
   { capturedAt: start + 3600000, totalEquityUSD: 102 }
 ]);
 assert.equal(duplicateDay.dailyReturns, 1);
-assert.equal(duplicateDay.cumulativeReturnPct, 5);
+assert.equal(duplicateDay.firstObservation, start + 3600000);
+assert.ok(Math.abs((duplicateDay.cumulativeReturnPct ?? 0) - ((105 / 102 - 1) * 100)) < 1e-10);
 
 // Invalid/non-positive valuations are excluded instead of poisoning statistics.
 const mixedValidity = calculatePortfolioRiskMetrics([
