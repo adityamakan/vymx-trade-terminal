@@ -30,13 +30,13 @@ Set these in the Render service dashboard and verify them after saving:
 
 | Setting | Required value |
 |---|---|
-| Build command | `npm ci && npm run lint && npm test && npm run build` |
+| Build command | `npm ci && npm run build` |
 | Start command | `npm start` |
 | Health check path | `/health` |
 | Node version | `22.19.0` |
 | Auto-deploy branch | `main` |
 
-The supplied log showed Render using `npm install && npm run build`. That is less reproducible than `npm ci`, and it did not run the typecheck or tests before deployment. The GitHub CI workflow now runs those checks and a production-server smoke test. Aligning Render's build command with CI is still a dashboard action; a repository commit cannot change a manually configured service unless Render is configured to consume a Blueprint.
+The supplied log showed Render using `npm install && npm run build`. That is less reproducible than `npm ci`, and it did not run the typecheck or tests before deployment. The `npm run build` script now runs `npm run lint` and `npm test` before generating production artifacts, so Render's existing `npm install && npm run build` command inherits the same preflight gates. The GitHub CI workflow runs the checks as separate named steps and a production-server smoke test. Aligning Render's build command with CI is still a dashboard action; a repository commit cannot change a manually configured service unless Render is configured to consume a Blueprint.
 
 ## Release gates
 
