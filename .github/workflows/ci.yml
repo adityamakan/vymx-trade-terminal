@@ -38,7 +38,7 @@ jobs:
         run: npm test
 
       - name: Build production artifacts
-        run: npm run build
+        run: npm run build:artifacts
 
       # Exercise the exact Node entry point Render starts, not only the bundler.
       - name: Smoke test production server
@@ -141,7 +141,7 @@ jobs:
         run: npm test
 
       - name: Build candidate dependencies
-        run: npm run build
+        run: npm run build:artifacts
 
       - name: Audit candidate dependencies
         if: always()
