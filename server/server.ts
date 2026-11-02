@@ -332,13 +332,80 @@ app.get('/api/yahoo/financials/:symbol', async (req: Request, res: Response) => 
   }
 });
 
+const MACRO_FRED_SERIES = [
+  { id: 'DGS10', label: 'US Treasury 10Y', units: 'Percent', frequency: 'Daily' },
+  { id: 'DGS2', label: 'US Treasury 2Y', units: 'Percent', frequency: 'Daily' },
+  { id: 'DGS3MO', label: 'US Treasury 3M', units: 'Percent', frequency: 'Daily' },
+  { id: 'FEDFUNDS', label: 'Effective Federal Funds Rate', units: 'Percent', frequency: 'Monthly' },
+  { id: 'CPIAUCSL', label: 'US CPI Index', units: 'Index (1982-84=100)', frequency: 'Monthly' },
+  { id: 'CPILFESL', label: 'US Core CPI Index', units: 'Index (1982-84=100)', frequency: 'Monthly' },
+  { id: 'M2SL', label: 'US M2 Money Stock', units: 'Billions of USD', frequency: 'Monthly' }
+] as const;
+
+async function fetchFredMacroSeries() {
+  const apiKey = process.env.FRED_API_KEY;
+  const fetchedAt = new Date().toISOString();
+  if (!apiKey) {
+    return MACRO_FRED_SERIES.map((series) => ({
+      ...series, value: null, observationDate: null, previousValue: null,
+      status: 'unavailable', source: 'Federal Reserve Bank of St. Louis FRED',
+      reason: 'FRED_API_KEY is not configured', fetchedAt
+    }));
+  }
+
+  return Promise.all(MACRO_FRED_SERIES.map(async (series) => {
+    try {
+      const url = new URL('https://api.stlouisfed.org/fred/series/observations');
+      url.search = new URLSearchParams({
+        series_id: series.id, api_key: apiKey, file_type: 'json',
+        sort_order: 'desc', limit: '24'
+      }).toString();
+      const upstream = await fetch(url, { signal: AbortSignal.timeout(8_000) });
+      if (!upstream.ok) throw new Error(`FRED returned HTTP ${upstream.status}`);
+      const payload: any = await upstream.json();
+      const observations = Array.isArray(payload?.observations) ? payload.observations : [];
+      const valid = observations.filter((row: any) =>
+        row && typeof row.date === 'string' && row.value !== '.' &&
+        Number.isFinite(Number(row.value))
+      );
+      const latest = valid[0];
+      const previous = valid[1];
+      if (!latest) throw new Error('No valid observations returned');
+      return {
+        ...series, value: Number(latest.value), observationDate: latest.date,
+        previousValue: previous ? Number(previous.value) : null,
+        status: 'available', source: 'Federal Reserve Bank of St. Louis FRED',
+        fetchedAt
+      };
+    } catch (error) {
+      return {
+        ...series, value: null, observationDate: null, previousValue: null,
+        status: 'unavailable', source: 'Federal Reserve Bank of St. Louis FRED',
+        reason: (error as Error).message, fetchedAt
+      };
+    }
+  }));
+}
+
 app.get('/api/macro/indicators', async (_req: Request, res: Response) => {
   const symbols = ['^GSPC', '^VIX', '^TNX', 'DX-Y.NYB', 'GC=F', 'CL=F', 'BTC-USD', 'EURUSD=X', 'INR=X'];
-  const result = await getPrices(symbols);
-  return res.status(result.returned ? 200 : 503).json({
-    success: result.returned > 0, indicators: result.prices, unavailable: result.errors,
-    source: 'Yahoo Finance', fetchedAt: new Date().toISOString(),
-    note: 'These are quoted market proxies, not official macroeconomic releases. Yahoo ^TNX is quoted in tenths of a percentage point; the UI normalizes it to percent.'
+  const [marketResult, officialSeries] = await Promise.all([
+    getPrices(symbols),
+    fetchFredMacroSeries()
+  ]);
+  const officialAvailable = officialSeries.some((series) => series.status === 'available');
+  const success = marketResult.returned > 0 || officialAvailable;
+  return res.status(success ? 200 : 503).json({
+    success,
+    indicators: marketResult.prices,
+    unavailable: marketResult.errors,
+    officialSeries,
+    sources: {
+      marketProxies: 'Yahoo Finance (unofficial market-data provider)',
+      officialMacro: 'Federal Reserve Bank of St. Louis FRED'
+    },
+    fetchedAt: new Date().toISOString(),
+    note: 'Market quotes are cross-asset proxies, not official macroeconomic releases. FRED observations are official published series and retain their observation dates; retrieval time is not substituted for observation time. CPI and core CPI are shown as index levels, not inflation rates.'
   });
 });
 
