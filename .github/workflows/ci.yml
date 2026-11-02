@@ -139,9 +139,37 @@ jobs:
       - name: Build candidate dependencies
         run: npm run build
 
-      - name: Upload dependency lockfile candidate
+      - name: Audit candidate dependencies
+        if: always()
+        run: npm audit --json > candidate-audit.json || true
+
+      - name: Summarize candidate audit
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          let report = {};
+          try { report = JSON.parse(fs.readFileSync('candidate-audit.json', 'utf8')); }
+          catch { report = { error: 'Candidate audit did not return valid JSON.' }; }
+          const counts = report.metadata?.vulnerabilities ?? {};
+          const lines = [
+            '## Candidate dependency audit',
+            '',
+            '| Severity | Count |',
+            '|---|---:|',
+            ...['critical', 'high', 'moderate', 'low', 'info'].map(level => `| ${level} | ${counts[level] ?? 0} |`),
+            '',
+            report.error ?? 'Review residual advisories before adopting this lockfile.'
+          ];
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\\n') + '\\n');
+          NODE
+
+      - name: Upload dependency lockfile candidate and audit
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dependency-lockfile-candidate
-          path: package-lock.json
+          path: |
+            package-lock.json
+            candidate-audit.json
           retention-days: 7
