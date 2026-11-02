@@ -46,3 +46,43 @@ assert.equal(sameDay.dailyReturns, 0);
 assert.equal(sameDay.cumulativeReturnPct, null);
 
 console.log('Financial analytics tests passed.');
+
+
+// Input order must not affect results; duplicate UTC-day observations collapse
+// to the last timestamped observation for that day.
+const duplicateDay = calculatePortfolioRiskMetrics([
+  { capturedAt: start + 86400000, totalEquityUSD: 105 },
+  { capturedAt: start, totalEquityUSD: 100 },
+  { capturedAt: start + 3600000, totalEquityUSD: 102 }
+]);
+assert.equal(duplicateDay.dailyReturns, 1);
+assert.equal(duplicateDay.cumulativeReturnPct, 5);
+
+// Invalid/non-positive valuations are excluded instead of poisoning statistics.
+const mixedValidity = calculatePortfolioRiskMetrics([
+  { capturedAt: start, totalEquityUSD: 100 },
+  { capturedAt: start + 86400000, totalEquityUSD: 0 },
+  { capturedAt: start + 2 * 86400000, totalEquityUSD: -10 },
+  { capturedAt: start + 3 * 86400000, totalEquityUSD: 103 }
+]);
+assert.equal(mixedValidity.observations, 2);
+assert.equal(mixedValidity.dailyReturns, 1);
+assert.equal(mixedValidity.cumulativeReturnPct, 3);
+
+// Equal-valued observations produce zero volatility; Sharpe remains unavailable
+// because dividing by zero volatility would be undefined.
+const flat = calculatePortfolioRiskMetrics(Array.from({ length: 40 }, (_, index) => ({
+  capturedAt: start + index * DAY_MS,
+  totalEquityUSD: 100
+})));
+assert.equal(flat.cumulativeReturnPct, 0);
+assert.equal(flat.annualizedVolatilityPct, 0);
+assert.equal(flat.sharpeAtZeroRiskFree, null);
+
+// A one-observation series must not manufacture a return or risk statistic.
+const singleton = calculatePortfolioRiskMetrics([
+  { capturedAt: start, totalEquityUSD: 100 }
+]);
+assert.equal(singleton.dailyReturns, 0);
+assert.equal(singleton.cumulativeReturnPct, null);
+assert.equal(singleton.maxDrawdownPct, null);
