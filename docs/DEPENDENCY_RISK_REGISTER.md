@@ -69,3 +69,26 @@ These are dependency advisory matches, not proof that every vulnerable code path
 ## Important limitation
 
 The report-only CI step records advisories but does not make the application secure by itself. The current audit findings remain open until a patched lockfile has been committed and the release gates pass. A successful build alone does not close a dependency vulnerability.
+
+
+## Post-remediation candidate audit (November 2, 2026)
+
+A non-forced `npm audit fix --package-lock-only` candidate was generated, installed with `npm ci`, and passed TypeScript validation, the automated test suite, and the production build before being committed to the remediation branch.
+
+| Severity | Baseline | Validated candidate |
+|---|---:|---:|
+| Critical | 2 | 0 |
+| High | 17 | 6 |
+| Moderate | 8 | 4 |
+| **Total** | **27** | **10** |
+
+The candidate resolves the two critical findings (`dompurify` and `proxy-addr`) and several high/moderate transitive advisories through compatible lockfile updates. The lockfile-only change leaves `package.json` ranges unchanged. Firebase SDK packages moved within the existing 12.x major line; authentication source code was not modified. A real Firebase sign-in/Firestore runtime regression test has not yet been performed.
+
+### Residual advisories
+
+- **High:** `firebase`, `@firebase/firestore`, `@firebase/firestore-compat`, `@grpc/grpc-js`, `yahoo-finance2`, `zod`.
+- **Moderate:** `@tailwindcss/typography`, `postcss-selector-parser`, `express`, `qs`.
+
+The audit tool proposes a major Firebase downgrade and a Yahoo Finance downgrade for some residual findings. Those are not accepted automatically. Firebase needs an Emulator-backed compatibility review; Yahoo Finance needs a controlled adapter migration or a separately tested safe pin. Tailwind's suggested downgrade is also not accepted without visual/build regression testing.
+
+**Status:** Critical advisories reduced to zero in the candidate lockfile; 10 residual advisories remain open. This is risk reduction, not a claim of zero vulnerabilities.
