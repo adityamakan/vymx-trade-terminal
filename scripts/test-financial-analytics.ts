@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { calculatePortfolioRiskMetrics } from '../src/utils/financialAnalytics';
+import { normalizeProviderTimestamp } from '../src/utils/providerTimestamp';
 
 const start = Date.UTC(2026, 0, 1);
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -46,7 +47,16 @@ const sameDay = calculatePortfolioRiskMetrics([
 assert.equal(sameDay.dailyReturns, 0);
 assert.equal(sameDay.cumulativeReturnPct, null);
 
-console.log('Financial analytics tests passed.');
+
+assert.equal(normalizeProviderTimestamp(null), null);
+assert.equal(normalizeProviderTimestamp(Number.NaN), null);
+assert.equal(normalizeProviderTimestamp('not-a-date'), null);
+assert.equal(normalizeProviderTimestamp(new Date(start)), new Date(start).toISOString());
+assert.equal(normalizeProviderTimestamp(start / 1000), new Date(start).toISOString());
+assert.equal(normalizeProviderTimestamp(start), new Date(start).toISOString());
+assert.equal(normalizeProviderTimestamp(new Date(Date.now() + 10 * 60_000)), null);
+
+console.log('Financial analytics and provider timestamp tests passed.');
 
 
 // Input order must not affect results; duplicate UTC-day observations collapse
