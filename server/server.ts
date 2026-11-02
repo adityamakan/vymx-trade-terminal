@@ -377,6 +377,11 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
   const sensex = quote('^BSESN');
   const btc = quote('BTC-USD');
   const vix = quote('^VIX');
+  const providerObservationTimes = Object.values(result.prices).map((item) => item.asOf);
+  const quoteAsOf = providerObservationTimes.length === result.returned
+    && providerObservationTimes.every((value): value is string => Boolean(value))
+    ? new Date(Math.min(...providerObservationTimes.map((value) => Date.parse(value)))).toISOString()
+    : null;
   return res.json({
     success: true,
     generated: false,
@@ -406,14 +411,9 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
       // These are deliberately null until an appropriate provider is connected.
       fearGreed: null, orderImbalance: null, smartMoney: null, darkPool: null, algoRisk: null,
       capitalInflows: null, capitalOutflows: null,
-      // Use the oldest timestamp among the returned observations as the
-      // coverage timestamp; if any quote lacks provider time, leave it unknown.
+      // Use the oldest provider observation among the returned quotes.
       quoteSource: 'Yahoo Finance',
-      quoteAsOf: Object.values(result.prices).every((item) => item.asOf)
-        ? Object.values(result.prices).map((item) => Date.parse(item.asOf!)).filter(Number.isFinite).sort((a, b) => a - b)[0]
-          ? new Date(Object.values(result.prices).map((item) => Date.parse(item.asOf!)).sort((a, b) => a - b)[0]).toISOString()
-          : null
-        : null
+      quoteAsOf
     },
     note: 'Prices, ETF proxies, commodity futures, FX crosses and the US 10Y proxy are provider-backed. Fear/greed, institutional flows, order-book depth, dark-pool activity, algorithmic risk and unsupported Treasury tenors are not supplied by this feed.'
   });
