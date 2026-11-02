@@ -718,7 +718,7 @@ export default function MacroeconomicAnalyzer() {
                       Gemini AI
                     </span>
                   </h3>
-                  <p className="text-xs text-zinc-400">AI commentary based on current provider market proxies; not official macroeconomic releases</p>
+                  <p className="text-xs text-zinc-400">AI commentary based on returned market proxies and any available FRED observations; interpretation is not an official release</p>
                 </div>
               </div>
 
@@ -778,6 +778,9 @@ export default function MacroeconomicAnalyzer() {
                       <span className="text-xl font-bold text-white block mt-1">{quote.price.toLocaleString(undefined, { maximumFractionDigits: 4 })}{symbol === '^TNX' ? '%' : ''}</span>
                       <span className={`text-xs font-semibold ${quote.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {quote.change >= 0 ? '+' : ''}{quote.change.toFixed(2)}%
+                      </span>
+                      <span className="mt-2 block border-t border-zinc-800 pt-2 text-[9px] text-zinc-500">
+                        Provider observation: {quote.asOf ? new Date(quote.asOf).toLocaleString() : 'Timestamp unavailable'}
                       </span>
                     </div>
                   );
