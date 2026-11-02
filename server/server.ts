@@ -700,12 +700,36 @@ app.use('/api/*', (req, res) => {
   res.status(404).json({ success: false, error: 'API endpoint not found', path: req.path });
 });
 
+const MAX_WEBSOCKET_CLIENTS = 20;
+const MAX_ACTIVE_WEBSOCKET_SYMBOLS = 100;
 const wss = new WebSocketServer({ noServer: true, maxPayload: 4096 });
 const subscriptions = new Map<WebSocket, string[]>();
 
 server.on('upgrade', (request, socket, head) => {
   const pathname = new URL(request.url || '/', 'http://localhost').pathname;
   if (pathname !== '/api/prices') { socket.destroy(); return; }
+
+  // Browser clients must connect from this same origin; non-browser clients may omit Origin.
+  const origin = request.headers.origin;
+  if (origin) {
+    try {
+      if (new URL(origin).host !== request.headers.host) {
+        socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+    } catch {
+      socket.destroy();
+      return;
+    }
+  }
+
+  if (wss.clients.size >= MAX_WEBSOCKET_CLIENTS) {
+    socket.write('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n\r\n');
+    socket.destroy();
+    return;
+  }
+
   wss.handleUpgrade(request, socket, head, (ws) => wss.emit('connection', ws, request));
 });
 
@@ -715,8 +739,23 @@ wss.on('connection', (ws) => {
     if (raw.toString() === 'ping') { ws.send('pong'); return; }
     try {
       const message = JSON.parse(raw.toString());
-      if (message?.type === 'subscribe') subscriptions.set(ws, validateSymbols(message.symbols));
-      else if (message?.type === 'ping') ws.send(JSON.stringify({ type: 'pong', timestamp: new Date().toISOString() }));
+      if (message?.type === 'subscribe') {
+        const requested = validateSymbols(message.symbols);
+        const otherSymbols = [...subscriptions.entries()]
+          .filter(([client]) => client !== ws)
+          .flatMap(([, symbols]) => symbols);
+        const aggregate = new Set([...otherSymbols, ...requested]);
+        if (aggregate.size > MAX_ACTIVE_WEBSOCKET_SYMBOLS) {
+          ws.send(JSON.stringify({
+            type: 'error',
+            message: `The live market-data connection supports at most ${MAX_ACTIVE_WEBSOCKET_SYMBOLS} distinct active symbols across all clients.`
+          }));
+          return;
+        }
+        subscriptions.set(ws, requested);
+      } else if (message?.type === 'ping') {
+        ws.send(JSON.stringify({ type: 'pong', timestamp: new Date().toISOString() }));
+      }
     } catch (error) {
       ws.send(JSON.stringify({ type: 'error', message: (error as Error).message }));
     }
