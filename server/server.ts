@@ -3,6 +3,7 @@ import path from 'path';
 import { createServer } from 'http';
 import { WebSocket, WebSocketServer } from 'ws';
 import yahooFinance from 'yahoo-finance2';
+import { normalizeProviderTimestamp } from '../src/utils/providerTimestamp';
 
 const app = express();
 const server = createServer(app);
@@ -48,7 +49,8 @@ type PriceQuote = {
   marketState: string | null;
   dayHigh: number | null;
   dayLow: number | null;
-  asOf: string;
+  asOf: string | null;
+  fetchedAt: string;
   source: 'Yahoo Finance';
 };
 
@@ -118,7 +120,11 @@ async function fetchQuote(symbol: string): Promise<PriceQuote> {
     marketState: typeof quote?.marketState === 'string' ? quote.marketState : null,
     dayHigh: quote?.regularMarketDayHigh != null && Number.isFinite(Number(quote.regularMarketDayHigh)) ? Number(quote.regularMarketDayHigh) * unitScale : null,
     dayLow: quote?.regularMarketDayLow != null && Number.isFinite(Number(quote.regularMarketDayLow)) ? Number(quote.regularMarketDayLow) * unitScale : null,
-    asOf: new Date().toISOString(), source: 'Yahoo Finance'
+    // Never substitute server fetch time for the provider's market-observation time.
+    // A missing provider timestamp remains null and is treated as unverified by the UI.
+    asOf: normalizeProviderTimestamp(quote?.regularMarketTime),
+    fetchedAt: new Date().toISOString(),
+    source: 'Yahoo Finance'
   };
   setBoundedCache(quoteCache, symbol, result, CACHE_TTL_MS);
   return result;
