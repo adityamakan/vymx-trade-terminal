@@ -78,7 +78,7 @@ A Netlify Deploy Preview failure is a separate check from the Render production 
 
 The Express service now enables Helmet headers (CSP remains disabled pending an explicit external-widget allowlist), compression, a 32 KB JSON body limit, one trusted Render proxy hop, a default 240-request/minute per-IP API limit, and a 15-request/minute AI-route limit. Health/status probes are excluded from the general API limit. CI smoke tests assert the security header and verify that malformed API input returns 400 and a second request at a deliberately low test limit returns 429.
 
-The rate-limit store is process-local. It must be replaced with a shared store before horizontally scaling the service. WebSocket upgrades bypass Express middleware; per-connection and aggregate subscription caps remain a separate hardening item.
+The rate-limit store is process-local. It must be replaced with a shared store before horizontally scaling the service. WebSocket upgrades bypass Express middleware but have independent same-origin checks, a 20-connection cap, a 100-distinct-symbol aggregate cap, and a 4 KB frame limit. CI smoke tests verify a same-origin handshake and ping/pong response.
 
 ## Firebase operations are separate
 
