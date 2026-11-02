@@ -406,7 +406,14 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
       // These are deliberately null until an appropriate provider is connected.
       fearGreed: null, orderImbalance: null, smartMoney: null, darkPool: null, algoRisk: null,
       capitalInflows: null, capitalOutflows: null,
-      quoteSource: 'Yahoo Finance', quoteAsOf: new Date().toISOString()
+      // Use the oldest timestamp among the returned observations as the
+      // coverage timestamp; if any quote lacks provider time, leave it unknown.
+      quoteSource: 'Yahoo Finance',
+      quoteAsOf: Object.values(result.prices).every((item) => item.asOf)
+        ? Object.values(result.prices).map((item) => Date.parse(item.asOf!)).filter(Number.isFinite).sort((a, b) => a - b)[0]
+          ? new Date(Object.values(result.prices).map((item) => Date.parse(item.asOf!)).sort((a, b) => a - b)[0]).toISOString()
+          : null
+        : null
     },
     note: 'Prices, ETF proxies, commodity futures, FX crosses and the US 10Y proxy are provider-backed. Fear/greed, institutional flows, order-book depth, dark-pool activity, algorithmic risk and unsupported Treasury tenors are not supplied by this feed.'
   });
@@ -517,7 +524,8 @@ app.get('/api/ai/exchange-latest', async (req: Request, res: Response) => {
     gainers: [],
     news: 'This endpoint currently provides an index quote only. No verified exchange-specific news or event feed is connected.',
     source: 'Yahoo Finance',
-    fetchedAt: quote.asOf
+    fetchedAt: quote.fetchedAt,
+    quoteAsOf: quote.asOf
   });
 });
 
