@@ -64,14 +64,22 @@ A candidate revision must pass, in order:
 
 ## Netlify preview versus Render backend
 
-The GitHub repository also reports Netlify Deploy Preview checks. The frontend currently calls same-origin `/api/*` REST routes and opens a same-origin `/api/prices` WebSocket. The repository does not contain a Netlify Functions or proxy configuration, while the Express API and WebSocket server are started by `server/server.ts` on Render.
+The production architecture remains Render full-stack: the Express process serves the React build, REST API and WebSocket from one origin. A Netlify static preview is a separate frontend host and must not be treated as production.
 
-Therefore, a Netlify static preview can build the frontend but will not automatically provide the Express API or WebSocket service. Unless the Netlify project dashboard has an external proxy/function configuration not represented in this repository, API-backed features in a Netlify preview will not work. Choose one explicit approach:
+This repository now includes `netlify.toml` with:
+- `npm ci && npm run build` as the build command and `dist` as the publish directory.
+- A forced same-origin REST proxy from `/api/*` to the Render API.
+- An SPA fallback to `/index.html`.
 
-- Use Render as the single full-stack deployment and treat Netlify preview as non-production/disabled; or
-- Configure a documented REST proxy to Render and a separately supported WebSocket route, then test both. A REST-only rewrite is not sufficient for live WebSocket quotes.
+The browser WebSocket is not proxied by that REST rewrite. For the Netlify site, configure the public build variable `VITE_WS_URL=wss://vymx-trade-terminal-2.onrender.com/api/prices`. On the Render service, configure `WEBSOCKET_ALLOWED_ORIGINS` with the exact Netlify site origin and a narrowly scoped deploy-preview pattern, for example `https://your-site.netlify.app,https://deploy-preview-*--your-site.netlify.app`. Replace `your-site` with the actual Netlify site slug; do not use a broad `*.netlify.app` allowlist. Redeploy the Netlify site after setting its build variable and redeploy Render after changing its server variable.
 
-A Netlify Deploy Preview failure is a separate check from the Render production deployment. Inspect its Netlify build log independently; do not interpret it as proof that Render production is down.
+Validation for a Netlify preview:
+1. Open `/api/health` on the preview domain and confirm it returns `service: vymx-api`.
+2. Confirm `POST /api/prices` returns a provider-backed quote or an explicit partial/unavailable response.
+3. Confirm the browser establishes `wss://vymx-trade-terminal-2.onrender.com/api/prices`, receives a price update, and completes heartbeat ping/pong.
+4. Confirm the browser console has no CORS, mixed-content, WebSocket 403, or repeated reconnect errors.
+
+A Netlify Deploy Preview is not production. Production remains the Render service and must pass its own health, REST and WebSocket checks. Do not infer Render health from Netlify status or vice versa.
 
 
 ## API edge protections
