@@ -4,6 +4,16 @@ VYMX is a research-oriented, multi-asset market dashboard and simulated trading 
 
 > **Data integrity notice:** Market observations are requested from Yahoo Finance and may be delayed, unavailable, incomplete, or subject to provider limits. Sector scores are ETF momentum proxies, not institutional-flow measurements. The application is for education and research; it is not a broker, exchange, investment adviser, or live execution venue. Independently verify all data before making financial decisions.
 
+## Repository guide
+
+- [System architecture and trust boundaries](docs/ARCHITECTURE.md)
+- [Contribution and review standards](CONTRIBUTING.md)
+- [Data quality contract](docs/DATA_QUALITY.md)
+- [Security policy](SECURITY.md)
+- [Deployment runbook](docs/DEPLOYMENT_RUNBOOK.md)
+- [Dependency risk register](docs/DEPENDENCY_RISK_REGISTER.md)
+- [Inspiration archive review](docs/INSPIRATION_ARCHIVE_REVIEW.md)
+
 ## Current architecture
 
 - React 19 + TypeScript frontend.
@@ -45,7 +55,7 @@ Configure Firebase client settings and optional provider secrets through the dep
 | `FINNHUB_API_KEY` | Provider-sourced market news | Optional |
 | `PORT` | Express server port | Optional; defaults to 5000 |
 
-Without optional provider credentials, the corresponding endpoints return explicit unavailable responses. The server does not substitute fabricated news, institutional flows, or AI answers.
+Without optional provider credentials, the corresponding endpoints return explicit unavailable responses. The macro workspace can still show Yahoo market proxies while clearly marking FRED official series as unavailable. The server does not substitute fabricated news, institutional flows, or AI answers.
 
 ## API reference
 
@@ -56,7 +66,7 @@ Without optional provider credentials, the corresponding endpoints return explic
 - `GET /api/market-snapshot` — selected global benchmark quotes.
 - `GET /api/historical/:symbol?start=ISO_DATE&end=ISO_DATE&interval=1d` — provider-sourced OHLCV candles. Intraday ranges are more restrictive: 5m/15m/30m up to 60 days; 1h up to 730 days; daily/weekly/monthly up to five years.
 - `GET /api/yahoo/financials/:symbol` — Yahoo Finance profile, valuation, financial-data and statement modules when returned by the provider.
-- `GET /api/macro/indicators` — cross-asset market proxies. These are not official macroeconomic releases.
+- `GET /api/macro/indicators` — cross-asset Yahoo Finance market proxies plus a provenance-aware FRED catalog (DGS10, DGS2, DGS3MO, FEDFUNDS, CPIAUCSL, CPILFESL, M2SL). Each official observation includes its FRED series ID, unit, frequency, source observation date, retrieval time and availability status. CPI series are index levels, not inflation rates. FRED values are unavailable until `FRED_API_KEY` is configured.
 - `GET /api/fred/series/:seriesId` — actual FRED observations when `FRED_API_KEY` is configured.
 - `GET /api/finnhub/news?category=general` — actual Finnhub news when `FINNHUB_API_KEY` is configured.
 

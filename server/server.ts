@@ -1,8 +1,12 @@
 import express, { Request, Response } from 'express';
+import helmet from 'helmet';
+import compression from 'compression';
+import { rateLimit } from 'express-rate-limit';
 import path from 'path';
 import { createServer } from 'http';
 import { WebSocket, WebSocketServer } from 'ws';
 import yahooFinance from 'yahoo-finance2';
+import { normalizeProviderTimestamp } from '../src/utils/providerTimestamp';
 
 const app = express();
 const server = createServer(app);
@@ -12,8 +16,27 @@ const CACHE_TTL_MS = 30_000;
 const MAX_CACHE_ENTRIES = 500;
 const DEFAULT_SYMBOLS = ['AAPL', 'MSFT', 'NVDA', '^GSPC', '^IXIC', '^NSEI', '^BSESN', 'BTC-USD', 'GC=F'];
 
+app.set('trust proxy', 1); // Render terminates one trusted reverse-proxy hop.
 app.disable('x-powered-by');
+app.use(helmet({
+  contentSecurityPolicy: false, // External market widgets require a separately reviewed CSP.
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: false
+}));
+app.use(compression());
 app.use(express.json({ limit: '32kb' }));
+
+const configuredApiLimit = Number.parseInt(process.env.API_RATE_LIMIT_PER_MINUTE || '240', 10);
+const apiRateLimit = Number.isFinite(configuredApiLimit) && configuredApiLimit > 0 ? configuredApiLimit : 240;
+app.use('/api', rateLimit({
+  windowMs: 60_000,
+  limit: apiRateLimit,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  skip: (req) => req.path === '/health' || req.path === '/status',
+  message: { success: false, code: 'API_RATE_LIMITED', error: 'Too many API requests. Please retry shortly.' }
+}));
+
 app.use('/api', (_req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
@@ -48,7 +71,8 @@ type PriceQuote = {
   marketState: string | null;
   dayHigh: number | null;
   dayLow: number | null;
-  asOf: string;
+  asOf: string | null;
+  fetchedAt: string;
   source: 'Yahoo Finance';
 };
 
@@ -118,7 +142,11 @@ async function fetchQuote(symbol: string): Promise<PriceQuote> {
     marketState: typeof quote?.marketState === 'string' ? quote.marketState : null,
     dayHigh: quote?.regularMarketDayHigh != null && Number.isFinite(Number(quote.regularMarketDayHigh)) ? Number(quote.regularMarketDayHigh) * unitScale : null,
     dayLow: quote?.regularMarketDayLow != null && Number.isFinite(Number(quote.regularMarketDayLow)) ? Number(quote.regularMarketDayLow) * unitScale : null,
-    asOf: new Date().toISOString(), source: 'Yahoo Finance'
+    // Never substitute server fetch time for the provider's market-observation time.
+    // A missing provider timestamp remains null and is treated as unverified by the UI.
+    asOf: normalizeProviderTimestamp(quote?.regularMarketTime),
+    fetchedAt: new Date().toISOString(),
+    source: 'Yahoo Finance'
   };
   setBoundedCache(quoteCache, symbol, result, CACHE_TTL_MS);
   return result;
@@ -304,13 +332,80 @@ app.get('/api/yahoo/financials/:symbol', async (req: Request, res: Response) => 
   }
 });
 
+const MACRO_FRED_SERIES = [
+  { id: 'DGS10', label: 'US Treasury 10Y', units: 'Percent', frequency: 'Daily' },
+  { id: 'DGS2', label: 'US Treasury 2Y', units: 'Percent', frequency: 'Daily' },
+  { id: 'DGS3MO', label: 'US Treasury 3M', units: 'Percent', frequency: 'Daily' },
+  { id: 'FEDFUNDS', label: 'Effective Federal Funds Rate', units: 'Percent', frequency: 'Monthly' },
+  { id: 'CPIAUCSL', label: 'US CPI Index', units: 'Index (1982-84=100)', frequency: 'Monthly' },
+  { id: 'CPILFESL', label: 'US Core CPI Index', units: 'Index (1982-84=100)', frequency: 'Monthly' },
+  { id: 'M2SL', label: 'US M2 Money Stock', units: 'Billions of USD', frequency: 'Monthly' }
+] as const;
+
+async function fetchFredMacroSeries() {
+  const apiKey = process.env.FRED_API_KEY;
+  const fetchedAt = new Date().toISOString();
+  if (!apiKey) {
+    return MACRO_FRED_SERIES.map((series) => ({
+      ...series, value: null, observationDate: null, previousValue: null,
+      status: 'unavailable', source: 'Federal Reserve Bank of St. Louis FRED',
+      reason: 'FRED_API_KEY is not configured', fetchedAt
+    }));
+  }
+
+  return Promise.all(MACRO_FRED_SERIES.map(async (series) => {
+    try {
+      const url = new URL('https://api.stlouisfed.org/fred/series/observations');
+      url.search = new URLSearchParams({
+        series_id: series.id, api_key: apiKey, file_type: 'json',
+        sort_order: 'desc', limit: '24'
+      }).toString();
+      const upstream = await fetch(url, { signal: AbortSignal.timeout(8_000) });
+      if (!upstream.ok) throw new Error(`FRED returned HTTP ${upstream.status}`);
+      const payload: any = await upstream.json();
+      const observations = Array.isArray(payload?.observations) ? payload.observations : [];
+      const valid = observations.filter((row: any) =>
+        row && typeof row.date === 'string' && row.value !== '.' &&
+        Number.isFinite(Number(row.value))
+      );
+      const latest = valid[0];
+      const previous = valid[1];
+      if (!latest) throw new Error('No valid observations returned');
+      return {
+        ...series, value: Number(latest.value), observationDate: latest.date,
+        previousValue: previous ? Number(previous.value) : null,
+        status: 'available', source: 'Federal Reserve Bank of St. Louis FRED',
+        fetchedAt
+      };
+    } catch (error) {
+      return {
+        ...series, value: null, observationDate: null, previousValue: null,
+        status: 'unavailable', source: 'Federal Reserve Bank of St. Louis FRED',
+        reason: (error as Error).message, fetchedAt
+      };
+    }
+  }));
+}
+
 app.get('/api/macro/indicators', async (_req: Request, res: Response) => {
   const symbols = ['^GSPC', '^VIX', '^TNX', 'DX-Y.NYB', 'GC=F', 'CL=F', 'BTC-USD', 'EURUSD=X', 'INR=X'];
-  const result = await getPrices(symbols);
-  return res.status(result.returned ? 200 : 503).json({
-    success: result.returned > 0, indicators: result.prices, unavailable: result.errors,
-    source: 'Yahoo Finance', fetchedAt: new Date().toISOString(),
-    note: 'These are quoted market proxies, not official macroeconomic releases. Yahoo ^TNX is quoted in tenths of a percentage point; the UI normalizes it to percent.'
+  const [marketResult, officialSeries] = await Promise.all([
+    getPrices(symbols),
+    fetchFredMacroSeries()
+  ]);
+  const officialAvailable = officialSeries.some((series) => series.status === 'available');
+  const success = marketResult.returned > 0 || officialAvailable;
+  return res.status(success ? 200 : 503).json({
+    success,
+    indicators: marketResult.prices,
+    unavailable: marketResult.errors,
+    officialSeries,
+    sources: {
+      marketProxies: 'Yahoo Finance (unofficial market-data provider)',
+      officialMacro: 'Federal Reserve Bank of St. Louis FRED'
+    },
+    fetchedAt: new Date().toISOString(),
+    note: 'Market quotes are cross-asset proxies, not official macroeconomic releases. FRED observations are official published series and retain their observation dates; retrieval time is not substituted for observation time. CPI and core CPI are shown as index levels, not inflation rates.'
   });
 });
 
@@ -371,6 +466,11 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
   const sensex = quote('^BSESN');
   const btc = quote('BTC-USD');
   const vix = quote('^VIX');
+  const providerObservationTimes = Object.values(result.prices).map((item) => item.asOf);
+  const quoteAsOf = providerObservationTimes.length === result.returned
+    && providerObservationTimes.every((value): value is string => Boolean(value))
+    ? new Date(Math.min(...providerObservationTimes.map((value) => Date.parse(value)))).toISOString()
+    : null;
   return res.json({
     success: true,
     generated: false,
@@ -400,7 +500,9 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
       // These are deliberately null until an appropriate provider is connected.
       fearGreed: null, orderImbalance: null, smartMoney: null, darkPool: null, algoRisk: null,
       capitalInflows: null, capitalOutflows: null,
-      quoteSource: 'Yahoo Finance', quoteAsOf: new Date().toISOString()
+      // Use the oldest provider observation among the returned quotes.
+      quoteSource: 'Yahoo Finance',
+      quoteAsOf
     },
     note: 'Prices, ETF proxies, commodity futures, FX crosses and the US 10Y proxy are provider-backed. Fear/greed, institutional flows, order-book depth, dark-pool activity, algorithmic risk and unsupported Treasury tenors are not supplied by this feed.'
   });
@@ -511,13 +613,20 @@ app.get('/api/ai/exchange-latest', async (req: Request, res: Response) => {
     gainers: [],
     news: 'This endpoint currently provides an index quote only. No verified exchange-specific news or event feed is connected.',
     source: 'Yahoo Finance',
-    fetchedAt: quote.asOf
+    fetchedAt: quote.fetchedAt,
+    quoteAsOf: quote.asOf
   });
 });
 
 // AI routes share a single server-side Gemini integration. If no key exists,
 // return an explicit unavailable response rather than invented fallback content.
-const aiRequestWindow = new Map<string, number[]>();
+const aiRequestLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 15,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { success: false, code: 'AI_RATE_LIMITED', error: 'AI request rate limit exceeded.' }
+});
 // These panels require specialized external datasets. Do not let a generic
 // language model invent geopolitical events, institutional transactions or
 // scheduled economic releases when those feeds are not configured.
@@ -539,7 +648,7 @@ const supportedAiFeatures = new Set([
   'quiz', 'narrative', 'exchange-latest', 'market-auras', 'institutional-flows',
   'economic-calendar', 'vymx-intelligence'
 ]);
-app.all('/api/ai/:feature', async (req: Request, res: Response) => {
+app.all('/api/ai/:feature', aiRequestLimiter, async (req: Request, res: Response) => {
   if (!supportedAiFeatures.has(req.params.feature)) return res.status(404).json({ success: false, error: 'AI feature not found' });
   if (!['GET', 'POST'].includes(req.method)) return res.status(405).json({ success: false, error: 'Method not allowed' });
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
@@ -548,18 +657,6 @@ app.all('/api/ai/:feature', async (req: Request, res: Response) => {
     error: 'AI analysis is unavailable until a server-side Gemini API key is configured.',
     generated: false
   });
-  const ip = req.ip || 'unknown';
-  const now = Date.now();
-  const recent = (aiRequestWindow.get(ip) || []).filter((time) => now - time < 60_000);
-  if (aiRequestWindow.size > 1_000) {
-    for (const [knownIp, timestamps] of aiRequestWindow) {
-      if (!timestamps.some((time) => now - time < 60_000)) aiRequestWindow.delete(knownIp);
-    }
-  }
-  if (recent.length >= 15) return res.status(429).json({ success: false, error: 'AI request rate limit exceeded' });
-  recent.push(now);
-  aiRequestWindow.set(ip, recent);
-
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   if (req.params.feature === 'live-news') {
     const newsKey = process.env.FINNHUB_API_KEY;
@@ -670,12 +767,43 @@ app.use('/api/*', (req, res) => {
   res.status(404).json({ success: false, error: 'API endpoint not found', path: req.path });
 });
 
+const MAX_WEBSOCKET_CLIENTS = 20;
+const MAX_ACTIVE_WEBSOCKET_SYMBOLS = 100;
 const wss = new WebSocketServer({ noServer: true, maxPayload: 4096 });
 const subscriptions = new Map<WebSocket, string[]>();
 
 server.on('upgrade', (request, socket, head) => {
   const pathname = new URL(request.url || '/', 'http://localhost').pathname;
   if (pathname !== '/api/prices') { socket.destroy(); return; }
+
+  // Browser clients must connect from this same origin; non-browser clients may omit Origin.
+  const origin = request.headers.origin;
+  if (origin) {
+    try {
+      if (new URL(origin).host !== request.headers.host) {
+        socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+    } catch {
+      socket.destroy();
+      return;
+    }
+  }
+
+  if (wss.clients.size >= MAX_WEBSOCKET_CLIENTS) {
+    socket.write('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n\r\n');
+    socket.destroy();
+    return;
+  }
+
+  const activeSymbols = new Set([...subscriptions.values()].flatMap((symbols) => symbols));
+  if (new Set([...activeSymbols, ...DEFAULT_SYMBOLS]).size > MAX_ACTIVE_WEBSOCKET_SYMBOLS) {
+    socket.write('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n\r\n');
+    socket.destroy();
+    return;
+  }
+
   wss.handleUpgrade(request, socket, head, (ws) => wss.emit('connection', ws, request));
 });
 
@@ -685,8 +813,23 @@ wss.on('connection', (ws) => {
     if (raw.toString() === 'ping') { ws.send('pong'); return; }
     try {
       const message = JSON.parse(raw.toString());
-      if (message?.type === 'subscribe') subscriptions.set(ws, validateSymbols(message.symbols));
-      else if (message?.type === 'ping') ws.send(JSON.stringify({ type: 'pong', timestamp: new Date().toISOString() }));
+      if (message?.type === 'subscribe') {
+        const requested = validateSymbols(message.symbols);
+        const otherSymbols = [...subscriptions.entries()]
+          .filter(([client]) => client !== ws)
+          .flatMap(([, symbols]) => symbols);
+        const aggregate = new Set([...otherSymbols, ...requested]);
+        if (aggregate.size > MAX_ACTIVE_WEBSOCKET_SYMBOLS) {
+          ws.send(JSON.stringify({
+            type: 'error',
+            message: `The live market-data connection supports at most ${MAX_ACTIVE_WEBSOCKET_SYMBOLS} distinct active symbols across all clients.`
+          }));
+          return;
+        }
+        subscriptions.set(ws, requested);
+      } else if (message?.type === 'ping') {
+        ws.send(JSON.stringify({ type: 'pong', timestamp: new Date().toISOString() }));
+      }
     } catch (error) {
       ws.send(JSON.stringify({ type: 'error', message: (error as Error).message }));
     }

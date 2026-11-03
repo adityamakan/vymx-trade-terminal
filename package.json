@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server/server.ts",
-    "build": "tsc && vite build && esbuild server/server.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist/server.cjs",
+    "build": "npm run lint && npm test && npm run build:artifacts",
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "test": "tsx scripts/test-financial-analytics.ts"
+    "test": "tsx scripts/test-financial-analytics.ts",
+    "build:artifacts": "vite build && esbuild server/server.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist/server.cjs"
   },
   "devDependencies": {
     "@types/compression": "^1.8.1",

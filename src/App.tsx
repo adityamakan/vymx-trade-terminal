@@ -248,7 +248,7 @@ export default function App() {
         return {
           ...asset,
           currency: typeof newPriceData.currency === 'string' ? newPriceData.currency.toUpperCase() : asset.currency ?? null,
-          quoteAsOf: typeof newPriceData.asOf === 'string' ? newPriceData.asOf : new Date().toISOString(),
+          quoteAsOf: typeof newPriceData.asOf === 'string' ? newPriceData.asOf : null,
           volume: Number.isFinite(newPriceData.volume) ? newPriceData.volume : 0,
           volumeDisplay: typeof newPriceData.volumeDisplay === 'string' ? newPriceData.volumeDisplay : 'N/A',
           price: (newPriceData.price !== undefined && !isNaN(newPriceData.price)) ? newPriceData.price : asset.price,
@@ -893,7 +893,7 @@ export default function App() {
                 Latency: <span className="text-zinc-400 font-bold">{latencyMs}ms</span>
               </span>
             )}
-            <span className="text-emerald-500/80 uppercase font-bold bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/15">Full-Stack Active</span>
+            <span className="text-emerald-500/80 uppercase font-bold bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/15">Paper Trading · No Live Execution</span>
             <span>Local Simulation Sandbox (No Financial Risks involved)</span>
           </div>
         </div>

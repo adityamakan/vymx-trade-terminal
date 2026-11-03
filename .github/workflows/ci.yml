@@ -6,15 +6,212 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
+  quality:
+    name: Typecheck, tests, build and dependency audit
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '22.19.0'
           cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build production artifacts
+        run: npm run build:artifacts
+
+      # Exercise the exact Node entry point Render starts, not only the bundler.
+      - name: Smoke test production server
+        run: |
+          PORT=4179 API_RATE_LIMIT_PER_MINUTE=1 node dist/server.cjs > server-smoke.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          for attempt in $(seq 1 30); do
+            if curl --silent --show-error --fail http://127.0.0.1:4179/health > health.json; then
+              node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const health = JSON.parse(fs.readFileSync('health.json', 'utf8'));
+          if (health.status !== 'ok' || health.service !== 'vymx-api') {
+            throw new Error('Unexpected production health response');
+          }
+          NODE
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              cat server-smoke.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          curl --silent --show-error --head http://127.0.0.1:4179/health | grep --ignore-case --quiet '^x-content-type-options: nosniff'
+
+          invalid_status=$(curl --silent --output /tmp/vymx-invalid.json --write-out '%{http_code}' \
+            -H 'Content-Type: application/json' \
+            --data '{"symbols":"AAPL"}' http://127.0.0.1:4179/api/prices)
+          test "$invalid_status" = "400"
+
+          limited_status=$(curl --silent --output /tmp/vymx-limited.json --write-out '%{http_code}' \
+            -H 'Content-Type: application/json' \
+            --data '{"symbols":"AAPL"}' http://127.0.0.1:4179/api/prices)
+          test "$limited_status" = "429"
+
+          node --input-type=module <<'NODE'
+          import WebSocket from 'ws';
+          const ws = new WebSocket('ws://127.0.0.1:4179/api/prices', {
+            headers: { Origin: 'http://127.0.0.1:4179' }
+          });
+          await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('WebSocket smoke test timed out')), 5000);
+            ws.once('open', () => ws.send('ping'));
+            ws.on('message', (data) => {
+              if (data.toString() === 'pong') {
+                clearTimeout(timeout);
+                ws.close();
+                resolve();
+              }
+            });
+            ws.once('error', (error) => {
+              clearTimeout(timeout);
+              reject(error);
+            });
+          });
+          NODE
+
+      # Report-only initially: the repository's known advisories must be
+      # triaged package-by-package before turning this into a blocking gate.
+      - name: Generate dependency vulnerability report
+        if: always()
+        run: npm audit --json > npm-audit.json || true
+
+      - name: Summarize dependency audit
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          let report = {};
+          try {
+            report = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'));
+          } catch {
+            report = { error: 'npm audit did not return valid JSON (network, registry, or npm failure).' };
+          }
+          const counts = report.metadata?.vulnerabilities ?? {};
+          const lines = [
+            '## Dependency audit (report-only)',
+            '',
+            '| Severity | Count |',
+            '|---|---:|',
+            ...['critical', 'high', 'moderate', 'low', 'info'].map(level => `| ${level} | ${counts[level] ?? 0} |`),
+            '',
+            report.error ?? 'This report does not automatically upgrade dependencies. Review each advisory, affected path, fix availability and compatibility before changing the lockfile.'
+          ];
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+          NODE
+
+      - name: Upload dependency audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: npm-audit.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  dependency-candidate:
+    name: Validate non-breaking dependency update candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.19.0'
+          cache: npm
+
+      # Generate a candidate only. No --force and no package.json mutation.
+      - name: Apply compatible audit fixes to candidate lockfile
+        run: npm audit fix --package-lock-only --ignore-scripts || true
+
+      - name: Install candidate lockfile
+        run: npm ci
+
+      - name: Typecheck candidate dependencies
+        run: npm run lint
+
+      - name: Test candidate dependencies
+        run: npm test
+
+      - name: Build candidate dependencies
+        run: npm run build:artifacts
+
+      - name: Audit candidate dependencies
+        if: always()
+        run: npm audit --json > candidate-audit.json || true
+
+      - name: Summarize candidate audit
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          let report = {};
+          try { report = JSON.parse(fs.readFileSync('candidate-audit.json', 'utf8')); }
+          catch { report = { error: 'Candidate audit did not return valid JSON.' }; }
+          const counts = report.metadata?.vulnerabilities ?? {};
+          const lines = [
+            '## Candidate dependency audit',
+            '',
+            '| Severity | Count |',
+            '|---|---:|',
+            ...['critical', 'high', 'moderate', 'low', 'info'].map(level => `| ${level} | ${counts[level] ?? 0} |`),
+            '',
+            report.error ?? 'Review residual advisories before adopting this lockfile.'
+          ];
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\\n') + '\\n');
+          NODE
+
+      - name: Require zero critical advisories and a reduced total
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const report = JSON.parse(fs.readFileSync('candidate-audit.json', 'utf8'));
+          const counts = report.metadata?.vulnerabilities;
+          if (!counts) throw new Error('Candidate audit report is unavailable.');
+          if ((counts.critical ?? 0) !== 0) throw new Error('Candidate still contains critical advisories.');
+          if ((counts.total ?? Infinity) >= 27) throw new Error('Candidate did not reduce the baseline of 27 advisories.');
+          NODE
+
+      - name: Upload dependency lockfile candidate and audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-lockfile-candidate
+          path: |
+            package-lock.json
+            candidate-audit.json
+          retention-days: 7
