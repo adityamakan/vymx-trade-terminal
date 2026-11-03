@@ -15,3 +15,5 @@ out.txt
 .env
 
 .env.local
+
+dist-server/
