@@ -776,118 +776,18 @@ function isAllowedWebSocketOrigin(origin: string, requestHost: string): boolean 
   try {
     const parsed = new URL(origin);
     if (parsed.host === requestHost) return true;
+    const candidate = parsed.origin.toLowerCase();
     const configured = (process.env.WEBSOCKET_ALLOWED_ORIGINS || '')
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean);
     return configured.some((pattern) => {
-      if (!pattern.includes('*')) return parsed.origin === new URL(pattern).origin;
-      const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\server.on('upgrade', (request, socket, head) => {').replace(/\\\*/g, '.*');
-      return new RegExp('^' + escaped + '
-  const pathname = new URL(request.url || '/', 'http://localhost').pathname;
-  if (pathname !== '/api/prices') { socket.destroy(); return; }
-
-  // Browser clients must connect from this same origin; non-browser clients may omit Origin.
-  const origin = request.headers.origin;
-  if (origin) {
-    try {
-      if (!isAllowedWebSocketOrigin(origin, request.headers.host || '')) {
-        socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
-        socket.destroy();
-        return;
-      }
-    } catch {
-      socket.destroy();
-      return;
-    }
-  }
-
-  if (wss.clients.size >= MAX_WEBSOCKET_CLIENTS) {
-    socket.write('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n\r\n');
-    socket.destroy();
-    return;
-  }
-
-  const activeSymbols = new Set([...subscriptions.values()].flatMap((symbols) => symbols));
-  if (new Set([...activeSymbols, ...DEFAULT_SYMBOLS]).size > MAX_ACTIVE_WEBSOCKET_SYMBOLS) {
-    socket.write('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n\r\n');
-    socket.destroy();
-    return;
-  }
-
-  wss.handleUpgrade(request, socket, head, (ws) => wss.emit('connection', ws, request));
-});
-
-wss.on('connection', (ws) => {
-  subscriptions.set(ws, DEFAULT_SYMBOLS);
-  ws.on('message', (raw) => {
-    if (raw.toString() === 'ping') { ws.send('pong'); return; }
-    try {
-      const message = JSON.parse(raw.toString());
-      if (message?.type === 'subscribe') {
-        const requested = validateSymbols(message.symbols);
-        const otherSymbols = [...subscriptions.entries()]
-          .filter(([client]) => client !== ws)
-          .flatMap(([, symbols]) => symbols);
-        const aggregate = new Set([...otherSymbols, ...requested]);
-        if (aggregate.size > MAX_ACTIVE_WEBSOCKET_SYMBOLS) {
-          ws.send(JSON.stringify({
-            type: 'error',
-            message: `The live market-data connection supports at most ${MAX_ACTIVE_WEBSOCKET_SYMBOLS} distinct active symbols across all clients.`
-          }));
-          return;
-        }
-        subscriptions.set(ws, requested);
-      } else if (message?.type === 'ping') {
-        ws.send(JSON.stringify({ type: 'pong', timestamp: new Date().toISOString() }));
-      }
-    } catch (error) {
-      ws.send(JSON.stringify({ type: 'error', message: (error as Error).message }));
-    }
-  });
-  ws.on('close', () => subscriptions.delete(ws));
-  ws.on('error', () => subscriptions.delete(ws));
-});
-
-let broadcastInFlight = false;
-const broadcastPrices = async () => {
-  if (broadcastInFlight) return;
-  broadcastInFlight = true;
-  try {
-    const active = [...wss.clients].filter((client) => client.readyState === WebSocket.OPEN);
-    if (!active.length) return;
-    const symbols = [...new Set(active.flatMap((client) => subscriptions.get(client) || DEFAULT_SYMBOLS))];
-    const result = await getPrices(symbols);
-    for (const client of active) {
-      if (client.readyState !== WebSocket.OPEN) continue;
-      const requested = subscriptions.get(client) || DEFAULT_SYMBOLS;
-      const prices = Object.fromEntries(requested.filter((symbol) => result.prices[symbol]).map((symbol) => [symbol, result.prices[symbol]]));
-      if (Object.keys(prices).length) {
-        client.send(JSON.stringify({ type: 'price_update', prices, source: 'Yahoo Finance', fetchedAt: new Date().toISOString() }));
-      }
-    }
-  } catch (error) {
-    console.error('[Market Data Engine] Broadcast failed:', error);
-  } finally {
-    broadcastInFlight = false;
-  }
-};
-const broadcastTimer = setInterval(() => { void broadcastPrices(); }, 30_000);
-
-const distPath = path.join(__dirname, '../dist');
-app.use(express.static(distPath));
-app.get('*', (_req, res) => res.sendFile(path.join(distPath, 'index.html')));
-
-server.listen(PORT, () => console.log(`VYMX API listening on port ${PORT}`));
-
-const shutdown = () => {
-  clearInterval(broadcastTimer);
-  for (const client of wss.clients) client.close(1001, 'Server shutting down');
-  server.close(() => process.exit(0));
-};
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
-, 'i').test(parsed.origin);
+      if (!pattern.includes('*')) return candidate === new URL(pattern).origin.toLowerCase();
+      const parts = pattern.toLowerCase().split('*');
+      if (parts.length !== 2) return false;
+      return candidate.startsWith(parts[0]) &&
+        candidate.endsWith(parts[1]) &&
+        candidate.length >= parts[0].length + parts[1].length;
     });
   } catch {
     return false;
