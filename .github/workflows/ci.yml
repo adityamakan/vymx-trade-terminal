@@ -43,7 +43,7 @@ jobs:
       # Exercise the exact Node entry point Render starts, not only the bundler.
       - name: Smoke test production server
         run: |
-          PORT=4179 API_RATE_LIMIT_PER_MINUTE=1 node dist/server.cjs > server-smoke.log 2>&1 &
+          PORT=4179 API_RATE_LIMIT_PER_MINUTE=1 node dist-server/server.cjs > server-smoke.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
 

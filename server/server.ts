@@ -772,6 +772,28 @@ const MAX_ACTIVE_WEBSOCKET_SYMBOLS = 100;
 const wss = new WebSocketServer({ noServer: true, maxPayload: 4096 });
 const subscriptions = new Map<WebSocket, string[]>();
 
+function isAllowedWebSocketOrigin(origin: string, requestHost: string): boolean {
+  try {
+    const parsed = new URL(origin);
+    if (parsed.host === requestHost) return true;
+    const candidate = parsed.origin.toLowerCase();
+    const configured = (process.env.WEBSOCKET_ALLOWED_ORIGINS || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    return configured.some((pattern) => {
+      if (!pattern.includes('*')) return candidate === new URL(pattern).origin.toLowerCase();
+      const parts = pattern.toLowerCase().split('*');
+      if (parts.length !== 2) return false;
+      return candidate.startsWith(parts[0]) &&
+        candidate.endsWith(parts[1]) &&
+        candidate.length >= parts[0].length + parts[1].length;
+    });
+  } catch {
+    return false;
+  }
+}
+
 server.on('upgrade', (request, socket, head) => {
   const pathname = new URL(request.url || '/', 'http://localhost').pathname;
   if (pathname !== '/api/prices') { socket.destroy(); return; }
