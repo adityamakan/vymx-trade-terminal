@@ -130,6 +130,24 @@ If required values are missing, Firebase Auth and Firestore intentionally remain
 
 The Firebase web API key is a public client identifier, not an authorization boundary. Keep Firestore rules restrictive, enable only the intended Auth providers, review authorized domains and consider App Check before wider public exposure.
 
+### Deploy Firestore rules and enable retention
+
+The checked-in `firebase.json` maps Firestore rules to `firestore.rules`. After independently confirming the production project ID and reviewing the exact rules file, deploy only the rules:
+
+```bash
+firebase deploy --only firestore:rules --project <CONFIRMED_PROJECT_ID>
+```
+
+The portfolio snapshot schema uses `expiresAt` for the `portfolioIntradaySnapshots` collection group. An expiration timestamp alone does not enable deletion. If the retention policy is approved, enable the Firestore TTL policy explicitly:
+
+```bash
+gcloud firestore fields ttls update expiresAt --collection-group=portfolioIntradaySnapshots --enable-ttl --project=<CONFIRMED_PROJECT_ID>
+gcloud firestore fields ttls list --collection-group=portfolioIntradaySnapshots --project=<CONFIRMED_PROJECT_ID>
+```
+
+Verify that the policy reports enabled before relying on automatic cleanup. Firestore TTL deletion is asynchronous; expired documents can remain visible until the deletion process runs, typically within 24 hours. Do not enable this policy until the collection name, field name, and retention requirement have been confirmed for the production project.
+
+
 ## Verified repository status at 12 November 2026
 
 - Main commit at audit time: `46fa98ebeffceaff55a66132a1daaaeb95c5cb5a`.
