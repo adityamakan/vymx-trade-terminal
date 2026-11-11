@@ -14,7 +14,7 @@ export function isVerifiedProviderQuote(
   maxAgeMs = 24 * 60 * 60_000
 ): boolean {
   const observedAt = typeof quote.asOf === 'string' ? Date.parse(quote.asOf) : Number.NaN;
-  return Number.isFinite(quote.price) && Number(quote.price) > 0 &&
+  return typeof quote.price === 'number' && Number.isFinite(quote.price) && quote.price > 0 &&
     Number.isFinite(observedAt) &&
     observedAt <= now + 5 * 60_000 &&
     now - observedAt <= maxAgeMs;
