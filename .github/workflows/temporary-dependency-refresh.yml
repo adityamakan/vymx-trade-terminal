@@ -1,0 +1,64 @@
+name: Temporary dependency lock refresh
+
+on:
+  push:
+    branches:
+      - fix/release-data-deployment-readiness
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out release-readiness branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.19.0'
+          cache: npm
+
+      - name: Regenerate lockfile from patched dependency policy
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Install exact regenerated lockfile
+        run: npm ci
+
+      - name: Validate typecheck, tests and production build
+        run: |
+          npm run lint
+          npm test
+          npm run build:artifacts
+
+      - name: Commit the validated lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "Lockfile already matches the dependency policy."
+          else
+            git commit -m "chore: refresh patched dependency lockfile"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Verify remaining dependency advisories
+        run: |
+          npm audit --json > npm-audit.json || true
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const report = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'));
+          const counts = report.metadata?.vulnerabilities;
+          if (!counts) throw new Error('npm audit did not return vulnerability metadata.');
+          console.log(JSON.stringify(counts, null, 2));
+          if ((counts.critical ?? 0) > 0 || (counts.high ?? 0) > 0 || (counts.moderate ?? 0) > 0) {
+            throw new Error('High, moderate or critical advisories remain; inspect npm audit output.');
+          }
+          NODE
