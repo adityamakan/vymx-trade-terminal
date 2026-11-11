@@ -215,13 +215,22 @@ export default function App() {
 
   const handlePriceUpdate = useCallback((prices: Record<string, any>) => {
     if (!prices || Object.keys(prices).length === 0) return;
+    const now = Date.now();
+    const verifiedEntries = Object.entries(prices).filter(([, quote]) => {
+      const observedAt = typeof quote?.asOf === 'string' ? Date.parse(quote.asOf) : Number.NaN;
+      return Number.isFinite(quote?.price) && quote.price > 0 &&
+        Number.isFinite(observedAt) && observedAt <= now + 5 * 60_000 &&
+        now - observedAt <= 24 * 60 * 60_000;
+    });
+    if (verifiedEntries.length === 0) return;
+    const verifiedPrices = Object.fromEntries(verifiedEntries);
     setIsDataOffline(false);
     setLastUpdatedTime(getKolkataTimeStr());
 
     setLiveAssets(prevAssets => {
       let changed = false;
       const nextAssets = prevAssets.map(asset => {
-        const newPriceData = prices[asset.symbol];
+        const newPriceData = verifiedPrices[asset.symbol];
         if (!newPriceData) return asset;
         if (
           newPriceData.price === null ||
@@ -530,8 +539,24 @@ export default function App() {
       return { success: false, message: 'Transaction rejected: Invalid or corrupted quantity data.' };
     }
 
-    const liveAsset = liveAssets.find((a) => a.symbol === symbol)!;
-    const assetName = liveAsset ? liveAsset.name : symbol;
+    const liveAsset = liveAssets.find((a) => a.symbol === symbol);
+    const observedAt = liveAsset?.quoteAsOf ? Date.parse(liveAsset.quoteAsOf) : Number.NaN;
+    const quoteAgeMs = Date.now() - observedAt;
+    if (
+      !liveAsset ||
+      !Number.isFinite(observedAt) ||
+      quoteAgeMs < -5 * 60_000 ||
+      quoteAgeMs > 24 * 60 * 60_000 ||
+      !Number.isFinite(liveAsset.price) ||
+      liveAsset.price <= 0
+    ) {
+      return { success: false, message: 'Transaction rejected: this instrument has no sufficiently fresh, verified provider quote.' };
+    }
+    const priceTolerance = Math.max(0.01, liveAsset.price * 1e-6);
+    if (Math.abs(price - liveAsset.price) > priceTolerance) {
+      return { success: false, message: 'Transaction rejected: the submitted price does not match the latest verified quote. Refresh the instrument and try again.' };
+    }
+    const assetName = liveAsset.name;
     const totalCostValue = quantity * price;
 
     if (isNaN(totalCostValue) || !isFinite(totalCostValue)) {
