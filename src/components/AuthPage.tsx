@@ -17,7 +17,6 @@ import {
   Sparkles
 } from 'lucide-react';
 import { auth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, db } from '../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
 import SecurityLedger from './SecurityLedger';
 import { logSecurityEvent } from '../utils/security';
 
@@ -248,23 +247,6 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
         authType: 'google_personal' as const,
         avatarUrl: user.photoURL || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&fit=crop&q=80',
       };
-
-      // Attempt to save basic user record to Firestore (requires firestore init later)
-      try {
-        if (db) {
-          await setDoc(doc(db, 'users', user.uid), {
-            uid: payload.uid,
-            name: payload.name,
-            email: payload.email,
-            authType: payload.authType,
-            avatarUrl: payload.avatarUrl,
-            lastLogin: new Date().toISOString()
-          }, { merge: true });
-        }
-      } catch (e) {
-        console.warn('Could not write user to firestore yet', e);
-      }
-
 
       logSecurityEvent(`Google authenticated session validated: ${payload.email}`, 'SUCCESS', 'low');
       onLoginSuccess(payload);
