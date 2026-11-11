@@ -542,11 +542,11 @@ app.get('/api/ai/market-auras', async (_req: Request, res: Response) => {
   const auras = proxies.flatMap((item) => {
     const quote = result.prices[item.symbol];
     if (!quote) return [];
-    const score = Math.max(0, Math.min(100, Math.round(50 + quote.change * 10)));
+    const score = quote.change == null ? null : Math.max(0, Math.min(100, Math.round(50 + quote.change * 10)));
     return [{
       sector: item.sector,
       score,
-      trend: quote.change > 0.25 ? 'Bullish' : quote.change < -0.25 ? 'Bearish' : 'Neutral',
+      trend: quote.change == null ? 'Unavailable' : quote.change > 0.25 ? 'Bullish' : quote.change < -0.25 ? 'Bearish' : 'Neutral',
       dailyChangePercent: quote.change,
       proxy: item.symbol,
       source: 'Yahoo Finance'
@@ -617,7 +617,7 @@ app.get('/api/ai/exchange-latest', async (req: Request, res: Response) => {
   const result = await getPrices([index.symbol]);
   const quote = result.prices[index.symbol];
   if (!quote) return res.status(503).json({ success: false, error: 'Exchange index quote unavailable', unavailable: result.errors });
-  const change = `${quote.change >= 0 ? '+' : ''}${quote.change.toFixed(2)}%`;
+  const change = quote.change == null ? 'N/A' : `${quote.change >= 0 ? '+' : ''}${quote.change.toFixed(2)}%`;
   return res.json({
     success: true,
     exchange,
