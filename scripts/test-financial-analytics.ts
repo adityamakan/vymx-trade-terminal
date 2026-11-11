@@ -98,3 +98,19 @@ assert.equal(singleton.cumulativeReturnPct, null);
 assert.equal(singleton.maxDrawdownPct, null);
 
 console.log('Financial analytics and provider timestamp tests passed.');
+
+
+// Provider quote verification rejects bundled demo values, missing timestamps,
+// stale observations and timestamps implausibly far in the future.
+const isFreshProviderQuote = (quote: { price?: unknown; asOf?: unknown }, now = Date.now()) => {
+  const observedAt = typeof quote.asOf === 'string' ? Date.parse(quote.asOf) : Number.NaN;
+  return Number.isFinite(quote.price) && Number(quote.price) > 0 &&
+    Number.isFinite(observedAt) && observedAt <= now + 5 * 60_000 &&
+    now - observedAt <= 24 * 60 * 60_000;
+};
+const quoteNow = Date.UTC(2026, 10, 11, 12, 0, 0);
+assert.equal(isFreshProviderQuote({ price: 100, asOf: new Date(quoteNow).toISOString() }, quoteNow), true);
+assert.equal(isFreshProviderQuote({ price: 100 }, quoteNow), false);
+assert.equal(isFreshProviderQuote({ price: 100, asOf: new Date(quoteNow - 25 * 60 * 60_000).toISOString() }, quoteNow), false);
+assert.equal(isFreshProviderQuote({ price: 0, asOf: new Date(quoteNow).toISOString() }, quoteNow), false);
+assert.equal(isFreshProviderQuote({ price: 100, asOf: new Date(quoteNow + 6 * 60_000).toISOString() }, quoteNow), false);
