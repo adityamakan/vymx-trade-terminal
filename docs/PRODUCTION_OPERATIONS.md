@@ -42,7 +42,7 @@ A release is not production-verified until all applicable items below have evide
 
 ### Render
 - [ ] Service `vymx-trade-terminal-2` deploys the exact expected `main` commit.
-- [ ] Build command is `npm ci && npm run build`.
+- [ ] Confirm the current Render build command (`npm install && npm run build`, as previously inspected) and plan a controlled dashboard change to `npm ci && npm run build` for lockfile-reproducible builds; do not mark the target command complete until Render settings confirm it.
 - [ ] Start command is `npm start`.
 - [ ] Health check path is `/health`.
 - [ ] Node runtime is `22.19.0`.
