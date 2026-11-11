@@ -296,14 +296,14 @@ export default function QuickTrade({
                         {formatCurrency(currentAsset.price, currentAsset.symbol, currentAsset.country)}
                       </div>
                       <div className={`text-[10px] font-bold font-mono flex items-center justify-end gap-0.5 ${
-                        currentAsset.change >= 0 ? 'text-emerald-400' : 'text-rose-450'
+                        currentAsset.change == null ? 'text-zinc-500' : currentAsset.change >= 0 ? 'text-emerald-400' : 'text-rose-450'
                       }`}>
-                        {currentAsset.change >= 0 ? (
+                        {currentAsset.change == null ? null : currentAsset.change >= 0 ? (
                           <TrendingUp className="h-2.5 w-2.5" />
                         ) : (
                           <TrendingDown className="h-2.5 w-2.5" />
                         )}
-                        <span>{currentAsset.change >= 0 ? '+' : ''}{currentAsset.change.toFixed(2)}%</span>
+                        <span>{currentAsset.change == null ? 'N/A' : `${currentAsset.change >= 0 ? '+' : ''}${currentAsset.change.toFixed(2)}%`}</span>
                       </div>
                     </div>
                   </div>
