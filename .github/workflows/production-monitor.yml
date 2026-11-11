@@ -26,11 +26,15 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: '22.19.0'
+          cache: npm
+      - name: Install production runtime dependencies
+        run: npm ci --omit=dev
       - name: Verify production health, market data and WebSocket heartbeat
         env:
           PRODUCTION_BASE_URL: https://vymx-trade-terminal-2.onrender.com
         run: |
           node --input-type=module <<'NODE'
+          import WebSocket from 'ws';
           const baseUrl = process.env.PRODUCTION_BASE_URL;
           if (!baseUrl || !baseUrl.startsWith('https://')) throw new Error('PRODUCTION_BASE_URL must be an HTTPS origin.');
 
@@ -98,7 +102,7 @@ jobs:
           const wsUrl = new URL('/api/prices', baseUrl);
           wsUrl.protocol = 'wss:';
           await new Promise((resolve, reject) => {
-            const socket = new WebSocket(wsUrl);
+            const socket = new WebSocket(wsUrl, { headers: { Origin: baseUrl } });
             let settled = false;
             const finish = (error) => {
               if (settled) return;
