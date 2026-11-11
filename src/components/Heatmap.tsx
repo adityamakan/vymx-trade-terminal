@@ -233,7 +233,7 @@ export default function Heatmap({
 
   const getCellMetricColorIntensityStyle = (asset: Asset) => {
     if (!hasFreshQuote(asset)) return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
-    if (metricView === "volume") return asset.volume > 10000000 ? "bg-indigo-950/90 text-indigo-300 border-indigo-500/30" : "bg-zinc-900 text-zinc-400 border-zinc-800/60";
+    if (metricView === "volume") return asset.volume != null && asset.volume > 10000000 ? "bg-indigo-950/90 text-indigo-300 border-indigo-500/30" : "bg-zinc-900 text-zinc-400 border-zinc-800/60";
     if (metricView === "range52w") {
       const spread = asset.high52w - asset.low52w;
       if (spread <= 0) return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
@@ -860,7 +860,7 @@ export default function Heatmap({
                             </div>
                             <div className="flex justify-between items-center text-[7px] text-zinc-400 font-mono">
                               <span>Liq Pool</span>
-                              <span className="text-blue-400">${(asset.volume / 10000000).toFixed(1)}T</span>
+                              <span className="text-blue-400">${asset.volume == null ? 'N/A' : `${(asset.volume / 10000000).toFixed(1)}T`}</span>
                             </div>
                             <div className="flex gap-0.5 mt-0.5 items-end h-4 w-full opacity-60">
                                {Array.from({length: 8}).map((_, i) => (
