@@ -59,6 +59,7 @@ export default function App() {
   const guestSessionRef = useRef(false);
   const portfolioSnapshotRef = useRef<{ virtualBalance: number; portfolio: PortfolioItem[]; assets: Asset[] }>({ virtualBalance: 100000, portfolio: [], assets: [] });
   const lastSnapshotBucketRef = useRef<number | null>(null);
+  const snapshotInFlightBucketRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!auth) return;
@@ -428,14 +429,15 @@ export default function App() {
     const uid = authUser.uid;
     const captureSnapshot = async () => {
       const bucket = Math.floor(Date.now() / (15 * 60 * 1000));
-      if (lastSnapshotBucketRef.current === bucket) return;
+      if (lastSnapshotBucketRef.current === bucket || snapshotInFlightBucketRef.current === bucket) return;
+      snapshotInFlightBucketRef.current = bucket;
       const current = portfolioSnapshotRef.current;
       const validPositions = current.portfolio
         .filter((position) => position.quantity > 0)
         .map((position) => {
           const quote = current.assets.find((asset) => asset.symbol === position.symbol);
           const currency = typeof quote?.currency === 'string' && /^[A-Z]{3}$/.test(quote.currency) ? quote.currency : null;
-          return quote && Number.isFinite(quote.price) && quote.price > 0
+          return quote && isVerifiedProviderQuote(quote)
             ? { symbol: position.symbol, quantity: position.quantity, price: quote.price, marketValue: position.quantity * quote.price, quoteCurrency: currency }
             : null;
         })
@@ -473,6 +475,7 @@ export default function App() {
         currencyNormalization: fxComplete ? 'provider-fx-to-usd' : 'incomplete'
       };
       try {
+        if (auth.currentUser?.uid !== uid) return;
         const dailyId = new Date(capturedAt).toISOString().slice(0, 10);
         const dailySnapshot = { ...snapshot, id: dailyId };
         await setDoc(doc(db, 'users', uid, 'portfolioSnapshots', dailyId), dailySnapshot);
@@ -486,6 +489,8 @@ export default function App() {
         setPortfolioSnapshots((previous) => [...previous.filter((item) => item.id !== dailyId), dailySnapshot].sort((a, b) => a.capturedAt - b.capturedAt).slice(-500));
       } catch (error) {
         console.warn('Portfolio snapshot was not persisted:', error);
+      } finally {
+        if (snapshotInFlightBucketRef.current === bucket) snapshotInFlightBucketRef.current = null;
       }
     };
     void captureSnapshot();
