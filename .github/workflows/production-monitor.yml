@@ -62,6 +62,18 @@ jobs:
           if (health.status !== 'ok' || health.service !== 'vymx-api') throw new Error('Unexpected production health payload.');
           console.log(`Health OK; uptime=${health.uptimeSeconds}s`);
 
+          const appShellResponse = await fetchWithRetry(new URL('/', baseUrl));
+          if (!appShellResponse.ok) throw new Error(`Production frontend returned HTTP ${appShellResponse.status}`);
+          const appHtml = await appShellResponse.text();
+          if (!appShellResponse.headers.get('content-type')?.includes('text/html') || !appHtml.includes('id="root"')) {
+            throw new Error('Production frontend did not return the expected VYMX application shell.');
+          }
+          const appScript = appHtml.match(/<script\\b[^>]*\\bsrc="([^"]+\\.js(?:\\?[^"]*)?)"/i)?.[1];
+          if (!appScript) throw new Error('Production frontend did not reference a built JavaScript bundle.');
+          const bundleResponse = await fetchWithRetry(new URL(appScript, baseUrl), { method: 'HEAD' });
+          if (!bundleResponse.ok) throw new Error(`Production frontend bundle returned HTTP ${bundleResponse.status}`);
+          console.log('Frontend HTML shell and built JavaScript asset OK.');
+
           const pricesResponse = await fetchWithRetry(new URL('/api/prices', baseUrl), {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
