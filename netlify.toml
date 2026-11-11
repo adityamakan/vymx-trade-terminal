@@ -1,0 +1,30 @@
+[build]
+  command = "npm ci && npm run build"
+  publish = "dist"
+
+[build.environment]
+  VITE_WS_URL = "wss://vymx-trade-terminal-2.onrender.com/api/prices"
+
+# Keep REST calls same-origin from the preview browser while routing them to Render.
+[[redirects]]
+  from = "/api/*"
+  to = "https://vymx-trade-terminal-2.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# React client-side routes.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Baseline security headers for the static preview. The API applies its own
+# server-side headers; these cover HTML, assets and client-side routes.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"

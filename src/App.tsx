@@ -29,6 +29,7 @@ import { getAssetMarketStatus } from './utils/market';
 import { auth, onAuthStateChanged, signOut, db, doc, getDoc, setDoc, collection, getDocs, Timestamp } from './lib/firebase';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useDataIntegrity } from './contexts/DataIntegrityContext';
+import { isSubmittedPriceCurrent, isVerifiedProviderQuote } from './utils/providerQuote';
 
 interface PortfolioSnapshot {
   id: string;
@@ -58,6 +59,7 @@ export default function App() {
   const guestSessionRef = useRef(false);
   const portfolioSnapshotRef = useRef<{ virtualBalance: number; portfolio: PortfolioItem[]; assets: Asset[] }>({ virtualBalance: 100000, portfolio: [], assets: [] });
   const lastSnapshotBucketRef = useRef<number | null>(null);
+  const snapshotInFlightBucketRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!auth) return;
@@ -215,13 +217,17 @@ export default function App() {
 
   const handlePriceUpdate = useCallback((prices: Record<string, any>) => {
     if (!prices || Object.keys(prices).length === 0) return;
+    const now = Date.now();
+    const verifiedEntries = Object.entries(prices).filter(([, quote]) => isVerifiedProviderQuote(quote, now));
+    if (verifiedEntries.length === 0) return;
+    const verifiedPrices = Object.fromEntries(verifiedEntries);
     setIsDataOffline(false);
     setLastUpdatedTime(getKolkataTimeStr());
 
     setLiveAssets(prevAssets => {
       let changed = false;
       const nextAssets = prevAssets.map(asset => {
-        const newPriceData = prices[asset.symbol];
+        const newPriceData = verifiedPrices[asset.symbol];
         if (!newPriceData) return asset;
         if (
           newPriceData.price === null ||
@@ -249,11 +255,11 @@ export default function App() {
           ...asset,
           currency: typeof newPriceData.currency === 'string' ? newPriceData.currency.toUpperCase() : asset.currency ?? null,
           quoteAsOf: typeof newPriceData.asOf === 'string' ? newPriceData.asOf : null,
-          volume: Number.isFinite(newPriceData.volume) ? newPriceData.volume : 0,
+          volume: typeof newPriceData.volume === 'number' && Number.isFinite(newPriceData.volume) ? newPriceData.volume : null,
           volumeDisplay: typeof newPriceData.volumeDisplay === 'string' ? newPriceData.volumeDisplay : 'N/A',
           price: (newPriceData.price !== undefined && !isNaN(newPriceData.price)) ? newPriceData.price : asset.price,
-          change: (newPriceData.change !== undefined && !isNaN(newPriceData.change)) ? newPriceData.change : asset.change,
-          changeAbs: (newPriceData.changeAbs !== undefined && !isNaN(newPriceData.changeAbs)) ? newPriceData.changeAbs : asset.changeAbs,
+          change: typeof newPriceData.change === 'number' && Number.isFinite(newPriceData.change) ? newPriceData.change : null,
+          changeAbs: typeof newPriceData.changeAbs === 'number' && Number.isFinite(newPriceData.changeAbs) ? newPriceData.changeAbs : null,
           low52w: (newPriceData.low52w !== undefined && !isNaN(newPriceData.low52w)) ? newPriceData.low52w : asset.low52w,
           high52w: (newPriceData.high52w !== undefined && !isNaN(newPriceData.high52w)) ? newPriceData.high52w : asset.high52w,
           prevClose: (newPriceData.prevClose !== undefined && !isNaN(newPriceData.prevClose)) ? newPriceData.prevClose : asset.prevClose,
@@ -423,14 +429,15 @@ export default function App() {
     const uid = authUser.uid;
     const captureSnapshot = async () => {
       const bucket = Math.floor(Date.now() / (15 * 60 * 1000));
-      if (lastSnapshotBucketRef.current === bucket) return;
+      if (lastSnapshotBucketRef.current === bucket || snapshotInFlightBucketRef.current === bucket) return;
+      snapshotInFlightBucketRef.current = bucket;
       const current = portfolioSnapshotRef.current;
       const validPositions = current.portfolio
         .filter((position) => position.quantity > 0)
         .map((position) => {
           const quote = current.assets.find((asset) => asset.symbol === position.symbol);
           const currency = typeof quote?.currency === 'string' && /^[A-Z]{3}$/.test(quote.currency) ? quote.currency : null;
-          return quote && Number.isFinite(quote.price) && quote.price > 0
+          return quote && isVerifiedProviderQuote(quote)
             ? { symbol: position.symbol, quantity: position.quantity, price: quote.price, marketValue: position.quantity * quote.price, quoteCurrency: currency }
             : null;
         })
@@ -468,6 +475,7 @@ export default function App() {
         currencyNormalization: fxComplete ? 'provider-fx-to-usd' : 'incomplete'
       };
       try {
+        if (auth.currentUser?.uid !== uid) return;
         const dailyId = new Date(capturedAt).toISOString().slice(0, 10);
         const dailySnapshot = { ...snapshot, id: dailyId };
         await setDoc(doc(db, 'users', uid, 'portfolioSnapshots', dailyId), dailySnapshot);
@@ -481,6 +489,8 @@ export default function App() {
         setPortfolioSnapshots((previous) => [...previous.filter((item) => item.id !== dailyId), dailySnapshot].sort((a, b) => a.capturedAt - b.capturedAt).slice(-500));
       } catch (error) {
         console.warn('Portfolio snapshot was not persisted:', error);
+      } finally {
+        if (snapshotInFlightBucketRef.current === bucket) snapshotInFlightBucketRef.current = null;
       }
     };
     void captureSnapshot();
@@ -520,7 +530,7 @@ export default function App() {
     }
 
     // Validation Wrapper: Ensure price and quantity are valid numbers
-    if (price === null || price === undefined || isNaN(price) || !isFinite(price) || price < 0) {
+    if (price === null || price === undefined || isNaN(price) || !isFinite(price) || price <= 0) {
       console.error(`[Data Integrity Error] Trade Submit Failed: Invalid price detected for ${symbol} - Price: ${price}`);
       return { success: false, message: 'Transaction rejected: Invalid or corrupted price data.' };
     }
@@ -530,8 +540,11 @@ export default function App() {
       return { success: false, message: 'Transaction rejected: Invalid or corrupted quantity data.' };
     }
 
-    const liveAsset = liveAssets.find((a) => a.symbol === symbol)!;
-    const assetName = liveAsset ? liveAsset.name : symbol;
+    const liveAsset = liveAssets.find((a) => a.symbol === symbol);
+    if (!liveAsset || !isVerifiedProviderQuote(liveAsset) || !isSubmittedPriceCurrent(price, liveAsset)) {
+      return { success: false, message: 'Transaction rejected: the instrument needs a provider quote no older than two minutes, and the order price must match that quote. Refresh and try again.' };
+    }
+    const assetName = liveAsset.name;
     const totalCostValue = quantity * price;
 
     if (isNaN(totalCostValue) || !isFinite(totalCostValue)) {

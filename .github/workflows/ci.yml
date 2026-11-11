@@ -20,10 +20,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22.19.0'
           cache: npm
@@ -43,7 +43,7 @@ jobs:
       # Exercise the exact Node entry point Render starts, not only the bundler.
       - name: Smoke test production server
         run: |
-          PORT=4179 API_RATE_LIMIT_PER_MINUTE=1 node dist/server.cjs > server-smoke.log 2>&1 &
+          PORT=4179 API_RATE_LIMIT_PER_MINUTE=1 WEBSOCKET_ALLOWED_ORIGINS=https://preview.example.net,https://deploy-preview-*--vymxtrade.netlify.app node dist-server/server.cjs > server-smoke.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
 
@@ -79,31 +79,74 @@ jobs:
 
           node --input-type=module <<'NODE'
           import WebSocket from 'ws';
-          const ws = new WebSocket('ws://127.0.0.1:4179/api/prices', {
-            headers: { Origin: 'http://127.0.0.1:4179' }
-          });
-          await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => reject(new Error('WebSocket smoke test timed out')), 5000);
-            ws.once('open', () => ws.send('ping'));
-            ws.on('message', (data) => {
-              if (data.toString() === 'pong') {
+          const url = 'ws://127.0.0.1:4179/api/prices';
+
+          async function expectOpen(origin, heartbeat = false) {
+            const ws = new WebSocket(url, { headers: { Origin: origin } });
+            await new Promise((resolve, reject) => {
+              const timeout = setTimeout(() => reject(new Error(`WebSocket open timed out for ${origin}`)), 5000);
+              ws.once('open', () => {
+                if (heartbeat) ws.send('ping');
+                else { clearTimeout(timeout); ws.close(); resolve(); }
+              });
+              ws.on('message', (data) => {
+                if (data.toString() === 'pong') {
+                  clearTimeout(timeout);
+                  ws.close();
+                  resolve();
+                }
+              });
+              ws.once('error', (error) => {
+                clearTimeout(timeout);
+                reject(error);
+              });
+            });
+          }
+
+          async function expectForbidden(origin) {
+            const ws = new WebSocket(url, { headers: { Origin: origin } });
+            const status = await new Promise((resolve, reject) => {
+              const timeout = setTimeout(() => reject(new Error(`WebSocket rejection timed out for ${origin}`)), 5000);
+              ws.once('unexpected-response', (_request, response) => {
+                clearTimeout(timeout);
+                resolve(response.statusCode);
+              });
+              ws.once('open', () => {
                 clearTimeout(timeout);
                 ws.close();
-                resolve();
-              }
+                reject(new Error(`Unexpectedly accepted disallowed origin: ${origin}`));
+              });
+              ws.once('error', (error) => {
+                clearTimeout(timeout);
+                if (error.message.includes('Unexpected server response: 403')) resolve(403);
+                else reject(error);
+              });
             });
-            ws.once('error', (error) => {
-              clearTimeout(timeout);
-              reject(error);
-            });
-          });
+            if (status !== 403) throw new Error(`Expected 403 for ${origin}, received ${status}`);
+          }
+
+          await expectOpen('http://127.0.0.1:4179', true);
+          await expectOpen('https://preview.example.net');
+          await expectOpen('https://deploy-preview-123--vymxtrade.netlify.app');
+          await expectForbidden('https://attacker.example.org');
           NODE
 
-      # Report-only initially: the repository's known advisories must be
-      # triaged package-by-package before turning this into a blocking gate.
+      - name: Set up Java for Firestore Emulator
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install Firestore rules test dependencies
+        run: npm install --no-save --package-lock=false --no-audit --no-fund --ignore-scripts @firebase/rules-unit-testing@5.0.2 firebase-tools@14.15.1
+
+      - name: Verify Firestore security rules in emulator
+        run: npx firebase emulators:exec --project demo-vymx-trade-terminal --only firestore "node scripts/test-firestore-rules.mjs"
+
+      # Preserve the full audit artifact, then block merges if any known advisory remains.
       - name: Generate dependency vulnerability report
         if: always()
-        run: npm audit --json > npm-audit.json || true
+        run: npm audit --json --fetch-retries=3 --fetch-timeout=120000 > npm-audit.json || true
 
       - name: Summarize dependency audit
         if: always()
@@ -118,7 +161,7 @@ jobs:
           }
           const counts = report.metadata?.vulnerabilities ?? {};
           const lines = [
-            '## Dependency audit (report-only)',
+            '## Dependency audit (blocking)',
             '',
             '| Severity | Count |',
             '|---|---:|',
@@ -131,12 +174,26 @@ jobs:
 
       - name: Upload dependency audit report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: npm-audit-report
           path: npm-audit.json
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Require zero known dependency vulnerabilities
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const report = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'));
+          const counts = report.metadata?.vulnerabilities;
+          if (!counts) throw new Error('npm audit did not return vulnerability metadata.');
+          console.log(JSON.stringify(counts, null, 2));
+          if ((counts.total ?? Infinity) !== 0) {
+            throw new Error('npm audit found one or more known vulnerabilities; remediate before merge.');
+          }
+          NODE
 
   dependency-candidate:
     name: Validate non-breaking dependency update candidate
@@ -144,12 +201,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out PR head
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22.19.0'
           cache: npm
@@ -195,20 +252,19 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\\n') + '\\n');
           NODE
 
-      - name: Require zero critical advisories and a reduced total
+      - name: Require zero known dependency vulnerabilities
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           const report = JSON.parse(fs.readFileSync('candidate-audit.json', 'utf8'));
           const counts = report.metadata?.vulnerabilities;
           if (!counts) throw new Error('Candidate audit report is unavailable.');
-          if ((counts.critical ?? 0) !== 0) throw new Error('Candidate still contains critical advisories.');
-          if ((counts.total ?? Infinity) >= 27) throw new Error('Candidate did not reduce the baseline of 27 advisories.');
+          if ((counts.total ?? Infinity) !== 0) throw new Error('Candidate still contains one or more known vulnerabilities.');
           NODE
 
       - name: Upload dependency lockfile candidate and audit
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dependency-lockfile-candidate
           path: |

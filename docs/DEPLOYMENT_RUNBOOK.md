@@ -5,7 +5,7 @@
 - Render web service: `vymx-trade-terminal-2`
 - Production source: GitHub repository `adityamakan/vymx-trade-terminal`, branch `main`
 - Node runtime: `22.19.0` (pinned in `.node-version`)
-- Application start command: `npm start` (runs `node dist/server.cjs`)
+- Application start command: `npm start` (runs `node dist-server/server.cjs`)
 - Health endpoint: `/health`
 - Render production URL: `https://vymx-trade-terminal-2.onrender.com`
 
@@ -64,21 +64,55 @@ A candidate revision must pass, in order:
 
 ## Netlify preview versus Render backend
 
-The GitHub repository also reports Netlify Deploy Preview checks. The frontend currently calls same-origin `/api/*` REST routes and opens a same-origin `/api/prices` WebSocket. The repository does not contain a Netlify Functions or proxy configuration, while the Express API and WebSocket server are started by `server/server.ts` on Render.
+The production architecture remains Render full-stack: the Express process serves the React build, REST API and WebSocket from one origin. A Netlify static preview is a separate frontend host and must not be treated as production.
 
-Therefore, a Netlify static preview can build the frontend but will not automatically provide the Express API or WebSocket service. Unless the Netlify project dashboard has an external proxy/function configuration not represented in this repository, API-backed features in a Netlify preview will not work. Choose one explicit approach:
+This repository now includes `netlify.toml` with:
+- `npm ci && npm run build` as the build command and `dist` as the publish directory.
+- A forced same-origin REST proxy from `/api/*` to the Render API.
+- An SPA fallback to `/index.html`.
 
-- Use Render as the single full-stack deployment and treat Netlify preview as non-production/disabled; or
-- Configure a documented REST proxy to Render and a separately supported WebSocket route, then test both. A REST-only rewrite is not sufficient for live WebSocket quotes.
+The browser WebSocket is not proxied by that REST rewrite. `netlify.toml` now sets the public build variable `VITE_WS_URL=wss://vymx-trade-terminal-2.onrender.com/api/prices`, so no secret or dashboard-only build variable is required for that endpoint. On the Render service, set `WEBSOCKET_ALLOWED_ORIGINS` to the exact Netlify production origin plus its narrowly scoped deploy-preview pattern. If the Netlify production hostname is `https://vymxtrade.netlify.app`, the value is `https://vymxtrade.netlify.app,https://deploy-preview-*--vymxtrade.netlify.app`; verify the site's actual primary hostname in Netlify before saving. Do not use a broad `*.netlify.app` allowlist. Redeploy Render after changing its server variable; Netlify rebuilds when the repository config changes.
 
-A Netlify Deploy Preview failure is a separate check from the Render production deployment. Inspect its Netlify build log independently; do not interpret it as proof that Render production is down.
+Validation for a Netlify preview:
+1. Open `/api/health` on the preview domain and confirm it returns `service: vymx-api`.
+2. Confirm `POST /api/prices` returns a provider-backed quote or an explicit partial/unavailable response.
+3. Confirm the browser establishes `wss://vymx-trade-terminal-2.onrender.com/api/prices`, receives a price update, and completes heartbeat ping/pong.
+4. Confirm the browser console has no CORS, mixed-content, WebSocket 403, or repeated reconnect errors.
+
+A Netlify Deploy Preview is not production. Production remains the Render service and must pass its own health, REST and WebSocket checks. Do not infer Render health from Netlify status or vice versa.
 
 
 ## API edge protections
 
 The Express service now enables Helmet headers (CSP remains disabled pending an explicit external-widget allowlist), compression, a 32 KB JSON body limit, one trusted Render proxy hop, a default 240-request/minute per-IP API limit, and a 15-request/minute AI-route limit. Health/status probes are excluded from the general API limit. CI smoke tests assert the security header and verify that malformed API input returns 400 and a second request at a deliberately low test limit returns 429.
 
-The rate-limit store is process-local. It must be replaced with a shared store before horizontally scaling the service. WebSocket upgrades bypass Express middleware but have independent same-origin checks, a 20-connection cap, a 100-distinct-symbol aggregate cap, and a 4 KB frame limit. CI smoke tests verify a same-origin handshake and ping/pong response.
+The rate-limit store is process-local. It must be replaced with a shared store before horizontally scaling the service. WebSocket upgrades bypass Express middleware but enforce same-origin or explicit allowlisted-origin checks, a 20-connection cap, a 100-distinct-symbol aggregate cap, and a 4 KB frame limit. CI smoke tests verify same-origin, exact allowlisted-origin, wildcard deploy-preview-origin and denied-origin behavior, including heartbeat ping/pong.
+
+## GitHub branch protection
+
+The connected GitHub integration returned no repository rulesets, but the branch-protection endpoint itself denied access to this integration. Therefore, protection on `main` has **not** been independently verified or changed by this remediation.
+
+Before merging, verify the repository's Settings → Branches / Rulesets configuration and require:
+- Pull requests before merging to `main`.
+- Successful `CI / Typecheck, tests, build and dependency audit` checks.
+- Successful CodeQL analysis checks.
+- No force pushes or branch deletion on `main`.
+- Conversation resolution before merge.
+
+Do not treat a green PR run as a substitute for protecting the default branch against direct pushes.
+
+## Firestore rules test
+
+The CI workflow starts the Firestore Emulator and runs `scripts/test-firestore-rules.mjs`. The suite verifies anonymous denial, per-user ledger isolation, schema constraints, snapshot ownership, intraday expiry timestamp shape, and default-deny behavior for unmatched paths.
+
+To run the same suite locally, install the test-only tools without changing the project lockfile, then execute the emulator:
+
+```bash
+npm install --no-save --package-lock=false @firebase/rules-unit-testing@5.0.2 firebase-tools@14.15.1
+npx firebase emulators:exec --project demo-vymx-trade-terminal --only firestore "node scripts/test-firestore-rules.mjs"
+```
+
+Passing emulator tests validates the checked-in rules against the emulator; it does not deploy those rules or prove that the production Firebase project is using this exact file.
 
 ## Firebase operations are separate
 
@@ -89,9 +123,9 @@ The rate-limit store is process-local. It must be replaced with a shared store b
 
 ## Dependency vulnerability policy
 
-The November 2, 2026 CI audit artifact reported 27 advisories: 2 critical, 17 high and 8 moderate. It included vulnerable direct dependencies and transitive dependencies. The raw report is retained as a CI artifact for 14 days.
+The initial November 2, 2026 audit reported 27 advisories (2 critical, 17 high and 8 moderate). The release-readiness branch has since upgraded `yahoo-finance2` to v4.0.6, initialized its client instance, and pinned patched transitive versions of `@grpc/grpc-js` (1.14.7) and `postcss-selector-parser` (6.1.6). The regenerated lockfile passed `npm ci`, typecheck, tests and production build. The follow-up `npm audit` gate completed successfully with zero critical, high or moderate advisories; this does not assert that there are no low or informational notices. Dependabot configuration is included to keep future updates visible.
 
-Do not run `npm audit fix --force` as a blanket response. In particular, the report proposed major-version changes for Firebase and Yahoo Finance dependencies. Triage each advisory by affected version, dependency path, exploitability, fixed version and compatibility; upgrade in controlled batches and rerun the complete release gates.
+Do not run `npm audit fix --force` as a blanket response. It proposed incompatible Firebase and Yahoo Finance changes for the original vulnerable tree. Continue to review each new advisory by affected version, dependency path, exploitability, fixed version and compatibility, then rerun the complete release gates.
 
 ## Evidence still required
 

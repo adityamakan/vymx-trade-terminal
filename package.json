@@ -6,11 +6,11 @@
   "scripts": {
     "dev": "tsx server/server.ts",
     "build": "npm run lint && npm test && npm run build:artifacts",
-    "start": "node dist/server.cjs",
-    "clean": "rm -rf dist",
+    "start": "node dist-server/server.cjs",
+    "clean": "rm -rf dist dist-server",
     "lint": "tsc --noEmit",
     "test": "tsx scripts/test-financial-analytics.ts",
-    "build:artifacts": "vite build && esbuild server/server.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist/server.cjs"
+    "build:artifacts": "vite build && esbuild server/server.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist-server/server.cjs"
   },
   "devDependencies": {
     "@types/compression": "^1.8.1",
@@ -55,9 +55,13 @@
     "typescript": "~5.8.2",
     "vite": "^6.2.3",
     "ws": "^8.21.0",
-    "yahoo-finance2": "^3.15.4"
+    "yahoo-finance2": "^4.0.6"
   },
   "engines": {
     "node": ">=22.19.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.7",
+    "postcss-selector-parser": "^6.1.5"
   }
 }

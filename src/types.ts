@@ -10,14 +10,14 @@ export interface Asset {
   price: number;
   currency?: string | null; // Provider-reported quote currency; null until verified.
   quoteAsOf?: string | null; // Timestamp of the latest verified provider quote; null for bundled demo defaults.
-  change: number; // percentage change, e.g. 1.25 or -0.84
-  changeAbs: number; // absolute change, e.g. 5.12 or -1.20
+  change: number | null; // provider-reported percentage change; null when unavailable
+  changeAbs: number | null; // provider-reported absolute change; null when unavailable
   marketCap: number; // in Millions for smaller or Billions for larger, let's double specify standard
   marketCapDisplay: string; // e.g. "3.25T" or "45.2B" or "890M"
   peRatio: number | null; // null for cryptos, forex, some index
   sector: string; // e.g. "Technology", "Financials", "DeFi", "Energy", "Metal", "Currencies", "Indices"
   country: string; // e.g. "United States", "Global", "Germany", "Japan", "Switzerland"
-  volume: number; // e.g. 24h volume
+  volume: number | null; // null when the provider did not supply volume
   volumeDisplay: string; // e.g. "52.4M"
   high52w: number;
   low52w: number;

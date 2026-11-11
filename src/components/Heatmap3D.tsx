@@ -23,7 +23,7 @@ function AssetCube({ asset, position, onSelectAsset }: { asset: Asset; position:
 
   // Market-cap data is not part of the live quote contract; use neutral geometry.
   const height = 0.8;
-  const color = getChangeColor(asset.change);
+  const color = getChangeColor(asset.change ?? 0);
 
   const targetScale = hovered ? 1.05 : 1;
   const targetY = position[1] + height / 2 + (hovered ? 0.2 : 0);
@@ -67,8 +67,8 @@ function AssetCube({ asset, position, onSelectAsset }: { asset: Asset; position:
         <Html position={[0, height + 0.5, 0]} center zIndexRange={[100, 0]}>
           <div className="bg-zinc-950/90 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 text-white text-[10px] p-2 rounded-lg font-mono shadow-2xl whitespace-nowrap pointer-events-none backdrop-blur-md">
             <div className="font-bold text-xs">{asset.symbol} - {asset.name}</div>
-            <div className={`mt-1 font-bold ${asset.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {asset.change >= 0 ? '+' : ''}{asset.change.toFixed(2)}%
+            <div className={`mt-1 font-bold ${asset.change == null ? 'text-zinc-500' : asset.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              {asset.change == null ? 'N/A' : `${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}%`}
             </div>
             <div className="text-zinc-400">Price: {asset.price.toFixed(2)}</div>
           </div>
@@ -81,7 +81,7 @@ function AssetCube({ asset, position, onSelectAsset }: { asset: Asset; position:
 export default function Heatmap3D({ assets, onSelectAsset }: Heatmap3DProps) {
   // Sort by absolute provider-reported daily move; no stale market-cap ranking is implied.
   const displayAssets = useMemo(() => {
-    return [...assets].sort((a, b) => Math.abs(b.change) - Math.abs(a.change)).slice(0, 64);
+    return [...assets].sort((a, b) => Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0)).slice(0, 64);
   }, [assets]);
 
   // Create a grid layout constraint

@@ -1,94 +1,60 @@
 # Dependency vulnerability risk register
 
-## Baseline
+## Current status — 2026-11-11
 
-Source: the repository's `npm audit --json` artifact generated on November 2, 2026 from the current lockfile at that time.
+The validated release-readiness lockfile reports **0 npm audit vulnerabilities**:
 
-| Severity | Count |
-|---|---:|
-| Critical | 2 |
-| High | 17 |
-| Moderate | 8 |
-| **Total** | **27** |
-
-These are dependency advisory matches, not proof that every vulnerable code path is reachable in VYMX. The audit must be evaluated against dependency paths, runtime exposure, feature usage, and available patched versions.
-
-## Critical
-
-| Package | Locked version | Dependency path | Initial response |
-|---|---:|---|---|
-| `dompurify` | 3.4.11 | Optional dependency of `jspdf` | Move to a patched compatible release; test PDF export and any HTML sanitization paths. |
-| `proxy-addr` | 2.0.7 | Express and nested Express dependency | Update to patched 2.0.8+ within compatible ranges; test proxy/IP handling and rate limiting. |
-
-## High
-
-| Package | Locked version | Dependency path | Initial response |
-|---|---:|---|---|
-| `@firebase/firestore` | 4.16.0 | `firebase` | Review Firebase SDK release path; audit suggests a major-version change, so do not downgrade blindly. |
-| `@firebase/firestore-compat` | 0.4.11 | `firebase` | Same Firebase migration track. |
-| `@grpc/grpc-js` | 1.9.16 | `@firebase/firestore` | Firebase currently constrains this dependency; test any override in the Firebase Emulator before use. |
-| `@modelcontextprotocol/sdk` | 1.29.0 | `yahoo-finance2`; peer dependency of `@google/genai` | Update to a patched 1.x version if compatible with both parents; add adapter tests. |
-| `body-parser` | 1.20.5 and nested 2.3.0 | Express and nested MCP Express | Update within each parent's supported range; verify JSON parsing and body-size limits. |
-| `browserslist` | 4.28.2 | Build tooling | Update compatible lockfile resolution and rerun Vite build. |
-| `compression` | 1.8.1 | Direct dependency | Update to patched 1.8.2+ and test streamed/closed responses. |
-| `fast-uri` | 3.1.2 | `ajv` | Update compatible transitive version; run schema validation tests. |
-| `firebase` | 12.15.0 | Direct dependency | Do not accept the audit tool's suggested major downgrade without evaluating Firebase Auth/Firestore compatibility. |
-| `ip-address` | 10.2.0 | `express-rate-limit` | Update within compatible range; verify IP parsing and proxy behavior. |
-| `nanoid` | 3.3.12 | `postcss` | Update compatible lockfile resolution. |
-| `postcss` | 8.5.15 | Vite/autoprefixer | Update within Vite's supported range; run full production build. |
-| `source-map-js` | 1.2.1 | PostCSS/Tailwind | Update to patched compatible version. |
-| `undici` | 7.29.0 | `cheerio` | Update to patched compatible version; test provider HTTP requests and HTML parsing. |
-| `vite` | 6.4.3 | Direct dependency | Update to a patched compatible 6.x release and verify plugin compatibility. |
-| `yahoo-finance2` | 3.15.4 | Direct dependency | v3 emitted a deprecation warning in CI. Plan a tested v4 migration or a temporary safe pin; verify quote/chart/quoteSummary behavior. |
-| `zod` | 3.25.76 | MCP SDK, Yahoo Finance adapter, schema tooling | Audit parent compatibility before moving to v4; do not force a major upgrade. |
-
-## Moderate
-
-| Package | Locked version | Dependency path | Initial response |
-|---|---:|---|---|
-| `@hono/node-server` | 1.19.14 | MCP SDK | Update compatible transitive version. |
-| `@tailwindcss/typography` | 0.5.20 | Direct dependency | Review patched release or tested parser override; audit's suggested downgrade is not an acceptable automatic fix. |
-| `baseline-browser-mapping` | 2.10.37 | Browserslist | Update compatible build-tool dependency. |
-| `fflate` | nested 0.6.x | `three-stdlib` | Update `three-stdlib`/nested dependency or use a tested override; verify 3D rendering and archive/PDF features. |
-| `hono` | 4.12.25 | MCP SDK | Update compatible transitive version. |
-| `postcss-selector-parser` | 6.0.10 | Tailwind typography | Verify compatible patched 6.x version or update parent package. |
-| `protobufjs` | 7.6.4 | Gemini SDK / gRPC tooling | Update within compatible range; run AI integration smoke tests. |
-| `qs` | 6.15.2 | Express/body-parser and nested Express | Update compatible version; test query parsing and request validation. |
-
-## Safe remediation sequence
-
-1. Create a dedicated dependency-maintenance branch.
-2. Apply non-breaking lockfile updates first; do not use `npm audit fix --force`.
-3. Review the resulting lockfile diff and verify that no major downgrade or unexpected package substitution occurred.
-4. Run `npm ci`, `npm run lint`, `npm test`, `npm run build`, and the production-server smoke test.
-5. Test Firebase Auth/Firestore behavior in the Firebase Emulator before changing Firebase SDK or gRPC dependency versions. Authentication implementation remains out of scope for the current remediation.
-6. Test quote, historical chart, and financial-statement adapters before changing `yahoo-finance2`.
-7. Re-run `npm audit --json` and compare counts and advisory paths. Record any accepted residual risk with an owner and review date.
-8. Only then merge the lockfile update.
-
-## Important limitation
-
-The report-only CI step records advisories but does not make the application secure by itself. The current audit findings remain open until a patched lockfile has been committed and the release gates pass. A successful build alone does not close a dependency vulnerability.
-
-
-## Post-remediation candidate audit (November 2, 2026)
-
-A non-forced `npm audit fix --package-lock-only` candidate was generated, installed with `npm ci`, and passed TypeScript validation, the automated test suite, and the production build before being committed to the remediation branch.
-
-| Severity | Baseline | Validated candidate |
+| Severity | Baseline (Nov 2) | Current lockfile |
 |---|---:|---:|
 | Critical | 2 | 0 |
-| High | 17 | 6 |
-| Moderate | 8 | 2 |
-| **Total** | **27** | **8** |
+| High | 17 | 0 |
+| Moderate | 8 | 0 |
+| Low | 0 | 0 |
+| Info | 0 | 0 |
+| **Total** | **27** | **0** |
 
-The latest candidate resolves the two critical findings (`dompurify` and `proxy-addr`) and additional Express/`qs` advisories through compatible lockfile updates. It also updates Express 4 to 4.22.3 and refreshes compatible transitive dependencies. The lockfile-only change leaves `package.json` ranges unchanged. Firebase SDK packages moved within the existing 12.x major line; authentication source code was not modified. A real Firebase sign-in/Firestore runtime regression test has not yet been performed.
+The current result came from `npm audit --json` after the regenerated lockfile was installed with `npm ci`. The CI verification step failed the run if any critical, high or moderate advisory remained; the completed audit output reported zero in every severity category. This means the npm advisory database reported no known vulnerabilities for this lockfile at that time. It is not a guarantee that the application has no security defects or that new advisories will not be published.
 
-### Residual advisories
+## Main remediation changes
 
-- **High:** `firebase`, `@firebase/firestore`, `@firebase/firestore-compat`, `@grpc/grpc-js`, `yahoo-finance2`, `zod`.
-- **Moderate:** `@tailwindcss/typography`, `postcss-selector-parser`.
+| Package | Previous locked version | Current locked version | Remediation |
+|---|---:|---:|---|
+| `yahoo-finance2` | 3.15.4 | 4.0.6 | Migrated to supported v4 on Node 22 and instantiated the `YahooFinance` client. |
+| `zod` | 3.25.76 | 4.6.7 | Updated through the Yahoo Finance v4 dependency graph. |
+| `@grpc/grpc-js` | 1.9.16 | 1.14.7 | Added a compatible npm override to resolve the Firebase/Firestore transitive advisory path. |
+| `postcss-selector-parser` | 6.0.10 | 6.1.6 | Added a compatible 6.x override for the Tailwind Typography dependency path. |
+| `firebase` | 12.15.0 | 12.19.0 | Refreshed within the existing 12.x range. |
+| `@firebase/firestore` | 4.16.0 | 4.17.2 | Refreshed within the existing Firebase SDK dependency graph. |
+| `dompurify` | 3.4.11 | 3.4.17 | Updated compatible lockfile resolution. |
+| `proxy-addr` | 2.0.7 | 2.0.8 | Updated compatible lockfile resolution. |
+| `express` | 4.21.2 | 4.22.3 | Updated within the existing Express 4 range. |
+| `qs` | 6.15.2 | 6.16.2 | Updated compatible lockfile resolution. |
 
-The audit tool proposes a major Firebase downgrade and a Yahoo Finance downgrade for some residual findings. Those are not accepted automatically. Firebase needs an Emulator-backed compatibility review; Yahoo Finance needs a controlled adapter migration or a separately tested safe pin. Tailwind's suggested downgrade is also not accepted without visual/build regression testing.
+The lockfile refresh also updated other affected transitive dependencies, including body-parser, Browserslist, compression, fast-uri, ip-address, nanoid, PostCSS, source-map-js, undici, Hono, fflate and protobufjs. The exact resolved versions are recorded in `package-lock.json`.
 
-**Status:** Critical advisories reduced to zero in the latest candidate lockfile; 8 residual advisories remain open. This is risk reduction, not a claim of zero vulnerabilities.
+## Validation completed
+
+The dependency-refresh workflow completed all of the following on the release-readiness branch:
+
+1. Regenerated `package-lock.json` from the declared dependency ranges and explicit overrides.
+2. Installed the resulting lockfile with `npm ci`.
+3. Passed TypeScript validation with `npm run lint`.
+4. Passed the automated financial analytics, provider timestamp and quote-verification tests with `npm test`.
+5. Passed the Vite frontend and Express production bundle build with `npm run build:artifacts`.
+6. Passed the follow-up `npm audit --json` check with zero vulnerabilities in all severity categories.
+
+The main CI workflow separately runs a production-server smoke test. The release-readiness branch now extends that smoke test to verify same-origin, exact allowlisted-origin, wildcard deploy-preview-origin and denied-origin WebSocket behavior.
+
+## Remaining verification that is not an npm audit result
+
+- Exercise Google sign-in and Firestore ledger reads/writes against the Firebase Emulator and the intended production Firebase project.
+- Confirm the Render deployment uses the updated lockfile and the configured Node 22 runtime.
+- Verify Yahoo quote, chart and quoteSummary responses against the live upstream provider after deployment; Yahoo Finance remains an unofficial external service.
+- Continue monitoring new advisories through the repository's Dependabot configuration and CI audit.
+
+## Maintenance policy
+
+- Do not use `npm audit fix --force` as a blanket remediation. The original audit proposed inappropriate major downgrades for Firebase, Tailwind Typography and Yahoo Finance.
+- Keep dependency changes in reviewable commits and regenerate the lockfile with npm rather than hand-editing resolved package entries.
+- Require `npm ci`, typecheck, tests, production build, server smoke tests and a fresh audit before merging dependency changes.
+- Recheck the npm advisory database at release time; a clean audit is time-specific.

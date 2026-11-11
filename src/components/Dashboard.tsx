@@ -205,8 +205,8 @@ export default function Dashboard({
   };
 
   // --- MARKET BREADTH FROM PER-ASSET VERIFIED PROVIDER QUOTES ONLY ---
-  const verifiedQuoteAssets = useMemo(() => assets.filter((asset) => {
-    if (!asset.quoteAsOf) return false;
+  const verifiedQuoteAssets = useMemo(() => assets.filter((asset): asset is Asset & { change: number } => {
+    if (!asset.quoteAsOf || asset.change == null) return false;
     const timestamp = Date.parse(asset.quoteAsOf);
     return Number.isFinite(timestamp) && timestamp <= Date.now() + 60_000 && Date.now() - timestamp <= 120_000;
   }), [assets, timeTick]);
@@ -1114,7 +1114,7 @@ export default function Dashboard({
             {watchlistAssets.length > 0 ? (
               <div className="divide-y divide-zinc-900">
                 {watchlistAssets.map((asset) => {
-                  const isUp = asset.change >= 0;
+                  const isUp = asset.change != null && asset.change >= 0;
                   const assetAlerts = priceAlerts.filter(a => a.symbol === asset.symbol && a.active);
                   const isAlertInputActive = activeAlertInput === asset.symbol;
 
@@ -1134,8 +1134,8 @@ export default function Dashboard({
                         <div className="flex items-center gap-4">
                           <div className="text-right cursor-pointer" onClick={() => onSelectAsset(asset)}>
                             <div className="text-xs font-bold font-mono text-zinc-100">{formatCurrency(asset.price, asset.symbol, asset.country)}</div>
-                            <div className={`text-[10px] font-semibold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-                              {isUp ? '+' : ''}{asset.change}%
+                            <div className={`text-[10px] font-semibold ${asset.change == null ? 'text-zinc-500' : isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {asset.change == null ? 'N/A' : `${isUp ? '+' : ''}${asset.change}%`}
                             </div>
                           </div>
 
@@ -1228,8 +1228,8 @@ export default function Dashboard({
                 <div>
                   <p className="text-xs font-semibold text-indigo-300">Watchlist Intelligence</p>
                   <p className="text-[10px] text-indigo-200/70 mt-1 leading-relaxed">
-                    {watchlistAssets.filter(a => a.quoteAsOf && a.change > 2).length > 0
-                      ? `${watchlistAssets.filter(a => a.quoteAsOf && a.change > 2).length} assets in your watchlist are showing unusually high bullish momentum today. Consider setting up price alerts.`
+                    {watchlistAssets.filter(a => a.quoteAsOf && a.change != null && a.change > 2).length > 0
+                      ? `${watchlistAssets.filter(a => a.quoteAsOf && a.change != null && a.change > 2).length} assets in your watchlist are showing unusually high bullish momentum today. Consider setting up price alerts.`
                       : `No verified daily quote moves above 2% are present in the current watchlist. This does not assess earnings, correlation or volatility.`}
                   </p>
                 </div>
@@ -1268,7 +1268,7 @@ export default function Dashboard({
                 <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Popular Equities</span>
                 <div className="space-y-2">
                   {popularStocks.map((stk) => {
-                    const isUp = stk.change >= 0;
+                    const isUp = stk.change != null && stk.change >= 0;
                     return (
                       <div
                         key={stk.symbol}
@@ -1282,7 +1282,7 @@ export default function Dashboard({
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-bold font-mono text-zinc-200">{formatCurrency(stk.price, stk.symbol, stk.country)}</span>
                           <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${isUp ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                            {isUp ? '+' : ''}{stk.change}%
+                            {stk.change == null ? 'N/A' : `${isUp ? '+' : ''}${stk.change}%`}
                           </span>
                         </div>
                       </div>
@@ -1296,7 +1296,7 @@ export default function Dashboard({
                 <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Crypto Assets</span>
                 <div className="space-y-2">
                   {marketCryptos.map((cry) => {
-                    const isUp = cry.change >= 0;
+                    const isUp = cry.change != null && cry.change >= 0;
                     return (
                       <div
                         key={cry.symbol}
@@ -1310,7 +1310,7 @@ export default function Dashboard({
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-bold font-mono text-zinc-200">{formatCurrency(cry.price, cry.symbol, cry.country)}</span>
                           <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${isUp ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                            {isUp ? '+' : ''}{cry.change}%
+                            {cry.change == null ? 'N/A' : `${isUp ? '+' : ''}${cry.change}%`}
                           </span>
                         </div>
                       </div>
@@ -1326,7 +1326,7 @@ export default function Dashboard({
               <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Benchmark Commodities & Futures</span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {marketCommodities.map((comm) => {
-                  const isUp = comm.change >= 0;
+                  const isUp = comm.change != null && comm.change >= 0;
                   return (
                     <div
                       key={comm.symbol}
@@ -1340,7 +1340,7 @@ export default function Dashboard({
                       <div className="text-right">
                         <span className="text-xs font-bold font-mono text-zinc-200">{formatCurrency(comm.price, comm.symbol, comm.country)}</span>
                         <div className={`text-[10px] font-semibold flex items-center justify-end gap-1 ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          <span>{isUp ? '+' : ''}{comm.change}%</span>
+                          <span>{comm.change == null ? 'N/A' : `${isUp ? '+' : ''}${comm.change}%`}</span>
                         </div>
                       </div>
                     </div>

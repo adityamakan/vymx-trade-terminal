@@ -8,9 +8,9 @@ export interface HedgeSuggestion {
 
 export function generateHedgeSuggestions(asset: Asset): HedgeSuggestion[] {
   // Simple heuristic based on asset type or direction
-  const isDown = asset.change < 0;
+  const isDown = asset.change != null && asset.change < 0;
   const isCrypto = asset.type === 'crypto';
-  const isHighVolatility = Math.abs(asset.change) > 3;
+  const isHighVolatility = asset.change != null && Math.abs(asset.change) > 3;
 
   const suggestions: HedgeSuggestion[] = [];
 

@@ -180,7 +180,7 @@ export default function Heatmap({
     return Object.entries(groups)
       .map(([name, items]) => {
         // Sort by absolute provider-reported daily move; market-cap metadata is not refreshed by the quote feed.
-        const sortedItems = [...items].sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
+        const sortedItems = [...items].sort((a, b) => Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0));
         return { name, items: sortedItems };
       })
       .sort((a, b) => b.items.length - a.items.length); // Larger groups first
@@ -188,7 +188,7 @@ export default function Heatmap({
 
   // Helper stats calculations
   const summaryStats = useMemo(() => {
-    const verifiedAssets = filteredAssets.filter(hasFreshQuote);
+    const verifiedAssets = filteredAssets.filter((asset): asset is Asset & { change: number } => hasFreshQuote(asset) && asset.change != null);
     const total = filteredAssets.length;
     const gainers = verifiedAssets.filter((a) => a.change > 0.05).length;
     const losers = verifiedAssets.filter((a) => a.change < -0.05).length;
@@ -233,7 +233,7 @@ export default function Heatmap({
 
   const getCellMetricColorIntensityStyle = (asset: Asset) => {
     if (!hasFreshQuote(asset)) return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
-    if (metricView === "volume") return asset.volume > 10000000 ? "bg-indigo-950/90 text-indigo-300 border-indigo-500/30" : "bg-zinc-900 text-zinc-400 border-zinc-800/60";
+    if (metricView === "volume") return asset.volume != null && asset.volume > 10000000 ? "bg-indigo-950/90 text-indigo-300 border-indigo-500/30" : "bg-zinc-900 text-zinc-400 border-zinc-800/60";
     if (metricView === "range52w") {
       const spread = asset.high52w - asset.low52w;
       if (spread <= 0) return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
@@ -700,7 +700,7 @@ export default function Heatmap({
               {/* Uniform tiles: verified market-cap weighting is not available in this quote feed. */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
                 {group.items.map((asset) => {
-                  const relativeUp = asset.change >= 0;
+                  const relativeUp = asset.change != null && asset.change >= 0;
                   const isFlash = flashUpdateSym[asset.symbol];
 
                   let sizeClass = "col-span-1 row-span-1 h-24";
@@ -853,20 +853,10 @@ export default function Heatmap({
 
 
                         {densityMode === "high" && (
-                          <div className="my-1 border-y border-white/5 py-1 flex flex-col gap-1 w-full">
-                            <div className="flex justify-between items-center text-[7px] text-zinc-400 font-mono">
-                              <span>Inst Flow</span>
-                              <span className={asset.change > 0 ? "text-emerald-400" : "text-rose-400"}>{asset.change > 0 ? "+" : ""}{(asset.change * 0.4).toFixed(2)}B</span>
-                            </div>
-                            <div className="flex justify-between items-center text-[7px] text-zinc-400 font-mono">
-                              <span>Liq Pool</span>
-                              <span className="text-blue-400">${(asset.volume / 10000000).toFixed(1)}T</span>
-                            </div>
-                            <div className="flex gap-0.5 mt-0.5 items-end h-4 w-full opacity-60">
-                               {Array.from({length: 8}).map((_, i) => (
-                                 <div key={i} className={`flex-1 rounded-sm ${i < 4 ? (asset.change > 0 ? 'bg-emerald-500' : 'bg-rose-500') : 'bg-zinc-600'}`} style={{ height: `${20 + ((asset.symbol.charCodeAt(i % asset.symbol.length) * (i + 1) * 17) % 70)}%` }}></div>
-                               ))}
-                            </div>
+                          <div className="my-1 border-y border-white/5 py-1 flex flex-col gap-1 w-full text-[8px] font-mono text-zinc-500">
+                            <div className="flex justify-between"><span>Institutional flows</span><span>N/A — no holdings feed</span></div>
+                            <div className="flex justify-between"><span>Liquidity pools</span><span>N/A — not applicable</span></div>
+                            <div className="flex justify-between"><span>Order-book depth</span><span>N/A — no order-book feed</span></div>
                           </div>
                         )}
 
@@ -1037,22 +1027,21 @@ export default function Heatmap({
                   24h Fluctuation
                 </p>
                 <p
-                  className={`font-bold flex items-center gap-1 ${hoveredAsset.change >= 0 ? "text-emerald-400" : "text-rose-455"}`}
+                  className={`font-bold flex items-center gap-1 ${hoveredAsset.change == null ? "text-zinc-500" : hoveredAsset.change >= 0 ? "text-emerald-400" : "text-rose-455"}`}
                 >
-                  {hoveredAsset.change >= 0 ? (
+                  {hoveredAsset.change == null ? null : hoveredAsset.change >= 0 ? (
                     <TrendingUp className="h-3 w-3" />
                   ) : (
                     <TrendingDown className="h-3 w-3" />
                   )}
                   <span>
-                    {hoveredAsset.change >= 0 ? "+" : ""}
-                    {hoveredAsset.change}%
+                    {hoveredAsset.change == null ? 'N/A' : `${hoveredAsset.change >= 0 ? '+' : ''}${hoveredAsset.change}%`}
                   </span>
                 </p>
               </div>
               <div>
                 <p className="text-zinc-500 text-[9px] uppercase font-bold">
-                  Market Cap Weight
+                  Reference Market Cap (static)
                 </p>
                 <p className="font-bold text-zinc-100">
                   {hoveredAsset.marketCapDisplay}
@@ -1060,7 +1049,7 @@ export default function Heatmap({
               </div>
               <div>
                 <p className="text-zinc-500 text-[9px] uppercase font-bold">
-                  24H Trading Volume
+                  Provider-reported volume
                 </p>
                 <p className="font-bold text-zinc-100">
                   {hoveredAsset.volumeDisplay}
@@ -1071,26 +1060,16 @@ export default function Heatmap({
             {/* Advanced Binance-style Technicals */}
             <div className="bg-zinc-950 p-2.5 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 grid grid-cols-2 gap-2 text-[10px] font-mono">
               <div className="col-span-2 text-zinc-500 text-[9px] uppercase font-bold mb-1 border-b border-zinc-900 pb-1">
-                Advanced Technicals & Sentiments (Live)
+                Advanced indicators (not supplied by feed)
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-zinc-500">RSI(14)</span>
-                <span
-                  className={`font-bold ${
-                    20 + ((hoveredAsset.symbol.charCodeAt(0) * 7) % 60) > 65
-                      ? "text-rose-400"
-                      : 20 + ((hoveredAsset.symbol.charCodeAt(0) * 7) % 60) < 35
-                        ? "text-emerald-400"
-                        : "text-zinc-300"
-                  }`}
-                >
-                  N/A
-                </span>
+                <span className="font-bold text-zinc-500">N/A</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-zinc-500">MACD (not calculated)</span>
-                <span className={`font-bold ${hoveredAsset.change > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <span className="font-bold text-zinc-500">
                   N/A
                 </span>
               </div>

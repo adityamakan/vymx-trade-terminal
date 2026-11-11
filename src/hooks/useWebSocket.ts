@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 export interface PriceQuote {
   price: number;
-  change: number;
-  changeAbs: number;
+  change: number | null;
+  changeAbs: number | null;
   low52w: number;
   high52w: number;
   prevClose: number;
@@ -121,7 +121,10 @@ export function useWebSocket(options?: UseWebSocketOptions) {
   const connect = useCallback(() => {
     // Determine the websocket URL based on current protocol
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/api/prices`;
+    // Static preview hosts can use the Render WebSocket endpoint directly.
+    // Keep same-origin behavior as the default for the Render full-stack deployment.
+    const configuredWsUrl = import.meta.env.VITE_WS_URL?.trim();
+    const wsUrl = configuredWsUrl || `${protocol}//${window.location.host}/api/prices`;
 
     try {
       ws.current = new WebSocket(wsUrl);

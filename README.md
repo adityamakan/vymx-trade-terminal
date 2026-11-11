@@ -44,7 +44,7 @@ npm run build
 npm start
 ```
 
-Configure Firebase client settings and optional provider secrets through the deployment environment. Never commit private API keys, service-account credentials, or secrets in frontend-exposed `VITE_*` variables.
+Configure Firebase client settings and optional provider secrets through the deployment environment. Never commit private API keys, service-account credentials, or secrets in frontend-exposed `VITE_*` variables. `VITE_WS_URL` is a public endpoint URL, not a credential.
 
 ## Environment variables
 
@@ -54,6 +54,8 @@ Configure Firebase client settings and optional provider secrets through the dep
 | `FRED_API_KEY` | Federal Reserve Economic Data observations | Optional |
 | `FINNHUB_API_KEY` | Provider-sourced market news | Optional |
 | `PORT` | Express server port | Optional; defaults to 5000 |
+| `WEBSOCKET_ALLOWED_ORIGINS` | Comma-separated exact origins or wildcard patterns allowed to open the market WebSocket from a separate frontend host | Optional; same-origin is allowed by default |
+| `VITE_WS_URL` | Public WebSocket URL embedded in a static frontend build (for Netlify previews only when using the Render backend) | Optional; defaults to same-origin `/api/prices` |
 
 Without optional provider credentials, the corresponding endpoints return explicit unavailable responses. The macro workspace can still show Yahoo market proxies while clearly marking FRED official series as unavailable. The server does not substitute fabricated news, institutional flows, or AI answers.
 

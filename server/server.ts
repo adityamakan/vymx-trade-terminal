@@ -5,11 +5,26 @@ import { rateLimit } from 'express-rate-limit';
 import path from 'path';
 import { createServer } from 'http';
 import { WebSocket, WebSocketServer } from 'ws';
-import yahooFinance from 'yahoo-finance2';
+import YahooFinanceExport from 'yahoo-finance2';
 import { normalizeProviderTimestamp } from '../src/utils/providerTimestamp';
 
 const app = express();
 const server = createServer(app);
+// yahoo-finance2 v4 publishes ESM and CommonJS entry points. The CJS
+// production bundle may expose the constructor through one or more default
+// wrappers, so normalize the export before instantiating it.
+function resolveYahooFinanceConstructor(exported: unknown): typeof YahooFinanceExport {
+  let candidate: unknown = exported;
+  for (let depth = 0; depth < 3; depth += 1) {
+    if (typeof candidate === 'function') return candidate as typeof YahooFinanceExport;
+    if (!candidate || typeof candidate !== 'object' || !('default' in candidate)) break;
+    candidate = (candidate as { default?: unknown }).default;
+  }
+  throw new TypeError('Unsupported yahoo-finance2 module export shape');
+}
+
+const YahooFinanceConstructor = resolveYahooFinanceConstructor(YahooFinanceExport);
+const yahooFinance = new YahooFinanceConstructor();
 const PORT = Number(process.env.PORT || 5000);
 const MAX_SYMBOLS = 100;
 const CACHE_TTL_MS = 30_000;
@@ -60,8 +75,8 @@ const SYMBOL_ALIASES: Record<string, string> = {
 
 type PriceQuote = {
   price: number;
-  change: number;
-  changeAbs: number;
+  change: number | null;
+  changeAbs: number | null;
   low52w: number | null;
   high52w: number | null;
   prevClose: number | null;
@@ -126,10 +141,10 @@ async function fetchQuote(symbol: string): Promise<PriceQuote> {
     : Number(quote.regularMarketPreviousClose) * unitScale;
   const changeAbs = quote?.regularMarketChange != null && Number.isFinite(Number(quote.regularMarketChange))
     ? Number(quote.regularMarketChange) * unitScale
-    : (Number.isFinite(previousClose) ? price - previousClose : 0);
+    : (Number.isFinite(previousClose) && previousClose > 0 ? price - previousClose : null);
   const change = quote?.regularMarketChangePercent != null && Number.isFinite(Number(quote.regularMarketChangePercent))
     ? Number(quote.regularMarketChangePercent)
-    : (previousClose > 0 ? (changeAbs / previousClose) * 100 : 0);
+    : (previousClose > 0 && changeAbs != null ? (changeAbs / previousClose) * 100 : null);
 
   const result: PriceQuote = {
     price, change, changeAbs,
@@ -526,7 +541,7 @@ app.get('/api/ai/market-auras', async (_req: Request, res: Response) => {
   const result = await getPrices(proxies.map((item) => item.symbol));
   const auras = proxies.flatMap((item) => {
     const quote = result.prices[item.symbol];
-    if (!quote) return [];
+    if (!quote || quote.change == null) return [];
     const score = Math.max(0, Math.min(100, Math.round(50 + quote.change * 10)));
     return [{
       sector: item.sector,
@@ -550,8 +565,9 @@ app.get('/api/ai/narrative', async (_req: Request, res: Response) => {
   const describe = (label: string, symbol: string) => {
     const quote = result.prices[symbol];
     if (!quote) return `${label}: unavailable`;
-    const direction = quote.change > 0 ? 'up' : quote.change < 0 ? 'down' : 'unchanged';
-    return `${label}: ${quote.price.toLocaleString('en-US', { maximumFractionDigits: 2 })}, ${direction} ${Math.abs(quote.change).toFixed(2)}% on the provider's quoted change`;
+    const direction = quote.change == null ? 'change unavailable' : quote.change > 0 ? 'up' : quote.change < 0 ? 'down' : 'unchanged';
+    const changeText = quote.change == null ? '' : ` ${Math.abs(quote.change).toFixed(2)}% on the provider's quoted change`;
+    return `${label}: ${quote.price.toLocaleString('en-US', { maximumFractionDigits: 2 })}, ${direction}${changeText}`;
   };
   const text = [
     'Provider market snapshot — observed quotes, not a causal news analysis.',
@@ -601,7 +617,7 @@ app.get('/api/ai/exchange-latest', async (req: Request, res: Response) => {
   const result = await getPrices([index.symbol]);
   const quote = result.prices[index.symbol];
   if (!quote) return res.status(503).json({ success: false, error: 'Exchange index quote unavailable', unavailable: result.errors });
-  const change = `${quote.change >= 0 ? '+' : ''}${quote.change.toFixed(2)}%`;
+  const change = quote.change == null ? 'N/A' : `${quote.change >= 0 ? '+' : ''}${quote.change.toFixed(2)}%`;
   return res.json({
     success: true,
     exchange,
@@ -772,6 +788,28 @@ const MAX_ACTIVE_WEBSOCKET_SYMBOLS = 100;
 const wss = new WebSocketServer({ noServer: true, maxPayload: 4096 });
 const subscriptions = new Map<WebSocket, string[]>();
 
+function isAllowedWebSocketOrigin(origin: string, requestHost: string): boolean {
+  try {
+    const parsed = new URL(origin);
+    if (parsed.host === requestHost) return true;
+    const candidate = parsed.origin.toLowerCase();
+    const configured = (process.env.WEBSOCKET_ALLOWED_ORIGINS || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    return configured.some((pattern) => {
+      if (!pattern.includes('*')) return candidate === new URL(pattern).origin.toLowerCase();
+      const parts = pattern.toLowerCase().split('*');
+      if (parts.length !== 2) return false;
+      return candidate.startsWith(parts[0]) &&
+        candidate.endsWith(parts[1]) &&
+        candidate.length >= parts[0].length + parts[1].length;
+    });
+  } catch {
+    return false;
+  }
+}
+
 server.on('upgrade', (request, socket, head) => {
   const pathname = new URL(request.url || '/', 'http://localhost').pathname;
   if (pathname !== '/api/prices') { socket.destroy(); return; }
@@ -780,7 +818,7 @@ server.on('upgrade', (request, socket, head) => {
   const origin = request.headers.origin;
   if (origin) {
     try {
-      if (new URL(origin).host !== request.headers.host) {
+      if (!isAllowedWebSocketOrigin(origin, request.headers.host || '')) {
         socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
         socket.destroy();
         return;

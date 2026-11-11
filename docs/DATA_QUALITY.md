@@ -14,6 +14,13 @@ Every provider-backed observation should be treated as one of:
 
 Never convert missing values to zero. Never fill missing observations with random, synthetic, or stale values while labeling the result live.
 
+## Unavailable and proxy-only indicators
+
+- Missing provider-reported daily percentage or absolute change remains `null`; the interface must display `N/A`, not a bundled demo value or a fabricated zero.
+- The screener does not currently receive an order-book depth feed, implied-volatility surface, calculated beta, RSI/MACD series or a verified volatility series. These fields must remain `N/A` until they are computed from documented provider observations.
+- Institutional ownership/flow, liquidity-pool depth and order-book imbalance are not supplied by the current quote adapter. They must not be inferred from price direction or quote volume.
+- The sentiment gauge is a heuristic proxy based on available price-change observations. It is not an official Fear & Greed index, a realized-volatility estimate, or a traded-volume breadth measure. Missing observations are excluded and unavailable components use neutral weighting.
+
 ## Provider provenance
 
 - Quote and historical OHLCV endpoints currently use Yahoo Finance through the server adapter. Yahoo Finance is an unofficial upstream; latency, availability, completeness, licensing, and rate limits are outside VYMX's control.
