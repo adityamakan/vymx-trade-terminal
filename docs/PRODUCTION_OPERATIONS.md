@@ -25,7 +25,7 @@ It performs four live checks against the production Render origin: The quote mus
 3. **Market-data path:** `POST /api/prices` requests AAPL and requires a valid positive finite price plus a parseable provider observation timestamp. It does not treat retrieval time as the provider observation time.
 4. **WebSocket lifecycle:** opens a same-origin WebSocket connection and requires the application heartbeat response `pong`.
 
-The monitor retries transient HTTP/network failures up to three attempts. A failed run means at least one production smoke check did not meet its contract; inspect the job log before concluding whether the cause is Render, the provider, or the WebSocket path. It is an availability signal, not a full synthetic user journey and not a guarantee that every symbol or screen is correct.
+The monitor uses Node 22's built-in WebSocket client and does not install the application dependency tree on every scheduled run. Its server-side WebSocket probe omits the browser Origin header; the CI integration tests separately verify same-origin, explicitly allowlisted and denied browser origins. The monitor retries transient HTTP/network failures up to three attempts. A failed run means at least one production smoke check did not meet its contract; inspect the job log before concluding whether the cause is Render, the provider, or the WebSocket path. It is an availability signal, not a full synthetic user journey and not a guarantee that every symbol or screen is correct.
 
 The monitor uses the public production URL and does not require secrets. Do not add API keys, Firebase credentials, or other secrets to workflow YAML or logs.
 
