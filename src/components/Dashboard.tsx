@@ -206,7 +206,7 @@ export default function Dashboard({
 
   // --- MARKET BREADTH FROM PER-ASSET VERIFIED PROVIDER QUOTES ONLY ---
   const verifiedQuoteAssets = useMemo(() => assets.filter((asset) => {
-    if (!asset.quoteAsOf) return false;
+    if (!asset.quoteAsOf || asset.change == null) return false;
     const timestamp = Date.parse(asset.quoteAsOf);
     return Number.isFinite(timestamp) && timestamp <= Date.now() + 60_000 && Date.now() - timestamp <= 120_000;
   }), [assets, timeTick]);
@@ -1114,7 +1114,7 @@ export default function Dashboard({
             {watchlistAssets.length > 0 ? (
               <div className="divide-y divide-zinc-900">
                 {watchlistAssets.map((asset) => {
-                  const isUp = asset.change >= 0;
+                  const isUp = asset.change != null && asset.change >= 0;
                   const assetAlerts = priceAlerts.filter(a => a.symbol === asset.symbol && a.active);
                   const isAlertInputActive = activeAlertInput === asset.symbol;
 
@@ -1134,8 +1134,8 @@ export default function Dashboard({
                         <div className="flex items-center gap-4">
                           <div className="text-right cursor-pointer" onClick={() => onSelectAsset(asset)}>
                             <div className="text-xs font-bold font-mono text-zinc-100">{formatCurrency(asset.price, asset.symbol, asset.country)}</div>
-                            <div className={`text-[10px] font-semibold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-                              {isUp ? '+' : ''}{asset.change}%
+                            <div className={`text-[10px] font-semibold ${asset.change == null ? 'text-zinc-500' : isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {asset.change == null ? 'N/A' : `${isUp ? '+' : ''}${asset.change}%`}
                             </div>
                           </div>
 
