@@ -18,11 +18,12 @@ The application is a market-data dashboard and simulated-trading environment. A 
 
 The GitHub Actions workflow `.github/workflows/production-monitor.yml` runs every 30 minutes and can also be started manually from Actions → Production availability monitor → Run workflow.
 
-It performs three live checks against the production Render origin. The quote must identify Yahoo Finance, include its provider observation timestamp, be no more than five minutes in the future and no older than seven days (allowing for weekends and market holidays):
+It performs four live checks against the production Render origin: The quote must identify Yahoo Finance, include its provider observation timestamp, be no more than five minutes in the future and no older than seven days (allowing for weekends and market holidays):
 
-1. **Process health:** `GET /health` must return HTTP 200 with `status: "ok"` and `service: "vymx-api"`.
-2. **Market-data path:** `POST /api/prices` requests AAPL and requires a valid positive finite price plus a parseable provider observation timestamp. It does not treat retrieval time as the provider observation time.
-3. **WebSocket lifecycle:** opens a same-origin WebSocket connection and requires the application heartbeat response `pong`.
+1. **Frontend delivery:** `GET /` must return the VYMX HTML shell and its built JavaScript bundle must be reachable.
+2. **Process health:** `GET /health` must return HTTP 200 with `status: "ok"` and `service: "vymx-api"`.
+3. **Market-data path:** `POST /api/prices` requests AAPL and requires a valid positive finite price plus a parseable provider observation timestamp. It does not treat retrieval time as the provider observation time.
+4. **WebSocket lifecycle:** opens a same-origin WebSocket connection and requires the application heartbeat response `pong`.
 
 The monitor retries transient HTTP/network failures up to three attempts. A failed run means at least one production smoke check did not meet its contract; inspect the job log before concluding whether the cause is Render, the provider, or the WebSocket path. It is an availability signal, not a full synthetic user journey and not a guarantee that every symbol or screen is correct.
 
