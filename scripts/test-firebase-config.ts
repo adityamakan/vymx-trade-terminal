@@ -3,6 +3,13 @@ import { resolveFirebaseClientConfig } from '../src/utils/firebaseConfig';
 
 assert.equal(resolveFirebaseClientConfig({}), null, 'missing Firebase config must disable persistent services');
 assert.equal(resolveFirebaseClientConfig({
+  VITE_FIREBASE_API_KEY: 'mock',
+  VITE_FIREBASE_AUTH_DOMAIN: 'mock.firebaseapp.com',
+  VITE_FIREBASE_PROJECT_ID: 'mock',
+  VITE_FIREBASE_APP_ID: 'mock'
+}), null, 'placeholder Firebase values must not initialize an app');
+
+assert.equal(resolveFirebaseClientConfig({
   VITE_FIREBASE_API_KEY: 'public-api-key',
   VITE_FIREBASE_PROJECT_ID: 'example-project'
 }), null, 'partial Firebase config must not initialize an incomplete app');
