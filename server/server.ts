@@ -5,11 +5,12 @@ import { rateLimit } from 'express-rate-limit';
 import path from 'path';
 import { createServer } from 'http';
 import { WebSocket, WebSocketServer } from 'ws';
-import yahooFinance from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2';
 import { normalizeProviderTimestamp } from '../src/utils/providerTimestamp';
 
 const app = express();
 const server = createServer(app);
+const yahooFinance = new YahooFinance();
 const PORT = Number(process.env.PORT || 5000);
 const MAX_SYMBOLS = 100;
 const CACHE_TTL_MS = 30_000;
