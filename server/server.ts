@@ -5,12 +5,26 @@ import { rateLimit } from 'express-rate-limit';
 import path from 'path';
 import { createServer } from 'http';
 import { WebSocket, WebSocketServer } from 'ws';
-import YahooFinance from 'yahoo-finance2';
+import YahooFinanceExport from 'yahoo-finance2';
 import { normalizeProviderTimestamp } from '../src/utils/providerTimestamp';
 
 const app = express();
 const server = createServer(app);
-const yahooFinance = new YahooFinance();
+// yahoo-finance2 v4 publishes ESM and CommonJS entry points. The CJS
+// production bundle may expose the constructor through one or more default
+// wrappers, so normalize the export before instantiating it.
+function resolveYahooFinanceConstructor(exported: unknown): typeof YahooFinanceExport {
+  let candidate: unknown = exported;
+  for (let depth = 0; depth < 3; depth += 1) {
+    if (typeof candidate === 'function') return candidate as typeof YahooFinanceExport;
+    if (!candidate || typeof candidate !== 'object' || !('default' in candidate)) break;
+    candidate = (candidate as { default?: unknown }).default;
+  }
+  throw new TypeError('Unsupported yahoo-finance2 module export shape');
+}
+
+const YahooFinanceConstructor = resolveYahooFinanceConstructor(YahooFinanceExport);
+const yahooFinance = new YahooFinanceConstructor();
 const PORT = Number(process.env.PORT || 5000);
 const MAX_SYMBOLS = 100;
 const CACHE_TTL_MS = 30_000;
