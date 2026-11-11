@@ -167,8 +167,8 @@ export default function CommandCenter({ isOpen, onClose, setView, assets, onSele
                         </div>
                         <div className="text-right">
                           <div className="font-mono text-sm">${asset.price.toLocaleString()}</div>
-                          <div className={`text-xs ${asset.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            {asset.change >= 0 ? '+' : ''}{asset.change}%
+                          <div className={`text-xs ${asset.change == null ? 'text-zinc-500' : asset.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {asset.change == null ? 'N/A' : `${asset.change >= 0 ? '+' : ''}${asset.change}%`}
                           </div>
                         </div>
                       </button>
