@@ -26,6 +26,9 @@ export function resolveFirebaseClientConfig(env: FirebaseClientEnvironment): Fir
   const projectId = env.VITE_FIREBASE_PROJECT_ID?.trim();
   const appId = env.VITE_FIREBASE_APP_ID?.trim();
   if (!apiKey || !authDomain || !projectId || !appId) return null;
+  const requiredValues = [apiKey, authDomain, projectId, appId].map((value) => value.toLowerCase());
+  const placeholders = new Set(['mock', 'placeholder', 'changeme', 'your-api-key', 'your_project_id']);
+  if (requiredValues.some((value) => placeholders.has(value))) return null;
   const config: FirebaseClientConfig = { apiKey, authDomain, projectId, appId };
   const storageBucket = env.VITE_FIREBASE_STORAGE_BUCKET?.trim();
   const messagingSenderId = env.VITE_FIREBASE_MESSAGING_SENDER_ID?.trim();
