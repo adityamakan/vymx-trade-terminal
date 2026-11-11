@@ -182,6 +182,7 @@ jobs:
           retention-days: 14
 
       - name: Require zero known dependency vulnerabilities
+        if: always()
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
