@@ -91,9 +91,10 @@ The GitHub integration cannot change or inspect Render dashboard settings.
 ### Production monitor
 
 The scheduled workflow checks:
-1. `GET /health` and the expected service identity.
-2. `POST /api/prices` for a real Yahoo Finance AAPL quote, positive finite price, provider source and observation timestamp no more than seven days old or five minutes in the future.
-3. Same-origin WebSocket handshake and ping/pong heartbeat.
+1. `GET /` and the built JavaScript bundle for frontend delivery.
+2. `GET /health` and the expected service identity.
+3. `POST /api/prices` for a real Yahoo Finance AAPL quote, positive finite price, provider source and observation timestamp no more than seven days old or five minutes in the future.
+4. Server-side WebSocket handshake and ping/pong heartbeat. Browser Origin allowlist behavior remains covered by CI integration tests.
 
 Merge and run it after the expected Render deployment. A passing result is an operational signal, not a full browser journey or a guarantee that every provider/instrument is available.
 
