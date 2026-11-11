@@ -75,8 +75,8 @@ const SYMBOL_ALIASES: Record<string, string> = {
 
 type PriceQuote = {
   price: number;
-  change: number;
-  changeAbs: number;
+  change: number | null;
+  changeAbs: number | null;
   low52w: number | null;
   high52w: number | null;
   prevClose: number | null;
@@ -141,10 +141,10 @@ async function fetchQuote(symbol: string): Promise<PriceQuote> {
     : Number(quote.regularMarketPreviousClose) * unitScale;
   const changeAbs = quote?.regularMarketChange != null && Number.isFinite(Number(quote.regularMarketChange))
     ? Number(quote.regularMarketChange) * unitScale
-    : (Number.isFinite(previousClose) ? price - previousClose : 0);
+    : (Number.isFinite(previousClose) && previousClose > 0 ? price - previousClose : null);
   const change = quote?.regularMarketChangePercent != null && Number.isFinite(Number(quote.regularMarketChangePercent))
     ? Number(quote.regularMarketChangePercent)
-    : (previousClose > 0 ? (changeAbs / previousClose) * 100 : 0);
+    : (previousClose > 0 && changeAbs != null ? (changeAbs / previousClose) * 100 : null);
 
   const result: PriceQuote = {
     price, change, changeAbs,
@@ -565,8 +565,9 @@ app.get('/api/ai/narrative', async (_req: Request, res: Response) => {
   const describe = (label: string, symbol: string) => {
     const quote = result.prices[symbol];
     if (!quote) return `${label}: unavailable`;
-    const direction = quote.change > 0 ? 'up' : quote.change < 0 ? 'down' : 'unchanged';
-    return `${label}: ${quote.price.toLocaleString('en-US', { maximumFractionDigits: 2 })}, ${direction} ${Math.abs(quote.change).toFixed(2)}% on the provider's quoted change`;
+    const direction = quote.change == null ? 'change unavailable' : quote.change > 0 ? 'up' : quote.change < 0 ? 'down' : 'unchanged';
+    const changeText = quote.change == null ? '' : ` ${Math.abs(quote.change).toFixed(2)}% on the provider's quoted change`;
+    return `${label}: ${quote.price.toLocaleString('en-US', { maximumFractionDigits: 2 })}, ${direction}${changeText}`;
   };
   const text = [
     'Provider market snapshot — observed quotes, not a causal news analysis.',
