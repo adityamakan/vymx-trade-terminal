@@ -29,7 +29,7 @@ The ZIP contains **109 entries**: **99 files** and directory entries, with appro
 - A Python macro backtester (398 lines).
 - Firebase configuration and Firestore rules.
 - A browser-side Gemini integration.
-- 14 one-off patch scripts, additional manual test probes, npm and Bun lockfiles, generated text outputs, and a bundled logo image.
+- 15 one-off patch scripts (14 CommonJS and one JavaScript), additional manual test probes, npm and Bun lockfiles, generated text outputs, and a bundled logo image.
 
 The README identifies the archive as an AI Studio applet, not a reproducible release of the current VYMX service. Its package metadata, environment assumptions, Firebase project identity and runtime topology must not be treated as authoritative for the current repository.
 
@@ -129,7 +129,7 @@ The route count is not evidence of product completeness. Several endpoints retur
 
 ## 6. Current repository comparison (main)
 
-The current `main` commit reviewed for this comparison is `8e77dbca2560d559d75d14b60391dc1a6544180f`.
+The application baseline reviewed for this comparison is `8e77dbca2560d559d75d14b60391dc1a6544180f`; the archive review, legacy-script cleanup and globe-scenario corrections are committed afterward on `main`.
 
 Already improved in the current repository:
 
