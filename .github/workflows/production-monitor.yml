@@ -26,15 +26,11 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: '22.19.0'
-          cache: npm
-      - name: Install locked dependencies
-        run: npm ci
       - name: Verify production health, market data and WebSocket heartbeat
         env:
           PRODUCTION_BASE_URL: https://vymx-trade-terminal-2.onrender.com
         run: |
           node --input-type=module <<'NODE'
-          import WebSocket from 'ws';
           const baseUrl = process.env.PRODUCTION_BASE_URL;
           if (!baseUrl || !baseUrl.startsWith('https://')) throw new Error('PRODUCTION_BASE_URL must be an HTTPS origin.');
 
@@ -102,24 +98,23 @@ jobs:
           const wsUrl = new URL('/api/prices', baseUrl);
           wsUrl.protocol = 'wss:';
           await new Promise((resolve, reject) => {
-            const socket = new WebSocket(wsUrl, { headers: { Origin: baseUrl } });
+            const socket = new WebSocket(wsUrl);
             let settled = false;
             const finish = (error) => {
               if (settled) return;
               settled = true;
               clearTimeout(timeout);
-              socket.removeAllListeners();
-              if (socket.readyState === WebSocket.OPEN) socket.close();
+              if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) socket.close();
               if (error) reject(error); else resolve();
             };
             const timeout = setTimeout(() => {
               socket.terminate();
               finish(new Error('Production WebSocket heartbeat timed out.'));
             }, 8_000);
-            socket.once('open', () => socket.send('ping'));
-            socket.on('message', data => { if (data.toString() === 'pong') finish(); });
-            socket.once('error', error => finish(error));
-            socket.once('close', code => finish(new Error(`WebSocket closed before heartbeat completed: ${code}`)));
+            socket.addEventListener('open', () => socket.send('ping'), { once: true });
+            socket.addEventListener('message', event => { if (event.data === 'pong') finish(); });
+            socket.addEventListener('error', () => finish(new Error('Production WebSocket connection failed.')));
+            socket.addEventListener('close', event => finish(new Error(`WebSocket closed before heartbeat completed: ${event.code}`)));
           });
           console.log('WebSocket same-origin connection and heartbeat OK.');
           NODE
