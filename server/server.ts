@@ -541,12 +541,12 @@ app.get('/api/ai/market-auras', async (_req: Request, res: Response) => {
   const result = await getPrices(proxies.map((item) => item.symbol));
   const auras = proxies.flatMap((item) => {
     const quote = result.prices[item.symbol];
-    if (!quote) return [];
-    const score = quote.change == null ? null : Math.max(0, Math.min(100, Math.round(50 + quote.change * 10)));
+    if (!quote || quote.change == null) return [];
+    const score = Math.max(0, Math.min(100, Math.round(50 + quote.change * 10)));
     return [{
       sector: item.sector,
       score,
-      trend: quote.change == null ? 'Unavailable' : quote.change > 0.25 ? 'Bullish' : quote.change < -0.25 ? 'Bearish' : 'Neutral',
+      trend: quote.change > 0.25 ? 'Bullish' : quote.change < -0.25 ? 'Bearish' : 'Neutral',
       dailyChangePercent: quote.change,
       proxy: item.symbol,
       source: 'Yahoo Finance'
