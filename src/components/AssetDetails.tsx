@@ -63,7 +63,7 @@ export default function AssetDetails({
   const handleShareInsights = () => {
     const text = `Asset Insight: ${asset.name} (${asset.symbol})\n` +
                  `Current Price: ${isDataOffline ? 'Unavailable — quote feed offline' : formatCurrencyProp(asset.price, asset.type, asset.country)}\n` +
-                 `Provider-reported Change: ${isDataOffline ? 'Unavailable' : `${asset.change > 0 ? '+' : ''}${asset.change}%`}\n` +
+                 `Provider-reported Change: ${isDataOffline || asset.change == null ? 'Unavailable' : `${asset.change > 0 ? '+' : ''}${asset.change}%`}\n` +
                  `Historical technical metrics use provider-backed candles; unavailable datasets are marked N/A.`;
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -192,7 +192,7 @@ export default function AssetDetails({
   // Calculate estimated totals for transactions
   const estimatedTotal = quantity * asset.price;
   const isStarred = watchlist.includes(asset.symbol);
-  const isUp = asset.change >= 0;
+  const isUp = asset.change != null && asset.change >= 0;
 
   const handleExecuteTrade = (e: React.FormEvent) => {
     e.preventDefault();
@@ -367,8 +367,8 @@ export default function AssetDetails({
               {formatCurrency(asset.price, asset.type)}
             </div>
             <div className={`text-xs font-bold font-mono tracking-tight flex items-center justify-end gap-1 ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {isUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-              <span>{isUp ? '+' : ''}{asset.changeAbs >= 0 ? asset.changeAbs.toFixed(asset.type === 'forex' || asset.type === 'bond' ? 4 : 2) : asset.changeAbs.toFixed(asset.type === 'forex' || asset.type === 'bond' ? 4 : 2)} ({isUp ? '+' : ''}{asset.change.toFixed(2)}%)</span>
+              {asset.change == null || asset.changeAbs == null ? null : isUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+              <span>{asset.change == null || asset.changeAbs == null ? 'N/A' : `${isUp ? '+' : ''}${asset.changeAbs.toFixed(asset.type === 'forex' || asset.type === 'bond' ? 4 : 2)} (${isUp ? '+' : ''}${asset.change.toFixed(2)}%)`}</span>
             </div>
           </div>
 
@@ -428,7 +428,7 @@ export default function AssetDetails({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="rounded-xl border border-zinc-900 bg-zinc-950/50 p-3">
                 <p className="text-[9px] uppercase tracking-widest text-zinc-500">Provider-reported change</p>
-                <p className="mt-1 text-lg font-black font-mono text-zinc-100">{isDataOffline ? 'N/A' : `${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}%`}</p>
+                <p className="mt-1 text-lg font-black font-mono text-zinc-100">{isDataOffline || asset.change == null ? 'N/A' : `${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}%`}</p>
               </div>
               <div className="rounded-xl border border-zinc-900 bg-zinc-950/50 p-3">
                 <p className="text-[9px] uppercase tracking-widest text-zinc-500">6M moving-average crossover</p>
