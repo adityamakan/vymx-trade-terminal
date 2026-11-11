@@ -68,7 +68,7 @@ jobs:
           if (!appShellResponse.headers.get('content-type')?.includes('text/html') || !appHtml.includes('id="root"')) {
             throw new Error('Production frontend did not return the expected VYMX application shell.');
           }
-          const appScript = appHtml.match(/<script\\b[^>]*\\bsrc="([^"]+\\.js(?:\\?[^"]*)?)"/i)?.[1];
+          const appScript = appHtml.match(/<script\b[^>]*\bsrc="([^"]+\.js(?:\?[^"]*)?)"/i)?.[1];
           if (!appScript) throw new Error('Production frontend did not reference a built JavaScript bundle.');
           const bundleResponse = await fetchWithRetry(new URL(appScript, baseUrl), { method: 'HEAD' });
           if (!bundleResponse.ok) throw new Error(`Production frontend bundle returned HTTP ${bundleResponse.status}`);
