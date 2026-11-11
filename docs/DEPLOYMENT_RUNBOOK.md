@@ -134,3 +134,28 @@ Do not run `npm audit fix --force` as a blanket response. It proposed incompatib
 - Confirmation that Render's dashboard build/start/health settings match this runbook.
 - Production smoke checks for provider reachability and WebSocket lifecycle.
 - Confirmation of deployed Firestore rules and TTL policy.
+
+
+## Firebase browser configuration
+
+The browser SDK must not initialize from placeholder project settings. The frontend reads these Vite build-time variables:
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `VITE_FIREBASE_API_KEY` | Yes | Firebase web app client identifier |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Yes | Firebase Authentication domain |
+| `VITE_FIREBASE_PROJECT_ID` | Yes | Exact Firebase project identity |
+| `VITE_FIREBASE_APP_ID` | Yes | Firebase web app identity |
+| `VITE_FIREBASE_STORAGE_BUCKET` | No | Storage bucket identifier |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | No | Messaging sender identifier |
+| `VITE_FIREBASE_MEASUREMENT_ID` | No | Analytics measurement identifier |
+
+These are public browser configuration values embedded in the client bundle, not private server credentials. Firestore authorization must be enforced by deployed Firestore rules; Firebase Auth providers and authorized domains must be configured in the correct project. Never place service-account JSON, private keys, FRED keys, Gemini keys or Finnhub tokens in `VITE_*` variables.
+
+If the four required values are absent or incomplete, the application intentionally disables Firebase initialization. Local Demo Access remains available, but it is not a persistent account and does not synchronize data across browsers or devices. This avoids connecting to the repository's former placeholder Firebase project configuration.
+
+For the Render full-stack production deployment, configure the variables in the Render service's build environment and trigger a fresh deployment. For Netlify Deploy Previews, configure the same values in the Deploy Preview context only if persistent preview authentication is required. Confirm the actual Firebase project ID and authorized frontend domains before setting them.
+
+## Main branch protection is currently missing
+
+The GitHub branch API reported `protected: false` for `main` on 12 November 2026, and the repository returned no rulesets. The connected integration cannot write repository administration settings. An administrator must enable a branch protection rule or ruleset requiring pull requests, successful CI and CodeQL checks, resolved conversations, and prohibiting force pushes and branch deletion. Verify the result through GitHub Settings and the branch API.
