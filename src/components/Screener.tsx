@@ -121,7 +121,7 @@ export default function Screener({
       let comparison = 0;
       if (sortBy === 'symbol') comparison = a.symbol.localeCompare(b.symbol);
       else if (sortBy === 'price') comparison = a.price - b.price;
-      else if (sortBy === 'change') comparison = a.change - b.change;
+      else if (sortBy === 'change') comparison = a.change == null ? (b.change == null ? 0 : 1) : b.change == null ? -1 : a.change - b.change;
       else if (sortBy === 'marketCap') comparison = a.marketCap - b.marketCap;
 
       return sortDirection === 'asc' ? comparison : -comparison;
@@ -875,7 +875,7 @@ export default function Screener({
                           N/A
                         </td>
                         <td className="py-3.5 px-4 text-center hidden lg:table-cell">
-                           <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${((asset.price * 3) % 100) > 70 ? 'bg-rose-500/10 text-rose-400' : ((asset.price * 3) % 100) < 30 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-800 text-zinc-400'}`}>
+                           <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500">
                              N/A
                            </span>
                         </td>
@@ -886,7 +886,7 @@ export default function Screener({
                            N/A
                         </td>
                         <td className="py-3.5 px-4 text-center hidden xl:table-cell">
-                           <span className={`text-[10px] font-mono ${asset.change > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                           <span className="text-[10px] font-mono text-zinc-500">
                              N/A
                            </span>
                         </td>
