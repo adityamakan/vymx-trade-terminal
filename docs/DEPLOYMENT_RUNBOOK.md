@@ -101,6 +101,19 @@ Before merging, verify the repository's Settings → Branches / Rulesets configu
 
 Do not treat a green PR run as a substitute for protecting the default branch against direct pushes.
 
+## Firestore rules test
+
+The CI workflow starts the Firestore Emulator and runs `scripts/test-firestore-rules.mjs`. The suite verifies anonymous denial, per-user ledger isolation, schema constraints, snapshot ownership, intraday expiry timestamp shape, and default-deny behavior for unmatched paths.
+
+To run the same suite locally, install the test-only tools without changing the project lockfile, then execute the emulator:
+
+```bash
+npm install --no-save --package-lock=false @firebase/rules-unit-testing@4.0.1 firebase-tools@14.15.1
+npx firebase emulators:exec --project demo-vymx-trade-terminal --only firestore "node scripts/test-firestore-rules.mjs"
+```
+
+Passing emulator tests validates the checked-in rules against the emulator; it does not deploy those rules or prove that the production Firebase project is using this exact file.
+
 ## Firebase operations are separate
 
 - Deploying the Node service does not deploy Firestore security rules.
