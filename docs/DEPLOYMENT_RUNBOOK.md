@@ -108,7 +108,7 @@ The CI workflow starts the Firestore Emulator and runs `scripts/test-firestore-r
 To run the same suite locally, install the test-only tools without changing the project lockfile, then execute the emulator:
 
 ```bash
-npm install --no-save --package-lock=false @firebase/rules-unit-testing@4.0.1 firebase-tools@14.15.1
+npm install --no-save --package-lock=false @firebase/rules-unit-testing@5.0.2 firebase-tools@14.15.1
 npx firebase emulators:exec --project demo-vymx-trade-terminal --only firestore "node scripts/test-firestore-rules.mjs"
 ```
 
