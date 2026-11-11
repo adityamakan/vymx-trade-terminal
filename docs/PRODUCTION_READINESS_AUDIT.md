@@ -18,8 +18,8 @@
 | Firestore rules | Emulator suite runs in CI | Emulator only |
 | Main branch protection | Branch API returned `protected: false`; rulesets endpoint returned `[]` | **P0 blocker** |
 | Firebase web configuration | Main contained a placeholder with `projectId: mock` | **P0 blocker for persistent auth/cloud sync** |
-| Netlify Deploy Preview | PR #7 Redirect rules, Header rules and Pages changed all report `Deploy failed` | **P0 preview blocker** |
-| Netlify root cause | Check output contains no build error; deploy log inaccessible through connected integration | Unknown |
+| Netlify Deploy Preview | Previous preview checks failed; not in the Render production request path | Optional / non-blocking for Render-only hosting |
+| Netlify root cause | Not investigated further because Netlify is not the production host | Not applicable to Render release decision |
 | Render service configuration | Read-only Render inspection: service is live on `46fa98e`; Node 22.19.0; build `npm install && npm run build`; start `npm start`; auto-deploy from `main`; Free plan, one instance; custom HTTP health-check path unset | Partially verified; health-check configuration needs correction |
 | Production API and WebSocket | Render build/startup logs verified; external HTTP/API/WebSocket probe unavailable; scheduled monitor is defined on PR #8 and not active until merge | Unverified |
 | Firebase production rules and TTL | Emulator tests only | Unverified |
@@ -60,18 +60,9 @@ Before enabling real accounts:
 
 These Firebase web values are public browser configuration, not private server secrets. Firestore rules and Auth are the authorization boundary. Never put service-account JSON, Gemini, FRED or Finnhub secrets into `VITE_*` variables.
 
-### 3. Resolve Netlify Deploy Preview
+### 3. Netlify is optional, not a Render production gate
 
-For PR #7 and the current PR #8, GitHub reports three failed deploy-derived checks: Redirect rules, Header rules and Pages changed. All three point to the same failed Netlify deploy and say only "Deploy failed". The failed checks are associated with the PR preview deployment; the underlying Netlify deploy log is not available through the current connected integration. The failure persisted after pinning Node 22.19.0, so Node-version mismatch is not established as the root cause. Do not guess the cause.
-
-Required diagnostic:
-1. Open the failed Netlify deploy from the PR check.
-2. Open the full deploy/build log.
-3. Copy the first actual error and final build output, redacting environment values and tokens.
-4. Verify Netlify base directory, build command, publish directory and Node version.
-5. Re-run the preview and require all deploy-derived checks to pass.
-
-The repository pins Node 22.19.0 in `.node-version`; this branch also declares the same version in `netlify.toml`. Netlify documents both `.node-version` and `NODE_VERSION` as supported selectors. The repeated failure after this alignment means the build log is still required to identify the actual cause.
+The production host is Render. Netlify Deploy Preview checks are separate GitHub integration checks and do not determine whether the Render production service builds, starts, serves its API, or accepts WebSocket connections. If Netlify is no longer used, leave these checks out of the production release decision and disable the Netlify repository integration / required checks in the relevant dashboard only after confirming no one relies on those previews. If previews are still used, diagnose them as a separate preview-environment issue. Do not change Render production settings to compensate for an unused Netlify integration.
 
 ## P1 — External production verification
 
@@ -103,7 +94,7 @@ Emulator tests do not deploy production rules. Deploy only after confirming the 
 
 ## P2 — Application acceptance
 
-After preview and backend checks pass:
+After Render production and backend checks pass (and optional preview checks only if the preview platform is actively used):
 - Test sign-in, demo access, dashboard, screener, asset details, portfolio, simulated trade, logout and account switching.
 - Verify provider timestamps, stale-data states, currency normalization and unavailable states.
 - Confirm no private provider credentials are present in the client bundle.
@@ -113,7 +104,7 @@ After preview and backend checks pass:
 
 ## Release decision
 
-Do not call VYMX production-ready until P0 blockers are closed and P1 external deployment checks have evidence. Green GitHub CI is necessary, but it does not verify Render, Netlify, Firebase production rules or GitHub governance.
+Do not call VYMX fully production-ready until the required source/CI, Render runtime, Firebase (if persistent auth/cloud sync is a product requirement), and GitHub governance gates have evidence. Netlify is not a release gate when Render is the only production host. Green GitHub CI alone does not verify live Render API/provider/WebSocket behavior or production Firebase rules.
 
 ## Evidence
 
