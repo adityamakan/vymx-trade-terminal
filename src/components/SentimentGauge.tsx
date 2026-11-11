@@ -34,7 +34,8 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
   // 1. Dynamic Sentiment Calculator based on current live prices/changes of different asset classes
   const computedSentiment = useMemo(() => {
     // A. Indices & Stock Momentum Sub-indicator
-    const equitiesSubset = assets.filter(a => a.type === 'stock' || a.type === 'index');
+    const observedAssets = assets.filter((asset) => asset.change != null);
+    const equitiesSubset = observedAssets.filter(a => a.type === 'stock' || a.type === 'index');
     const eqAvgChange = equitiesSubset.length > 0
       ? equitiesSubset.reduce((sum, item) => sum + item.change, 0) / equitiesSubset.length
       : 0;
@@ -44,7 +45,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
     eqScore = Math.max(5, Math.min(95, eqScore));
 
     // B. Crypto Velocity Sub-indicator
-    const cryptoSubset = assets.filter(a => a.type === 'crypto');
+    const cryptoSubset = observedAssets.filter(a => a.type === 'crypto');
     const cryptoAvgChange = cryptoSubset.length > 0
       ? cryptoSubset.reduce((sum, item) => sum + item.change, 0) / cryptoSubset.length
       : 0;
@@ -56,27 +57,25 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
     // C. Safe Haven Hedge Premium Sub-indicator (Gold Spot)
     const goldAsset = assets.find(a => a.symbol === 'GC=F');
     const spxAsset = assets.find(a => a.symbol === '.SPX');
-    const goldChange = goldAsset ? goldAsset.change : 0;
-    const spxChange = spxAsset ? spxAsset.change : 0;
+    const goldChange = goldAsset?.change ?? null;
+    const spxChange = spxAsset?.change ?? null;
 
     // Inverse relationship: standard stock outperformance over safe-havens signals greed.
     // Gold outperformance over stocks signals fear/protective capital allocation.
-    const safeHavenGap = (spxChange - goldChange);
-    let safeHavenScore = 50 + (safeHavenGap * 15);
+    const safeHavenGap = spxChange != null && goldChange != null ? spxChange - goldChange : null;
+    let safeHavenScore = safeHavenGap == null ? 50 : 50 + (safeHavenGap * 15);
     safeHavenScore = Math.max(5, Math.min(95, safeHavenScore));
 
-    // D. Market Volume Breadth Sub-indicator (Advance vs. Decline Index)
-    const totalAssetsCount = assets.length;
-    const advancingAssets = assets.filter(a => a.change > 0).length;
+    // D. Market breadth sub-indicator (advance/decline; not traded volume).
+    const totalAssetsCount = observedAssets.length;
+    const advancingAssets = observedAssets.filter(a => a.change! > 0).length;
     const advancingRatio = totalAssetsCount > 0 ? advancingAssets / totalAssetsCount : 0.5;
 
-    // E. Top 5 Assets Volatility & Volume Sub-indicator
-    // We sort the top 5 most volatile/traded assets (using change as a proxy for volatility)
-    const sortedAssets = [...assets].sort((a, b) => Math.abs(b.change) - Math.abs(a.change)).slice(0, 5);
-    const top5AvgVolatility = sortedAssets.reduce((sum, item) => sum + Math.abs(item.change), 0) / 5;
+    // E. Top 5 daily-move magnitude proxy. This is not realized volatility or traded volume.
+    const sortedAssets = [...observedAssets].sort((a, b) => Math.abs(b.change!) - Math.abs(a.change!)).slice(0, 5);
+    const top5AvgVolatility = sortedAssets.length > 0 ? sortedAssets.reduce((sum, item) => sum + Math.abs(item.change!), 0) / sortedAssets.length : 0;
 
-    // Convert volatility (e.g., 0-5% avg) into a 0-100 score. High volatility + high volume = extreme fear or greed
-    // We'll map it such that higher volatility increases the extreme nature of the score.
+    // Larger daily moves increase the extremity proxy; this is not a substitute for a return-series volatility estimate.
     let top5VolScore = (top5AvgVolatility * 20);
     top5VolScore = Math.max(5, Math.min(95, top5VolScore));
 
