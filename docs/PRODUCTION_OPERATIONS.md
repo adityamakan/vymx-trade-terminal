@@ -23,7 +23,7 @@ It performs four live checks against the production Render origin:
 1. **Frontend delivery:** `GET /` must return the VYMX HTML shell and its built JavaScript bundle must be reachable.
 2. **Process health:** `GET /health` must return HTTP 200 with `status: "ok"` and `service: "vymx-api"`.
 3. **Market-data path:** `POST /api/prices` requests AAPL and requires a positive finite price, the Yahoo Finance source label, and a provider observation timestamp no more than five minutes in the future or seven days old (allowing for weekends and market holidays). It does not treat retrieval time as the provider observation time.
-4. **WebSocket lifecycle:** opens a server-side WebSocket connection and requires the application heartbeat response `pong`. The probe omits the browser Origin header.
+4. **WebSocket lifecycle:** opens a server-side WebSocket connection and requires the application heartbeat response `pong`. The probe sends `Origin: https://vymx-trade-terminal-2.onrender.com`, so it exercises the production same-origin WebSocket policy. It is a server-side synthetic client, not a browser-origin test.
 
 The monitor installs only production runtime dependencies (including the locked `ws` client), not development dependencies. Its WebSocket probe explicitly sends `Origin: https://vymx-trade-terminal-2.onrender.com` and exercises the same-origin allow rule; the CI integration tests separately verify same-origin, explicitly allowlisted and denied browser origins. The monitor retries transient HTTP/network failures up to three attempts. A failed run means at least one production smoke check did not meet its contract; inspect the job log before concluding whether the cause is Render, the provider, or the WebSocket path. It is an availability signal, not a full synthetic user journey and not a guarantee that every symbol or screen is correct.
 
@@ -44,7 +44,7 @@ A release is not production-verified until all applicable items below have evide
 - [ ] Service `vymx-trade-terminal-2` deploys the exact expected `main` commit.
 - [ ] Confirm the current Render build command (`npm install && npm run build`, as previously inspected) and plan a controlled dashboard change to `npm ci && npm run build` for lockfile-reproducible builds; do not mark the target command complete until Render settings confirm it.
 - [ ] Start command is `npm start`.
-- [ ] Health check path is `/health`.
+- [ ] Configure the Render HTTP health-check path as `/health` and verify successful checks after saving; the inspected production service currently has no custom HTTP health-check path configured.
 - [ ] Node runtime is `22.19.0`.
 - [ ] `WEBSOCKET_ALLOWED_ORIGINS` contains only the verified frontend production origin and the narrowly scoped deploy-preview pattern, if previews need direct WebSocket access.
 - [ ] No secret values are copied into GitHub, PR comments, screenshots, or support requests.
@@ -153,7 +153,9 @@ Verify that the policy reports enabled before relying on automatic cleanup. Fire
 - Main commit at audit time: `46fa98ebeffceaff55a66132a1daaaeb95c5cb5a`.
 - GitHub Actions CI and CodeQL completed successfully for that commit.
 - The default branch API reported `protected: false`; no repository rulesets were returned.
-- Render deployed commit, environment variables, health-check setting and runtime logs were not accessible through the connected GitHub integration.
+- Read-only Render inspection on 12 November 2026 confirmed service `vymx-trade-terminal-2` is live on commit `46fa98ebeffceaff55a66132a1daaaeb95c5cb5a`, with Node.js `22.19.0`, build command `npm install && npm run build`, start command `npm start`, automatic deploys from `main`, Free plan and one instance. The custom HTTP health-check path is unset. Build/runtime logs show a successful build and `VYMX API listening on port 10000`; this confirms startup, not successful external API or WebSocket behavior. The connected Render read-only service response does not expose environment-variable names or values, and the external HTTP fetch attempt was unavailable, so those items remain unverified.
+- The Render workspace also contains legacy sibling services `vymx-trade-terminal-1` (suspended) and `vymx-trade-terminal` (not suspended; configured start command is `npm startyarn start`). Do not delete or change either without confirming whether it is still used.
+- The production monitor is defined in PR #8 but is not active until that PR is merged. At the latest audit, PR #8 head `29b849d261ec7de19f8f84479c73ed66ba303d99` had a queued CI run and a failed Netlify Deploy Preview check; the candidate is not release-approved.
 - Netlify Deploy Preview for PR #7 failed in Redirect rules, Header rules and Pages changed. GitHub check output says only "Deploy failed"; the underlying Netlify log was not accessible, so the cause remains unknown.
 - The Firebase config on `main` at audit time contained placeholder values (`projectId: mock`). This follow-up replaces the fake config import with explicit Vite environment configuration.
 - Firestore Emulator tests do not deploy production rules or prove the production project is correct.
