@@ -88,7 +88,7 @@ try {
   }));
   await assertFails(setDoc(intraday(alice, 'alice', 'bucket-2'), {
     ...validSnapshot('bucket-2'),
-    expiresAt: new Date(Date.now() + 90 * 86400000)
+    expiresAt: new Date(Date.now() + 90 * 86400000).toISOString()
   }));
   await assertFails(setDoc(intraday(alice, 'alice', 'bucket-3'), {
     ...validSnapshot('bucket-3'),
