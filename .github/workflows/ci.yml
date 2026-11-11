@@ -43,7 +43,7 @@ jobs:
       # Exercise the exact Node entry point Render starts, not only the bundler.
       - name: Smoke test production server
         run: |
-          PORT=4179 API_RATE_LIMIT_PER_MINUTE=1 node dist-server/server.cjs > server-smoke.log 2>&1 &
+          PORT=4179 API_RATE_LIMIT_PER_MINUTE=1 WEBSOCKET_ALLOWED_ORIGINS=https://preview.example.net node dist-server/server.cjs > server-smoke.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
 
@@ -79,24 +79,55 @@ jobs:
 
           node --input-type=module <<'NODE'
           import WebSocket from 'ws';
-          const ws = new WebSocket('ws://127.0.0.1:4179/api/prices', {
-            headers: { Origin: 'http://127.0.0.1:4179' }
-          });
-          await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => reject(new Error('WebSocket smoke test timed out')), 5000);
-            ws.once('open', () => ws.send('ping'));
-            ws.on('message', (data) => {
-              if (data.toString() === 'pong') {
+          const url = 'ws://127.0.0.1:4179/api/prices';
+
+          async function expectOpen(origin, heartbeat = false) {
+            const ws = new WebSocket(url, { headers: { Origin: origin } });
+            await new Promise((resolve, reject) => {
+              const timeout = setTimeout(() => reject(new Error(`WebSocket open timed out for ${origin}`)), 5000);
+              ws.once('open', () => {
+                if (heartbeat) ws.send('ping');
+                else { clearTimeout(timeout); ws.close(); resolve(); }
+              });
+              ws.on('message', (data) => {
+                if (data.toString() === 'pong') {
+                  clearTimeout(timeout);
+                  ws.close();
+                  resolve();
+                }
+              });
+              ws.once('error', (error) => {
+                clearTimeout(timeout);
+                reject(error);
+              });
+            });
+          }
+
+          async function expectForbidden(origin) {
+            const ws = new WebSocket(url, { headers: { Origin: origin } });
+            const status = await new Promise((resolve, reject) => {
+              const timeout = setTimeout(() => reject(new Error(`WebSocket rejection timed out for ${origin}`)), 5000);
+              ws.once('unexpected-response', (_request, response) => {
+                clearTimeout(timeout);
+                resolve(response.statusCode);
+              });
+              ws.once('open', () => {
                 clearTimeout(timeout);
                 ws.close();
-                resolve();
-              }
+                reject(new Error(`Unexpectedly accepted disallowed origin: ${origin}`));
+              });
+              ws.once('error', (error) => {
+                clearTimeout(timeout);
+                if (error.message.includes('Unexpected server response: 403')) resolve(403);
+                else reject(error);
+              });
             });
-            ws.once('error', (error) => {
-              clearTimeout(timeout);
-              reject(error);
-            });
-          });
+            if (status !== 403) throw new Error(`Expected 403 for ${origin}, received ${status}`);
+          }
+
+          await expectOpen('http://127.0.0.1:4179', true);
+          await expectOpen('https://preview.example.net');
+          await expectForbidden('https://attacker.example.org');
           NODE
 
       # Report-only initially: the repository's known advisories must be
