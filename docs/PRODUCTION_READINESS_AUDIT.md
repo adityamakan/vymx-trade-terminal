@@ -20,8 +20,8 @@
 | Firebase web configuration | Main contained a placeholder with `projectId: mock` | **P0 blocker for persistent auth/cloud sync** |
 | Netlify Deploy Preview | PR #7 Redirect rules, Header rules and Pages changed all report `Deploy failed` | **P0 preview blocker** |
 | Netlify root cause | Check output contains no build error; deploy log inaccessible through connected integration | Unknown |
-| Render deployed commit/settings | Dashboard not accessible through GitHub integration | Unverified |
-| Production API and WebSocket | No live production monitor run yet | Unverified |
+| Render service configuration | Read-only Render inspection: service is live on `46fa98e`; Node 22.19.0; build `npm install && npm run build`; start `npm start`; auto-deploy from `main`; Free plan, one instance; custom HTTP health-check path unset | Partially verified; health-check configuration needs correction |
+| Production API and WebSocket | Render build/startup logs verified; external HTTP/API/WebSocket probe unavailable; scheduled monitor is defined on PR #8 and not active until merge | Unverified |
 | Firebase production rules and TTL | Emulator tests only | Unverified |
 
 ## P0 — Required before production release
@@ -62,7 +62,7 @@ These Firebase web values are public browser configuration, not private server s
 
 ### 3. Resolve Netlify Deploy Preview
 
-For PR #7 and the current PR #8, GitHub reports three failed deploy-derived checks: Redirect rules, Header rules and Pages changed. All three point to the same failed Netlify deploy and say only "Deploy failed". The latest PR #8 deploy is `6af4c8fc41d135264b3ab90f`. The failure persisted after pinning Node 22.19.0, so Node-version mismatch is not established as the root cause. Do not guess the cause.
+For PR #7 and the current PR #8, GitHub reports three failed deploy-derived checks: Redirect rules, Header rules and Pages changed. All three point to the same failed Netlify deploy and say only "Deploy failed". The failed checks are associated with the PR preview deployment; the underlying Netlify deploy log is not available through the current connected integration. The failure persisted after pinning Node 22.19.0, so Node-version mismatch is not established as the root cause. Do not guess the cause.
 
 Required diagnostic:
 1. Open the failed Netlify deploy from the PR check.
@@ -77,16 +77,15 @@ The repository pins Node 22.19.0 in `.node-version`; this branch also declares t
 
 ### Render
 
-Confirm service `vymx-trade-terminal-2` deploys the expected `main` commit and has:
-- Build: `npm ci && npm run build`
-- Start: `npm start`
-- Node: `22.19.0`
-- Health check: `/health`
-- Correct, narrow `WEBSOCKET_ALLOWED_ORIGINS`
-- Required `VITE_FIREBASE_*` values at build time if persistent auth is enabled
-- Server-only provider secrets kept outside the browser bundle
+Read-only inspection confirmed service `vymx-trade-terminal-2` is connected to `main` with auto-deploy enabled. At inspection it was live on commit `46fa98ebeffceaff55a66132a1daaaeb95c5cb5a`; the build completed on 11 November 2026 at 19:22 UTC. Observed settings were Node.js `22.19.0`, build `npm install && npm run build`, start `npm start`, Free plan and one instance. Build/runtime logs show a successful build and `VYMX API listening on port 10000`.
 
-The GitHub integration cannot change or inspect Render dashboard settings.
+Remaining Render actions:
+- Change the build command to `npm ci && npm run build` only as a controlled dashboard change after verifying lockfile consistency; the current observed command is `npm install && npm run build`.
+- Configure HTTP health-check path `/health`; the inspected service currently has no custom HTTP health-check path.
+- Verify the narrow `WEBSOCKET_ALLOWED_ORIGINS` value and the presence of required build/runtime variables without exposing secret values. The connected read-only service response did not expose environment-variable names or values.
+- Confirm the candidate merge commit is deployed, then verify live HTTP/API/provider/WebSocket behavior.
+
+The workspace also contains legacy sibling services `vymx-trade-terminal-1` (suspended) and `vymx-trade-terminal` (not suspended, configured start command `npm startyarn start`). They were not modified or deleted. Review their ownership/use before cleanup.
 
 ### Production monitor
 
@@ -96,7 +95,7 @@ The scheduled workflow checks:
 3. `POST /api/prices` for a real Yahoo Finance AAPL quote, positive finite price, provider source and observation timestamp no more than seven days old or five minutes in the future.
 4. Server-side WebSocket handshake and ping/pong heartbeat. Browser Origin allowlist behavior remains covered by CI integration tests.
 
-Merge and run it after the expected Render deployment. A passing result is an operational signal, not a full browser journey or a guarantee that every provider/instrument is available.
+Merge and run it after the expected Render deployment. The workflow is present in PR #8 but is not active until the PR merges. A passing result is an operational signal, not a full browser journey or a guarantee that every provider/instrument is available.
 
 ### Firestore production rules and TTL
 
