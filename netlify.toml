@@ -14,3 +14,14 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Baseline security headers for the static preview. The API applies its own
+# server-side headers; these cover HTML, assets and client-side routes.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
