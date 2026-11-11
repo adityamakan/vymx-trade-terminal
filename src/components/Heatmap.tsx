@@ -180,7 +180,7 @@ export default function Heatmap({
     return Object.entries(groups)
       .map(([name, items]) => {
         // Sort by absolute provider-reported daily move; market-cap metadata is not refreshed by the quote feed.
-        const sortedItems = [...items].sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
+        const sortedItems = [...items].sort((a, b) => Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0));
         return { name, items: sortedItems };
       })
       .sort((a, b) => b.items.length - a.items.length); // Larger groups first
@@ -188,7 +188,7 @@ export default function Heatmap({
 
   // Helper stats calculations
   const summaryStats = useMemo(() => {
-    const verifiedAssets = filteredAssets.filter(hasFreshQuote);
+    const verifiedAssets = filteredAssets.filter((asset) => hasFreshQuote(asset) && asset.change != null);
     const total = filteredAssets.length;
     const gainers = verifiedAssets.filter((a) => a.change > 0.05).length;
     const losers = verifiedAssets.filter((a) => a.change < -0.05).length;
@@ -700,7 +700,7 @@ export default function Heatmap({
               {/* Uniform tiles: verified market-cap weighting is not available in this quote feed. */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
                 {group.items.map((asset) => {
-                  const relativeUp = asset.change >= 0;
+                  const relativeUp = asset.change != null && asset.change >= 0;
                   const isFlash = flashUpdateSym[asset.symbol];
 
                   let sizeClass = "col-span-1 row-span-1 h-24";
@@ -853,20 +853,10 @@ export default function Heatmap({
 
 
                         {densityMode === "high" && (
-                          <div className="my-1 border-y border-white/5 py-1 flex flex-col gap-1 w-full">
-                            <div className="flex justify-between items-center text-[7px] text-zinc-400 font-mono">
-                              <span>Inst Flow</span>
-                              <span className={asset.change > 0 ? "text-emerald-400" : "text-rose-400"}>{asset.change > 0 ? "+" : ""}{(asset.change * 0.4).toFixed(2)}B</span>
-                            </div>
-                            <div className="flex justify-between items-center text-[7px] text-zinc-400 font-mono">
-                              <span>Liq Pool</span>
-                              <span className="text-blue-400">${asset.volume == null ? 'N/A' : `${(asset.volume / 10000000).toFixed(1)}T`}</span>
-                            </div>
-                            <div className="flex gap-0.5 mt-0.5 items-end h-4 w-full opacity-60">
-                               {Array.from({length: 8}).map((_, i) => (
-                                 <div key={i} className={`flex-1 rounded-sm ${i < 4 ? (asset.change > 0 ? 'bg-emerald-500' : 'bg-rose-500') : 'bg-zinc-600'}`} style={{ height: `${20 + ((asset.symbol.charCodeAt(i % asset.symbol.length) * (i + 1) * 17) % 70)}%` }}></div>
-                               ))}
-                            </div>
+                          <div className="my-1 border-y border-white/5 py-1 flex flex-col gap-1 w-full text-[8px] font-mono text-zinc-500">
+                            <div className="flex justify-between"><span>Institutional flows</span><span>N/A — no holdings feed</span></div>
+                            <div className="flex justify-between"><span>Liquidity pools</span><span>N/A — not applicable</span></div>
+                            <div className="flex justify-between"><span>Order-book depth</span><span>N/A — no order-book feed</span></div>
                           </div>
                         )}
 
