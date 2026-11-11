@@ -254,7 +254,7 @@ export default function App() {
           ...asset,
           currency: typeof newPriceData.currency === 'string' ? newPriceData.currency.toUpperCase() : asset.currency ?? null,
           quoteAsOf: typeof newPriceData.asOf === 'string' ? newPriceData.asOf : null,
-          volume: Number.isFinite(newPriceData.volume) ? newPriceData.volume : 0,
+          volume: typeof newPriceData.volume === 'number' && Number.isFinite(newPriceData.volume) ? newPriceData.volume : null,
           volumeDisplay: typeof newPriceData.volumeDisplay === 'string' ? newPriceData.volumeDisplay : 'N/A',
           price: (newPriceData.price !== undefined && !isNaN(newPriceData.price)) ? newPriceData.price : asset.price,
           change: (newPriceData.change !== undefined && !isNaN(newPriceData.change)) ? newPriceData.change : asset.change,
@@ -542,7 +542,7 @@ export default function App() {
       !liveAsset ||
       !Number.isFinite(observedAt) ||
       quoteAgeMs < -5 * 60_000 ||
-      quoteAgeMs > 24 * 60 * 60_000 ||
+      quoteAgeMs > 120_000 ||
       !Number.isFinite(liveAsset.price) ||
       liveAsset.price <= 0
     ) {
