@@ -19,3 +19,19 @@ export function isVerifiedProviderQuote(
     observedAt <= now + 5 * 60_000 &&
     now - observedAt <= maxAgeMs;
 }
+
+/**
+ * A simulated order must use the same fresh provider price the UI most recently
+ * received. The tolerance is deliberately tiny and relative to avoid allowing
+ * materially different prices for low-priced FX instruments.
+ */
+export function isSubmittedPriceCurrent(
+  submittedPrice: number,
+  quote: ProviderQuoteLike,
+  now = Date.now()
+): boolean {
+  if (!isVerifiedProviderQuote(quote, now)) return false;
+  if (!Number.isFinite(submittedPrice) || submittedPrice <= 0 || typeof quote.price !== 'number') return false;
+  const tolerance = Math.max(1e-8, Math.abs(quote.price) * 1e-8);
+  return Math.abs(submittedPrice - quote.price) <= tolerance;
+}
