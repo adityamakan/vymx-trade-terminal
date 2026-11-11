@@ -17,7 +17,7 @@ export interface Asset {
   peRatio: number | null; // null for cryptos, forex, some index
   sector: string; // e.g. "Technology", "Financials", "DeFi", "Energy", "Metal", "Currencies", "Indices"
   country: string; // e.g. "United States", "Global", "Germany", "Japan", "Switzerland"
-  volume: number; // e.g. 24h volume
+  volume: number | null; // null when the provider did not supply volume
   volumeDisplay: string; // e.g. "52.4M"
   high52w: number;
   low52w: number;
