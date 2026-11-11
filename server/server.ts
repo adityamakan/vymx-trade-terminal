@@ -802,7 +802,7 @@ server.on('upgrade', (request, socket, head) => {
   const origin = request.headers.origin;
   if (origin) {
     try {
-      if (new URL(origin).host !== request.headers.host) {
+      if (!isAllowedWebSocketOrigin(origin, request.headers.host || '')) {
         socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
         socket.destroy();
         return;
