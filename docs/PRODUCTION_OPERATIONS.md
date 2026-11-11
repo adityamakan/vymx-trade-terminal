@@ -86,6 +86,30 @@ Emulator tests do not deploy rules. An `expiresAt` field does not enable TTL by 
 
 The GitHub branch API reported `main.protected = false` on 12 November 2026, and the repository returned no rulesets. The branch-protection detail endpoint denied integration access, so an administrator must configure and verify branch protection or a ruleset in GitHub Settings.
 
+## Render environment configuration
+
+The Render service is a same-origin full-stack deployment. The frontend can use the default WebSocket URL derived from its own host, so `VITE_WS_URL` is not required on the Render build unless the frontend is deliberately hosted elsewhere.
+
+Review the following keys in the Render service's Environment page. The connected read-only Render service response does not expose environment-variable names or values, so their current presence has not been verified. Never copy secret values into chat, GitHub, logs or documentation.
+
+| Variable | Purpose | Requirement |
+|---|---|---|
+| `PORT` | HTTP listener port | Render supplies this automatically; do not hard-code a port |
+| `API_RATE_LIMIT_PER_MINUTE` | API request limit | Optional; application default is 240 requests/minute per process |
+| `WEBSOCKET_ALLOWED_ORIGINS` | Extra browser origins allowed to connect to WebSocket | Optional for same-origin Render hosting; set only exact trusted origins when a separate frontend is used |
+| `GEMINI_API_KEY` | Server-side AI provider | Optional; keep server-side |
+| `GOOGLE_API_KEY` | Server-side compatibility fallback for AI provider | Optional; keep server-side |
+| `FINNHUB_API_KEY` | Finnhub market-data/news integration | Optional; related routes remain unavailable without it |
+| `FRED_API_KEY` | FRED macroeconomic-data integration | Optional; related routes remain unavailable without it |
+| `VITE_FIREBASE_API_KEY` | Firebase browser SDK | Required only if persistent Firebase Auth/cloud sync is intended |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase browser SDK | Required only if persistent Firebase Auth/cloud sync is intended |
+| `VITE_FIREBASE_PROJECT_ID` | Firebase browser SDK | Required only if persistent Firebase Auth/cloud sync is intended |
+| `VITE_FIREBASE_APP_ID` | Firebase browser SDK | Required only if persistent Firebase Auth/cloud sync is intended |
+| `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_MEASUREMENT_ID` | Optional Firebase SDK services | Only when those services are used |
+| `VITE_WS_URL` | Override frontend WebSocket URL for a separate static frontend | Leave unset for same-origin Render full-stack hosting |
+
+Do not invent or paste Firebase values. Confirm the production Firebase project first. Never place Gemini, Finnhub, FRED, service-account JSON, or any private credential in a `VITE_*` variable.
+
 ## Incident triage
 
 ### Health check fails
