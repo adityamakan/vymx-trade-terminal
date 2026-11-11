@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { calculatePortfolioRiskMetrics } from '../src/utils/financialAnalytics';
 import { normalizeProviderTimestamp } from '../src/utils/providerTimestamp';
-import { isVerifiedProviderQuote } from '../src/utils/providerQuote';
+import { isVerifiedProviderQuote, isSubmittedPriceCurrent } from '../src/utils/providerQuote';
 
 const start = Date.UTC(2026, 0, 1);
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -110,5 +110,9 @@ assert.equal(isVerifiedProviderQuote({ price: 100, asOf: new Date(quoteNow - 121
 assert.equal(isVerifiedProviderQuote({ price: 100, asOf: new Date(quoteNow - 119_000).toISOString() }, quoteNow), true);
 assert.equal(isVerifiedProviderQuote({ price: 0, asOf: new Date(quoteNow).toISOString() }, quoteNow), false);
 assert.equal(isVerifiedProviderQuote({ price: 100, asOf: new Date(quoteNow + 6 * 60_000).toISOString() }, quoteNow), false);
+assert.equal(isSubmittedPriceCurrent(100, { price: 100, asOf: new Date(quoteNow).toISOString() }, quoteNow), true);
+assert.equal(isSubmittedPriceCurrent(100.01, { price: 100, asOf: new Date(quoteNow).toISOString() }, quoteNow), false);
+assert.equal(isSubmittedPriceCurrent(100, { price: 100, asOf: new Date(quoteNow - 121_000).toISOString() }, quoteNow), false);
+assert.equal(isSubmittedPriceCurrent(0, { price: 100, asOf: new Date(quoteNow).toISOString() }, quoteNow), false);
 
 console.log('Financial analytics, provider timestamp and quote verification tests passed.');
