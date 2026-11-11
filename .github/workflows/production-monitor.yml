@@ -1,0 +1,132 @@
+name: Production availability monitor
+
+on:
+  schedule:
+    - cron: '17,47 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-availability-monitor
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Production API, provider and WebSocket smoke tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22.19.0'
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Verify production health, market data and WebSocket heartbeat
+        env:
+          PRODUCTION_BASE_URL: https://vymx-trade-terminal-2.onrender.com
+        run: |
+          node --input-type=module <<'NODE'
+          import WebSocket from 'ws';
+
+          const baseUrl = process.env.PRODUCTION_BASE_URL;
+          if (!baseUrl || !baseUrl.startsWith('https://')) {
+            throw new Error('PRODUCTION_BASE_URL must be an HTTPS origin.');
+          }
+
+          async function fetchWithRetry(url, options = {}, attempts = 3) {
+            let lastError;
+            for (let attempt = 1; attempt <= attempts; attempt += 1) {
+              try {
+                const response = await fetch(url, {
+                  ...options,
+                  signal: AbortSignal.timeout(12_000)
+                });
+                if (response.status >= 500 && attempt < attempts) {
+                  await new Promise(resolve => setTimeout(resolve, attempt * 5_000));
+                  continue;
+                }
+                return response;
+              } catch (error) {
+                lastError = error;
+                if (attempt < attempts) {
+                  await new Promise(resolve => setTimeout(resolve, attempt * 5_000));
+                }
+              }
+            }
+            throw lastError ?? new Error(`Request failed after ${attempts} attempts: ${url}`);
+          }
+
+          const healthResponse = await fetchWithRetry(new URL('/health', baseUrl));
+          if (!healthResponse.ok) {
+            throw new Error(`Production health returned HTTP ${healthResponse.status}`);
+          }
+          const health = await healthResponse.json();
+          if (health.status !== 'ok' || health.service !== 'vymx-api') {
+            throw new Error('Production health payload does not identify a healthy vymx-api service.');
+          }
+          console.log(`Health OK; uptime=${health.uptimeSeconds}s`);
+
+          const pricesResponse = await fetchWithRetry(new URL('/api/prices', baseUrl), {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ symbols: ['AAPL'] })
+          });
+          if (!pricesResponse.ok) {
+            throw new Error(`Production market-data endpoint returned HTTP ${pricesResponse.status}`);
+          }
+          const prices = await pricesResponse.json();
+          if (prices.success !== true || !prices.prices || typeof prices.prices !== 'object' || prices.returned < 1) {
+            throw new Error('Production market-data endpoint did not return at least one provider quote.');
+          }
+          const quote = prices.prices.AAPL;
+          if (!quote || typeof quote.price !== 'number' || !Number.isFinite(quote.price) || quote.price <= 0) {
+            throw new Error('AAPL quote is missing or invalid.');
+          }
+          if (typeof quote.asOf !== 'string' || !Number.isFinite(Date.parse(quote.asOf))) {
+            throw new Error('AAPL quote is missing its provider observation timestamp.');
+          }
+          console.log(`Market-data OK; returned=${prices.returned}; provider timestamp=${quote.asOf}`);
+
+          const wsUrl = new URL('/api/prices', baseUrl);
+          wsUrl.protocol = 'wss:';
+          await new Promise((resolve, reject) => {
+            const socket = new WebSocket(wsUrl, {
+              headers: { Origin: baseUrl }
+            });
+            const timeout = setTimeout(() => {
+              socket.terminate();
+              reject(new Error('Production WebSocket heartbeat timed out.'));
+            }, 8_000);
+
+            socket.once('open', () => socket.send('ping'));
+            socket.on('message', data => {
+              if (data.toString() === 'pong') {
+                clearTimeout(timeout);
+                socket.close();
+                resolve();
+              }
+            });
+            socket.once('error', error => {
+              clearTimeout(timeout);
+              reject(error);
+            });
+            socket.once('close', (code) => {
+              if (code !== 1000 && code !== 1005) {
+                clearTimeout(timeout);
+                reject(new Error(`Production WebSocket closed unexpectedly: ${code}`));
+              }
+            });
+          });
+          console.log('WebSocket same-origin connection and heartbeat OK.');
+          NODE
