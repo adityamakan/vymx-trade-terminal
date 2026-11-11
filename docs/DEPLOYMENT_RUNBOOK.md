@@ -88,6 +88,19 @@ The Express service now enables Helmet headers (CSP remains disabled pending an 
 
 The rate-limit store is process-local. It must be replaced with a shared store before horizontally scaling the service. WebSocket upgrades bypass Express middleware but enforce same-origin or explicit allowlisted-origin checks, a 20-connection cap, a 100-distinct-symbol aggregate cap, and a 4 KB frame limit. CI smoke tests verify same-origin, exact allowlisted-origin, wildcard deploy-preview-origin and denied-origin behavior, including heartbeat ping/pong.
 
+## GitHub branch protection
+
+The connected GitHub integration returned no repository rulesets, but the branch-protection endpoint itself denied access to this integration. Therefore, protection on `main` has **not** been independently verified or changed by this remediation.
+
+Before merging, verify the repository's Settings → Branches / Rulesets configuration and require:
+- Pull requests before merging to `main`.
+- Successful `CI / Typecheck, tests, build and dependency audit` checks.
+- Successful CodeQL analysis checks.
+- No force pushes or branch deletion on `main`.
+- Conversation resolution before merge.
+
+Do not treat a green PR run as a substitute for protecting the default branch against direct pushes.
+
 ## Firebase operations are separate
 
 - Deploying the Node service does not deploy Firestore security rules.
