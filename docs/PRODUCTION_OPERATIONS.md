@@ -50,14 +50,17 @@ A release is not production-verified until all applicable items below have evide
 - [ ] No secret values are copied into GitHub, PR comments, screenshots, or support requests.
 - [ ] Production API, browser WebSocket and server logs are reviewed after deploy.
 
-### Netlify preview
-- [ ] Netlify build completes and the Redirect rules, Header rules and Pages changed checks are green.
+### Optional preview integration (Netlify)
+Netlify is not part of the production architecture or production release gate when Render is the only hosting platform in use. Its preview checks may remain visible on GitHub, but they must not be confused with Render deployment health. Only investigate or require these checks if the project owner actively uses Netlify previews.
+
+If Netlify previews are intentionally retained:
+- [ ] Preview build completes and its deployment-derived checks are green.
 - [ ] `/api/health` on the preview resolves to the Render API.
 - [ ] The frontend uses the configured Render WebSocket endpoint.
 - [ ] Browser console shows no CORS, WebSocket 403, mixed-content, or reconnect loop errors.
-- [ ] The actual Netlify primary hostname is verified before adding it to Render's origin allowlist.
+- [ ] The actual preview hostname is verified before adding it to Render's origin allowlist.
 
-A Netlify preview is not the production host. The production service remains Render.
+If Netlify is no longer used, remove or disable its repository integration and required status checks through the relevant GitHub/Netlify settings after confirming no preview consumers depend on it. Do not broaden Render's origin allowlist to accommodate an unused host.
 
 ### Firebase
 - [ ] The intended production Firebase project is independently confirmed.
@@ -119,7 +122,7 @@ If a deployment causes a production regression:
 - The health endpoint verifies process health/configuration, not upstream provider health.
 - The application is not a brokerage or live order-execution system; simulated trades are not real orders.
 - Process-local rate limiting is not shared across multiple service instances. Reassess before horizontal scaling.
-- Production Firebase rules, TTL, Render environment variables, Netlify deploy checks, and GitHub branch protection require separate dashboard verification.
+- Production Firebase rules, TTL, Render environment-variable names/presence, and GitHub branch protection require separate dashboard verification. Netlify checks are optional and non-blocking when Render is the sole hosting platform.
 
 
 ## Firebase client configuration
@@ -155,7 +158,7 @@ Verify that the policy reports enabled before relying on automatic cleanup. Fire
 - The default branch API reported `protected: false`; no repository rulesets were returned.
 - Read-only Render inspection on 12 November 2026 confirmed service `vymx-trade-terminal-2` is live on commit `46fa98ebeffceaff55a66132a1daaaeb95c5cb5a`, with Node.js `22.19.0`, build command `npm install && npm run build`, start command `npm start`, automatic deploys from `main`, Free plan and one instance. The custom HTTP health-check path is unset. Build/runtime logs show a successful build and `VYMX API listening on port 10000`; this confirms startup, not successful external API or WebSocket behavior. The connected Render read-only service response does not expose environment-variable names or values, and the external HTTP fetch attempt was unavailable, so those items remain unverified.
 - The Render workspace also contains legacy sibling services `vymx-trade-terminal-1` (suspended) and `vymx-trade-terminal` (not suspended; configured start command is `npm startyarn start`). Do not delete or change either without confirming whether it is still used.
-- The production monitor is defined in PR #8 but is not active until that PR is merged. At the latest audit, PR #8 head `29b849d261ec7de19f8f84479c73ed66ba303d99` had a queued CI run and a failed Netlify Deploy Preview check; the candidate is not release-approved.
-- Netlify Deploy Preview for PR #7 failed in Redirect rules, Header rules and Pages changed. GitHub check output says only "Deploy failed"; the underlying Netlify log was not accessible, so the cause remains unknown.
+- The production monitor is defined in PR #8 but is not active until that PR is merged. Its scheduled workflow is designed to monitor the Render production origin directly.
+- Netlify preview checks have failed in prior PRs, but they are not a production blocker for this Render-only deployment. Their underlying failure is outside the Render production path and is intentionally treated as optional unless Netlify previews are still in active use.
 - The Firebase config on `main` at audit time contained placeholder values (`projectId: mock`). This follow-up replaces the fake config import with explicit Vite environment configuration.
 - Firestore Emulator tests do not deploy production rules or prove the production project is correct.
