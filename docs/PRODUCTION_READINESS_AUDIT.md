@@ -62,7 +62,7 @@ These Firebase web values are public browser configuration, not private server s
 
 ### 3. Resolve Netlify Deploy Preview
 
-For PR #7, GitHub reports three failed deploy-derived checks: Redirect rules, Header rules and Pages changed. All point to the same failed Netlify deploy and say only "Deploy failed". Do not guess the cause.
+For PR #7 and the current PR #8, GitHub reports three failed deploy-derived checks: Redirect rules, Header rules and Pages changed. All three point to the same failed Netlify deploy and say only "Deploy failed". The latest PR #8 deploy is `6af4c8fc41d135264b3ab90f`. The failure persisted after pinning Node 22.19.0, so Node-version mismatch is not established as the root cause. Do not guess the cause.
 
 Required diagnostic:
 1. Open the failed Netlify deploy from the PR check.
@@ -71,7 +71,7 @@ Required diagnostic:
 4. Verify Netlify base directory, build command, publish directory and Node version.
 5. Re-run the preview and require all deploy-derived checks to pass.
 
-The repository pins Node 22.19.0 in `.node-version`; this branch also declares the same version in `netlify.toml`. Netlify documents `.node-version` as a supported Node-version selector. This removes one configuration ambiguity but does not prove it caused the previous failure.
+The repository pins Node 22.19.0 in `.node-version`; this branch also declares the same version in `netlify.toml`. Netlify documents both `.node-version` and `NODE_VERSION` as supported selectors. The repeated failure after this alignment means the build log is still required to identify the actual cause.
 
 ## P1 — External production verification
 
