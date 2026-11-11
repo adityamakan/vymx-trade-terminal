@@ -269,10 +269,10 @@ export default function Screener({
             }
 
             // Calculation metrics
-            const isAUp = assetA.change >= 0;
-            const isBUp = assetB.change >= 0;
+            const isAUp = assetA.change != null && assetA.change >= 0;
+            const isBUp = assetB.change != null && assetB.change >= 0;
 
-            const pctDelta24h = assetA.change - assetB.change;
+            const pctDelta24h = assetA.change != null && assetB.change != null ? assetA.change - assetB.change : null;
 
             // Compute year tracker positions
             const rangePctA = getYearlyRangePercent(assetA.price, assetA.low52w, assetA.high52w);
@@ -368,22 +368,20 @@ export default function Screener({
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">24h Performance</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono">
                           <span className={`font-bold px-1.5 py-0.5 rounded text-[10px] sm:text-xs ${isAUp ? 'text-emerald-400 bg-emerald-500/5' : 'text-rose-450 bg-rose-500/5'}`}>
-                            {isAUp ? '+' : ''}{assetA.change.toFixed(2)}%
+                            {assetA.change == null ? 'N/A' : `${isAUp ? '+' : ''}${assetA.change.toFixed(2)}%`}
                           </span>
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono">
                           <span className={`font-bold px-1.5 py-0.5 rounded text-[10px] sm:text-xs ${isBUp ? 'text-emerald-400 bg-emerald-500/5' : 'text-rose-450 bg-rose-500/5'}`}>
-                            {isBUp ? '+' : ''}{assetB.change.toFixed(2)}%
+                            {assetB.change == null ? 'N/A' : `${isBUp ? '+' : ''}${assetB.change.toFixed(2)}%`}
                           </span>
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center">
-                          {assetA.change > assetB.change ? (
-                            <span className="text-emerald-400 font-mono font-bold text-[8px] sm:text-[9px] bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">
-                              {assetA.symbol} (+{(assetA.change - assetB.change).toFixed(2)}%)
-                            </span>
+                          {pctDelta24h == null ? (
+                            <span className="text-zinc-500 font-mono text-[8px] sm:text-[9px]">N/A</span>
                           ) : (
                             <span className="text-emerald-400 font-mono font-bold text-[8px] sm:text-[9px] bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">
-                              {assetB.symbol} (+{(assetB.change - assetA.change).toFixed(2)}%)
+                              {pctDelta24h >= 0 ? assetA.symbol : assetB.symbol} ({pctDelta24h >= 0 ? '+' : ''}{Math.abs(pctDelta24h).toFixed(2)} pp)
                             </span>
                           )}
                         </td>
@@ -810,7 +808,7 @@ export default function Screener({
               <tbody className="divide-y divide-zinc-900/60 text-xs text-zinc-300">
                 {filteredAssets.length > 0 ? (
                   filteredAssets.map((asset) => {
-                    const isUp = asset.change >= 0;
+                    const isUp = asset.change != null && asset.change >= 0;
                     const isStarred = watchlist.includes(asset.symbol);
 
                     const marketStatus = getAssetMarketStatus(asset.symbol, asset.type, asset.country, isStrictHours);
@@ -845,7 +843,7 @@ export default function Screener({
                         {/* Change */}
                         <td className="py-3.5 px-3 sm:px-5 text-right cursor-pointer font-mono text-xs" onClick={() => onSelectAsset(asset)}>
                           <span className={`inline-flex rounded px-1 sm:px-1.5 py-0.5 font-bold text-[10px] sm:text-xs ${isUp ? 'text-emerald-400 bg-emerald-500/5' : 'text-rose-450 bg-rose-500/5'}`}>
-                            {isUp ? '+' : ''}{asset.change.toFixed(2)}%
+                            {asset.change == null ? 'N/A' : `${isUp ? '+' : ''}${asset.change.toFixed(2)}%`}
                           </span>
                         </td>
                         {/* 52W Range Dense Bar */}
@@ -863,24 +861,9 @@ export default function Screener({
                         </td>
                         {/* 100x Density AI Analysis Panel */}
                         <td className="py-2 px-5 hidden 2xl:table-cell w-[220px]">
-                           <div className="flex flex-col gap-1 w-full bg-black/40 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 p-1.5 rounded-lg">
-                             <div className="flex justify-between items-center text-[7px] text-zinc-400 font-mono">
-                               <span>Volatility</span>
-                               <span className="text-amber-400">±{((asset.price * 0.4) % 15 + 2).toFixed(1)}%</span>
-                             </div>
-                             <div className="flex gap-0.5 items-end h-3 w-full opacity-70">
-                               {Array.from({length: 12}).map((_, i) => {
-                                 const isGreen = asset.change >= 0 ? (i % 3 !== 0) : (i % 3 === 0);
-                                 const height = 25 + ((asset.symbol.charCodeAt(i % asset.symbol.length) * (i + 1) * 13) % 65);
-                                 return (
-                                   <div key={i} className={`flex-1 rounded-[1px] ${isGreen ? 'bg-emerald-500' : 'bg-rose-500'}`} style={{ height: `${height}%` }}></div>
-                                 );
-                               })}
-                             </div>
-                             <div className="flex justify-between items-center text-[7px] font-mono mt-0.5">
-                               <span className="text-zinc-500">OB Imbalance</span>
-                               <span className={asset.change > 0 ? "text-emerald-400" : "text-rose-400"}>{asset.change > 0 ? 'Bids > Asks' : 'Asks > Bids'}</span>
-                             </div>
+                           <div className="flex flex-col gap-1 w-full bg-black/40 border border-zinc-800/60 p-2 rounded-lg text-[9px] font-mono text-zinc-500">
+                             <div className="flex justify-between"><span>Volatility</span><span>N/A — candles required</span></div>
+                             <div className="flex justify-between"><span>Order-book imbalance</span><span>N/A — depth feed absent</span></div>
                            </div>
                         </td>
                         {/* Market Cap */}
@@ -889,22 +872,22 @@ export default function Screener({
                         </td>
                         {/* New Dense Metrics */}
                         <td className="py-3.5 px-4 text-center font-mono text-zinc-300 text-[10px] hidden md:table-cell">
-                          {((asset.price * 10) % 50 + 10).toFixed(1)}M
+                          N/A
                         </td>
                         <td className="py-3.5 px-4 text-center hidden lg:table-cell">
                            <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${((asset.price * 3) % 100) > 70 ? 'bg-rose-500/10 text-rose-400' : ((asset.price * 3) % 100) < 30 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-800 text-zinc-400'}`}>
-                             {((asset.price * 3) % 100).toFixed(1)}
+                             N/A
                            </span>
                         </td>
                         <td className="py-3.5 px-4 text-center font-mono text-zinc-400 text-[10px] hidden lg:table-cell">
-                           {((asset.price % 2) + 0.5).toFixed(2)}
+                           N/A
                         </td>
                         <td className="py-3.5 px-4 text-center font-mono text-indigo-400 text-[10px] hidden xl:table-cell">
-                           {((asset.price * 2.5) % 80 + 10).toFixed(1)}%
+                           N/A
                         </td>
                         <td className="py-3.5 px-4 text-center hidden xl:table-cell">
                            <span className={`text-[10px] font-mono ${asset.change > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                             {asset.change > 0 ? '+' : ''}{(asset.change * 0.4).toFixed(2)}
+                             N/A
                            </span>
                         </td>
                         {/* P/E Ratio */}
