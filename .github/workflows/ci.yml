@@ -43,7 +43,7 @@ jobs:
       # Exercise the exact Node entry point Render starts, not only the bundler.
       - name: Smoke test production server
         run: |
-          PORT=4179 API_RATE_LIMIT_PER_MINUTE=1 WEBSOCKET_ALLOWED_ORIGINS=https://preview.example.net node dist-server/server.cjs > server-smoke.log 2>&1 &
+          PORT=4179 API_RATE_LIMIT_PER_MINUTE=1 WEBSOCKET_ALLOWED_ORIGINS=https://preview.example.net,https://deploy-preview-*--vymxtrade.netlify.app node dist-server/server.cjs > server-smoke.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
 
@@ -127,6 +127,7 @@ jobs:
 
           await expectOpen('http://127.0.0.1:4179', true);
           await expectOpen('https://preview.example.net');
+          await expectOpen('https://deploy-preview-123--vymxtrade.netlify.app');
           await expectForbidden('https://attacker.example.org');
           NODE
 
