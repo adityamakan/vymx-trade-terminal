@@ -146,7 +146,7 @@ jobs:
       # Preserve the full audit artifact, then block merges if any known advisory remains.
       - name: Generate dependency vulnerability report
         if: always()
-        run: npm audit --json > npm-audit.json || true
+        run: npm audit --json --fetch-retries=3 --fetch-timeout=120000 > npm-audit.json || true
 
       - name: Summarize dependency audit
         if: always()
