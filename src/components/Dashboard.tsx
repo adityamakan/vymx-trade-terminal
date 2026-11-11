@@ -205,7 +205,7 @@ export default function Dashboard({
   };
 
   // --- MARKET BREADTH FROM PER-ASSET VERIFIED PROVIDER QUOTES ONLY ---
-  const verifiedQuoteAssets = useMemo(() => assets.filter((asset) => {
+  const verifiedQuoteAssets = useMemo(() => assets.filter((asset): asset is Asset & { change: number } => {
     if (!asset.quoteAsOf || asset.change == null) return false;
     const timestamp = Date.parse(asset.quoteAsOf);
     return Number.isFinite(timestamp) && timestamp <= Date.now() + 60_000 && Date.now() - timestamp <= 120_000;
@@ -1229,7 +1229,7 @@ export default function Dashboard({
                   <p className="text-xs font-semibold text-indigo-300">Watchlist Intelligence</p>
                   <p className="text-[10px] text-indigo-200/70 mt-1 leading-relaxed">
                     {watchlistAssets.filter(a => a.quoteAsOf && a.change != null && a.change > 2).length > 0
-                      ? `${watchlistAssets.filter(a => a.quoteAsOf && a.change > 2).length} assets in your watchlist are showing unusually high bullish momentum today. Consider setting up price alerts.`
+                      ? `${watchlistAssets.filter(a => a.quoteAsOf && a.change != null && a.change > 2).length} assets in your watchlist are showing unusually high bullish momentum today. Consider setting up price alerts.`
                       : `No verified daily quote moves above 2% are present in the current watchlist. This does not assess earnings, correlation or volatility.`}
                   </p>
                 </div>
