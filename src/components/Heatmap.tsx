@@ -188,7 +188,7 @@ export default function Heatmap({
 
   // Helper stats calculations
   const summaryStats = useMemo(() => {
-    const verifiedAssets = filteredAssets.filter((asset) => hasFreshQuote(asset) && asset.change != null);
+    const verifiedAssets = filteredAssets.filter((asset): asset is Asset & { change: number } => hasFreshQuote(asset) && asset.change != null);
     const total = filteredAssets.length;
     const gainers = verifiedAssets.filter((a) => a.change > 0.05).length;
     const losers = verifiedAssets.filter((a) => a.change < -0.05).length;
