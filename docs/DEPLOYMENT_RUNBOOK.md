@@ -5,7 +5,7 @@
 - Render web service: `vymx-trade-terminal-2`
 - Production source: GitHub repository `adityamakan/vymx-trade-terminal`, branch `main`
 - Node runtime: `22.19.0` (pinned in `.node-version`)
-- Application start command: `npm start` (runs `node dist/server.cjs`)
+- Application start command: `npm start` (runs `node dist-server/server.cjs`)
 - Health endpoint: `/health`
 - Render production URL: `https://vymx-trade-terminal-2.onrender.com`
 
@@ -71,7 +71,7 @@ This repository now includes `netlify.toml` with:
 - A forced same-origin REST proxy from `/api/*` to the Render API.
 - An SPA fallback to `/index.html`.
 
-The browser WebSocket is not proxied by that REST rewrite. For the Netlify site, configure the public build variable `VITE_WS_URL=wss://vymx-trade-terminal-2.onrender.com/api/prices`. On the Render service, configure `WEBSOCKET_ALLOWED_ORIGINS` with the exact Netlify site origin and a narrowly scoped deploy-preview pattern, for example `https://your-site.netlify.app,https://deploy-preview-*--your-site.netlify.app`. Replace `your-site` with the actual Netlify site slug; do not use a broad `*.netlify.app` allowlist. Redeploy the Netlify site after setting its build variable and redeploy Render after changing its server variable.
+The browser WebSocket is not proxied by that REST rewrite. `netlify.toml` now sets the public build variable `VITE_WS_URL=wss://vymx-trade-terminal-2.onrender.com/api/prices`, so no secret or dashboard-only build variable is required for that endpoint. On the Render service, set `WEBSOCKET_ALLOWED_ORIGINS` to the exact Netlify production origin plus its narrowly scoped deploy-preview pattern. If the Netlify production hostname is `https://vymxtrade.netlify.app`, the value is `https://vymxtrade.netlify.app,https://deploy-preview-*--vymxtrade.netlify.app`; verify the site's actual primary hostname in Netlify before saving. Do not use a broad `*.netlify.app` allowlist. Redeploy Render after changing its server variable; Netlify rebuilds when the repository config changes.
 
 Validation for a Netlify preview:
 1. Open `/api/health` on the preview domain and confirm it returns `service: vymx-api`.
@@ -86,7 +86,7 @@ A Netlify Deploy Preview is not production. Production remains the Render servic
 
 The Express service now enables Helmet headers (CSP remains disabled pending an explicit external-widget allowlist), compression, a 32 KB JSON body limit, one trusted Render proxy hop, a default 240-request/minute per-IP API limit, and a 15-request/minute AI-route limit. Health/status probes are excluded from the general API limit. CI smoke tests assert the security header and verify that malformed API input returns 400 and a second request at a deliberately low test limit returns 429.
 
-The rate-limit store is process-local. It must be replaced with a shared store before horizontally scaling the service. WebSocket upgrades bypass Express middleware but have independent same-origin checks, a 20-connection cap, a 100-distinct-symbol aggregate cap, and a 4 KB frame limit. CI smoke tests verify a same-origin handshake and ping/pong response.
+The rate-limit store is process-local. It must be replaced with a shared store before horizontally scaling the service. WebSocket upgrades bypass Express middleware but enforce same-origin or explicit allowlisted-origin checks, a 20-connection cap, a 100-distinct-symbol aggregate cap, and a 4 KB frame limit. CI smoke tests verify same-origin, exact allowlisted-origin, wildcard deploy-preview-origin and denied-origin behavior, including heartbeat ping/pong.
 
 ## Firebase operations are separate
 
@@ -97,9 +97,9 @@ The rate-limit store is process-local. It must be replaced with a shared store b
 
 ## Dependency vulnerability policy
 
-The November 2, 2026 CI audit artifact reported 27 advisories: 2 critical, 17 high and 8 moderate. It included vulnerable direct dependencies and transitive dependencies. The raw report is retained as a CI artifact for 14 days.
+The initial November 2, 2026 audit reported 27 advisories (2 critical, 17 high and 8 moderate). The release-readiness branch has since upgraded `yahoo-finance2` to v4.0.6, initialized its client instance, and pinned patched transitive versions of `@grpc/grpc-js` (1.14.7) and `postcss-selector-parser` (6.1.6). The regenerated lockfile passed `npm ci`, typecheck, tests and production build. The follow-up `npm audit` gate completed successfully with zero critical, high or moderate advisories; this does not assert that there are no low or informational notices. Dependabot configuration is included to keep future updates visible.
 
-Do not run `npm audit fix --force` as a blanket response. In particular, the report proposed major-version changes for Firebase and Yahoo Finance dependencies. Triage each advisory by affected version, dependency path, exploitability, fixed version and compatibility; upgrade in controlled batches and rerun the complete release gates.
+Do not run `npm audit fix --force` as a blanket response. It proposed incompatible Firebase and Yahoo Finance changes for the original vulnerable tree. Continue to review each new advisory by affected version, dependency path, exploitability, fixed version and compatibility, then rerun the complete release gates.
 
 ## Evidence still required
 
