@@ -20,10 +20,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22.19.0'
           cache: npm
@@ -131,8 +131,7 @@ jobs:
           await expectForbidden('https://attacker.example.org');
           NODE
 
-      # Report-only initially: the repository's known advisories must be
-      # triaged package-by-package before turning this into a blocking gate.
+      # Preserve the full audit artifact, then block merges if any known advisory remains.
       - name: Generate dependency vulnerability report
         if: always()
         run: npm audit --json > npm-audit.json || true
@@ -163,12 +162,25 @@ jobs:
 
       - name: Upload dependency audit report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: npm-audit-report
           path: npm-audit.json
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Require zero known dependency vulnerabilities
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const report = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'));
+          const counts = report.metadata?.vulnerabilities;
+          if (!counts) throw new Error('npm audit did not return vulnerability metadata.');
+          console.log(JSON.stringify(counts, null, 2));
+          if ((counts.total ?? Infinity) !== 0) {
+            throw new Error('npm audit found one or more known vulnerabilities; remediate before merge.');
+          }
+          NODE
 
   dependency-candidate:
     name: Validate non-breaking dependency update candidate
@@ -176,12 +188,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out PR head
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22.19.0'
           cache: npm
@@ -227,20 +239,19 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\\n') + '\\n');
           NODE
 
-      - name: Require zero critical advisories and a reduced total
+      - name: Require zero known dependency vulnerabilities
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           const report = JSON.parse(fs.readFileSync('candidate-audit.json', 'utf8'));
           const counts = report.metadata?.vulnerabilities;
           if (!counts) throw new Error('Candidate audit report is unavailable.');
-          if ((counts.critical ?? 0) !== 0) throw new Error('Candidate still contains critical advisories.');
-          if ((counts.total ?? Infinity) >= 27) throw new Error('Candidate did not reduce the baseline of 27 advisories.');
+          if ((counts.total ?? Infinity) !== 0) throw new Error('Candidate still contains one or more known vulnerabilities.');
           NODE
 
       - name: Upload dependency lockfile candidate and audit
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dependency-lockfile-candidate
           path: |
