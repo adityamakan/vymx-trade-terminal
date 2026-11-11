@@ -29,7 +29,7 @@ import { getAssetMarketStatus } from './utils/market';
 import { auth, onAuthStateChanged, signOut, db, doc, getDoc, setDoc, collection, getDocs, Timestamp } from './lib/firebase';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useDataIntegrity } from './contexts/DataIntegrityContext';
-import { isVerifiedProviderQuote } from './utils/providerQuote';
+import { isSubmittedPriceCurrent, isVerifiedProviderQuote } from './utils/providerQuote';
 
 interface PortfolioSnapshot {
   id: string;
@@ -536,21 +536,8 @@ export default function App() {
     }
 
     const liveAsset = liveAssets.find((a) => a.symbol === symbol);
-    const observedAt = liveAsset?.quoteAsOf ? Date.parse(liveAsset.quoteAsOf) : Number.NaN;
-    const quoteAgeMs = Date.now() - observedAt;
-    if (
-      !liveAsset ||
-      !Number.isFinite(observedAt) ||
-      quoteAgeMs < -5 * 60_000 ||
-      quoteAgeMs > 120_000 ||
-      !Number.isFinite(liveAsset.price) ||
-      liveAsset.price <= 0
-    ) {
-      return { success: false, message: 'Transaction rejected: this instrument has no sufficiently fresh, verified provider quote.' };
-    }
-    const priceTolerance = Math.max(0.01, liveAsset.price * 1e-6);
-    if (Math.abs(price - liveAsset.price) > priceTolerance) {
-      return { success: false, message: 'Transaction rejected: the submitted price does not match the latest verified quote. Refresh the instrument and try again.' };
+    if (!liveAsset || !isVerifiedProviderQuote(liveAsset) || !isSubmittedPriceCurrent(price, liveAsset)) {
+      return { success: false, message: 'Transaction rejected: the instrument needs a provider quote no older than two minutes, and the order price must match that quote. Refresh and try again.' };
     }
     const assetName = liveAsset.name;
     const totalCostValue = quantity * price;
