@@ -1027,16 +1027,15 @@ export default function Heatmap({
                   24h Fluctuation
                 </p>
                 <p
-                  className={`font-bold flex items-center gap-1 ${hoveredAsset.change >= 0 ? "text-emerald-400" : "text-rose-455"}`}
+                  className={`font-bold flex items-center gap-1 ${hoveredAsset.change == null ? "text-zinc-500" : hoveredAsset.change >= 0 ? "text-emerald-400" : "text-rose-455"}`}
                 >
-                  {hoveredAsset.change >= 0 ? (
+                  {hoveredAsset.change == null ? null : hoveredAsset.change >= 0 ? (
                     <TrendingUp className="h-3 w-3" />
                   ) : (
                     <TrendingDown className="h-3 w-3" />
                   )}
                   <span>
-                    {hoveredAsset.change >= 0 ? "+" : ""}
-                    {hoveredAsset.change}%
+                    {hoveredAsset.change == null ? 'N/A' : `${hoveredAsset.change >= 0 ? '+' : ''}${hoveredAsset.change}%`}
                   </span>
                 </p>
               </div>
@@ -1080,7 +1079,7 @@ export default function Heatmap({
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-zinc-500">MACD (not calculated)</span>
-                <span className={`font-bold ${hoveredAsset.change > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <span className="font-bold text-zinc-500">
                   N/A
                 </span>
               </div>
