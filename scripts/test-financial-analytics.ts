@@ -106,7 +106,8 @@ console.log('Financial analytics and provider timestamp tests passed.');
 const quoteNow = Date.UTC(2026, 10, 11, 12, 0, 0);
 assert.equal(isVerifiedProviderQuote({ price: 100, asOf: new Date(quoteNow).toISOString() }, quoteNow), true);
 assert.equal(isVerifiedProviderQuote({ price: 100 }, quoteNow), false);
-assert.equal(isVerifiedProviderQuote({ price: 100, asOf: new Date(quoteNow - 25 * 60 * 60_000).toISOString() }, quoteNow), false);
+assert.equal(isVerifiedProviderQuote({ price: 100, asOf: new Date(quoteNow - 121_000).toISOString() }, quoteNow), false);
+assert.equal(isVerifiedProviderQuote({ price: 100, asOf: new Date(quoteNow - 119_000).toISOString() }, quoteNow), true);
 assert.equal(isVerifiedProviderQuote({ price: 0, asOf: new Date(quoteNow).toISOString() }, quoteNow), false);
 assert.equal(isVerifiedProviderQuote({ price: 100, asOf: new Date(quoteNow + 6 * 60_000).toISOString() }, quoteNow), false);
 
