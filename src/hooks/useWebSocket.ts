@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 export interface PriceQuote {
   price: number;
-  change: number;
-  changeAbs: number;
+  change: number | null;
+  changeAbs: number | null;
   low52w: number;
   high52w: number;
   prevClose: number;
