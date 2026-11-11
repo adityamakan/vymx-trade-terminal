@@ -2,6 +2,9 @@
   command = "npm ci && npm run build"
   publish = "dist"
 
+[build.environment]
+  VITE_WS_URL = "wss://vymx-trade-terminal-2.onrender.com/api/prices"
+
 # Keep REST calls same-origin from the preview browser while routing them to Render.
 [[redirects]]
   from = "/api/*"
