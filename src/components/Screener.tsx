@@ -121,8 +121,12 @@ export default function Screener({
       let comparison = 0;
       if (sortBy === 'symbol') comparison = a.symbol.localeCompare(b.symbol);
       else if (sortBy === 'price') comparison = a.price - b.price;
-      else if (sortBy === 'change') comparison = a.change == null ? (b.change == null ? 0 : 1) : b.change == null ? -1 : a.change - b.change;
-      else if (sortBy === 'marketCap') comparison = a.marketCap - b.marketCap;
+      else if (sortBy === 'change') {
+        // Missing provider observations stay last in both sort directions.
+        if (a.change == null) return b.change == null ? 0 : 1;
+        if (b.change == null) return -1;
+        comparison = a.change - b.change;
+      } else if (sortBy === 'marketCap') comparison = a.marketCap - b.marketCap;
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
