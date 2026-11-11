@@ -1,6 +1,7 @@
 export interface ProviderQuoteLike {
   price?: unknown;
   asOf?: unknown;
+  quoteAsOf?: unknown;
 }
 
 /**
@@ -13,7 +14,8 @@ export function isVerifiedProviderQuote(
   now = Date.now(),
   maxAgeMs = 120_000
 ): boolean {
-  const observedAt = typeof quote.asOf === 'string' ? Date.parse(quote.asOf) : Number.NaN;
+  const timestamp = quote.asOf ?? quote.quoteAsOf;
+  const observedAt = typeof timestamp === 'string' ? Date.parse(timestamp) : Number.NaN;
   return typeof quote.price === 'number' && Number.isFinite(quote.price) && quote.price > 0 &&
     Number.isFinite(observedAt) &&
     observedAt <= now + 5 * 60_000 &&
