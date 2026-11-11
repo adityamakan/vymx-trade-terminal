@@ -1041,7 +1041,7 @@ export default function Heatmap({
               </div>
               <div>
                 <p className="text-zinc-500 text-[9px] uppercase font-bold">
-                  Market Cap Weight
+                  Reference Market Cap (static)
                 </p>
                 <p className="font-bold text-zinc-100">
                   {hoveredAsset.marketCapDisplay}
@@ -1049,7 +1049,7 @@ export default function Heatmap({
               </div>
               <div>
                 <p className="text-zinc-500 text-[9px] uppercase font-bold">
-                  24H Trading Volume
+                  Provider-reported volume
                 </p>
                 <p className="font-bold text-zinc-100">
                   {hoveredAsset.volumeDisplay}
@@ -1060,22 +1060,12 @@ export default function Heatmap({
             {/* Advanced Binance-style Technicals */}
             <div className="bg-zinc-950 p-2.5 rounded-lg border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 grid grid-cols-2 gap-2 text-[10px] font-mono">
               <div className="col-span-2 text-zinc-500 text-[9px] uppercase font-bold mb-1 border-b border-zinc-900 pb-1">
-                Advanced Technicals & Sentiments (Live)
+                Advanced indicators (not supplied by feed)
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-zinc-500">RSI(14)</span>
-                <span
-                  className={`font-bold ${
-                    20 + ((hoveredAsset.symbol.charCodeAt(0) * 7) % 60) > 65
-                      ? "text-rose-400"
-                      : 20 + ((hoveredAsset.symbol.charCodeAt(0) * 7) % 60) < 35
-                        ? "text-emerald-400"
-                        : "text-zinc-300"
-                  }`}
-                >
-                  N/A
-                </span>
+                <span className="font-bold text-zinc-500">N/A</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-zinc-500">MACD (not calculated)</span>
