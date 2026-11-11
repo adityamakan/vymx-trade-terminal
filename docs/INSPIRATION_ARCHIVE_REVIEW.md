@@ -1,173 +1,195 @@
-# Review of the October 7 VYMX inspiration archive
+# Review of the uploaded VYMX inspiration archive (v17)
 
-## Executive conclusion
+**Review date:** 12 November 2026  
+**Reference:** `vymx-trade (17).zip` supplied in this conversation  
+**Disposition:** Product-design reference only; not a safe source tree or deployment artifact.
 
-The uploaded `vymx-trade (16).zip` is a useful product-design and feature-discovery reference, but it is not a safe implementation baseline. It contains several strong interface and product concepts alongside fabricated market observations, static macroeconomic assumptions, synthetic volume, and a hard-coded regime backtester.
+## Executive decision
 
-The current remediation branch already preserves the strongest macro-workspace concept while deliberately disabling the synthetic backtest and returning explicit unavailable states. The correct approach is to extract the product structure and analytical requirements, then rebuild each capability on sourced, timestamped observations and reproducible calculations. Do not copy the archive wholesale or merge its old server/data files over the current implementation.
+The archive contains a broad, visually ambitious multi-asset trading and macro-research application. It is useful for preserving the product vision: a single workspace that connects global markets, portfolio analysis, macroeconomic research, education, geopolitical context and interactive visualizations.
 
-## 1. What is worth preserving
+It is not suitable for copying into the current repository. The old snapshot mixes real provider requests with authored fallback observations, synthetic histories, random volume/order-book values, unsupported institutional-flow claims, and a hard-coded macro backtester. It also has weaker server and credential boundaries than the current application.
 
-### A. Macro research workspace
+The current `main` branch is materially safer than this archive. The correct strategy is:
 
-The archive's `MacroeconomicAnalyzer` provides a useful information architecture:
+1. Preserve the archive's product breadth and information architecture.
+2. Keep the current provider-provenance, quote-freshness, security, Firestore and test controls.
+3. Rebuild only the valuable capabilities that can be backed by sourced observations and reproducible calculations.
+4. Leave unsupported features explicitly unavailable rather than filling the screen with convincing but invented values.
 
-- Macro indicator dashboard.
-- Yield-curve and rates view.
-- Historical regime research/backtesting workspace.
-- Sovereign-risk monitor.
-- AI macro strategist.
-- Portfolio-versus-benchmark wealth and drawdown visualization.
-- Cross-asset correlation matrix and asset contribution breakdown.
+**Do not replace current `src/`, `server/`, package manifests, Firebase configuration, or deployment settings with the archive.**
 
-This is a good product direction because it connects rates, FX, commodities, equity risk, policy, and portfolio consequences in one research workflow.
+## 1. Archive inventory and scope
 
-**Current repository status:** The remediation branch already contains a macro workspace and the indicator endpoint. The UI separates market proxies from official macro releases, exposes unavailable data, and explicitly disables backtesting until a validated engine exists. Keep this safer behavior.
+The ZIP contains **109 entries**: **99 files** and directory entries, with approximately **2.42 MB** of uncompressed file content. The source inventory includes:
 
-### B. Research-oriented explanation structure
+- 45 React component files under `src/components/`.
+- Frontend application, data, types, styles, hooks, contexts and utility modules.
+- A large legacy `server.ts` (2,114 lines) with 29 route declarations.
+- A Python macro backtester (398 lines).
+- Firebase configuration and Firestore rules.
+- A browser-side Gemini integration.
+- 14 one-off patch scripts, additional manual test probes, npm and Bun lockfiles, generated text outputs, and a bundled logo image.
 
-The archive's AI strategist asks for a structured analysis of:
+The README identifies the archive as an AI Studio applet, not a reproducible release of the current VYMX service. Its package metadata, environment assumptions, Firebase project identity and runtime topology must not be treated as authoritative for the current repository.
 
-1. Executive macro thesis.
-2. Transmission channels across bonds, equities, commodities and FX.
-3. Historical regime precedents.
-4. Quantitative allocation and hedging implications.
+## 2. Product concepts worth retaining
 
-Keep this as a report outline, not as permission for the model to invent figures. Every numeric claim must be linked to a supplied observation, series ID, date, and calculation. AI output should distinguish observed facts, interpretation, scenarios, and uncertainty.
+### 2.1 Global multi-asset terminal
 
-### C. Expandable geopolitical research cards
+The archive's strongest product idea is the breadth of the instrument universe: equities, indices, cryptoassets, FX, commodities and rates, with regional exchange context. Retain:
 
-The geopolitics component has a useful presentation pattern: event, region, severity, timeline, root cause, mechanism, and economic transmission. It can be reused when there is a verifiable event feed and each event has source links, publication time, event time, and an explicit confidence/impact methodology.
+- Fast symbol search and instrument detail pages.
+- Global benchmark and sector views.
+- Watchlists, price alerts and a paper portfolio.
+- Benchmark-relative charts and historical OHLCV exploration.
+- Clear market-session and quote-status indicators.
 
-### D. Peer comparison
+The current application already has provider-backed quote and history paths, a screener, asset details, portfolio, watchlist, market dashboard, volume analysis and benchmark comparisons. Continue extending those surfaces rather than importing the old quote fallbacks or random demo histories.
 
-The competitor panel's simple same-sector comparison is a useful starting point. Build it only from validated company metadata and comparable metrics. Market capitalization, price, returns, reporting currency, and observation dates must be sourced and visible. Do not assume that matching a sector string alone makes two businesses economically comparable.
+### 2.2 Macro research workspace
 
-## 2. What must not be copied
+The old `MacroeconomicAnalyzer` is a strong information-architecture reference. Its useful research flow combines:
 
-| Archive feature | Evidence found | Why it is unsafe | Required replacement |
+- Cross-asset market indicators.
+- Rates and yield-curve context.
+- Sovereign and macroeconomic fundamentals.
+- Historical regime research.
+- Portfolio/benchmark wealth and drawdown views.
+- Correlation and contribution analysis.
+- An AI research assistant.
+
+Retain the workflow, but make each figure expandable to show its source, series identifier, units, observation date, retrieval time, frequency and calculation. The current macro workspace already distinguishes Yahoo market proxies from official FRED series and deliberately disables the synthetic backtest. That is the correct baseline.
+
+### 2.3 Portfolio risk and comparison
+
+The archive's portfolio dashboard, correlation views, benchmark comparison and asset-level analytics point in the right direction. The current repository has moved these concepts toward real calculations:
+
+- Portfolio risk metrics use timestamped USD-normalized snapshots.
+- Asset and watchlist comparisons request provider-backed historical data.
+- Risk and correlation calculations align returns by date and enforce minimum observation counts.
+- Volume analysis uses provider OHLCV rather than random bars.
+- Trend analysis uses historical observations and should remain labelled as a statistical regression/projection, not a guaranteed forecast.
+
+Further work should focus on cash-flow-aware TWR/MWR, FX provenance, dividend/adjustment conventions, missing-data handling and reproducible calculation manifests.
+
+### 2.4 Education and guided workflows
+
+The archive's Academy, walkthrough, chart studies, flashcards and quizzes are useful product features. Static educational material is appropriate without a live provider, provided examples are labelled as examples and do not imply current market conditions. Keep educational content separate from live market observations and from personalized investment recommendations.
+
+### 2.5 Visual storytelling
+
+The 3D globe, heatmap, event shockwave, sector breakdown and market ticker can make the terminal easier to explore. Preserve visual geography and clearly labelled user-controlled simulations. Do not present randomized arcs, simulated shocks, decorative markers or animation as measured capital flows, geopolitical risk, market impact or order-book telemetry.
+
+## 3. Archive defects: do not reintroduce
+
+| Area | Finding in the archive | Risk | Required treatment |
 |---|---|---|---|
-| Macro indicator fallbacks | `server.ts` substitutes hard-coded values such as 4.32, 4.12, 103.4, 76.5, 2680, 16.2 and 5750 when Yahoo values are missing. | Provider failure is disguised as a successful live observation. | Return null/unavailable per series; include provider observation time, fetch time, units, source and market state. |
-| Central-bank dashboard | Fed/ECB/BoE/BoJ/RBI/PBOC rates, stances, meeting dates and cut probabilities are literal constants. | These can be stale or false while appearing live. | Official central-bank releases and calendars, with source URL, effective date, retrieval time and no fabricated probability. |
-| Macro pressures | Global M2 growth 5.4%, US core CPI 3.2%, and the real-rate calculation are hard-coded or derived from a fixed CPI assumption. | A real rate requires aligned nominal-yield and inflation observations with clearly defined maturities and periods. | FRED/official statistical series; document transformations, units, frequency, release date and vintage. |
-| Yield-curve recession lead time | `leadTimeMonths: 14` is fixed. | A fixed lead-time claim is not an observation or a calibrated forecast. | Show the actual spread time series; if forecasting, publish model, sample, target definition, calibration and uncertainty. |
-| Macro backtester | `server/macro_backtester.py` stores hand-authored monthly returns for 2008–09, 2020–21, 2022–24, a stagflation simulation and 2025–26. | The numbers are synthetic, not retrieved historical total-return series. | Reconstruct adjusted total-return histories from an auditable provider and disclose data gaps. |
-| Historical regime names | A 2025–26 profile is presented as a historical regime, despite containing authored return sequences. | It can be mistaken for measured historical performance. | Label hypothetical scenarios as scenarios; never mix them with historical backtests. |
-| Volume analysis | `VolumeAnalysis.tsx` generates each volume point using `Math.random()`. | The plotted volume has no relationship to the actual instrument or trading session. | Use provider OHLCV volume aligned to the exact candle interval; otherwise show volume unavailable. |
-| Institutional flows | `InstitutionalFlows.tsx` contains hard-coded named block deals, sector flows, monthly series and geopolitical flow narratives. | Specific investors, companies, amounts, dates and rationales appear factual but are not backed by a feed. | Integrate exchange/regulatory disclosures or remove the event. Preserve source document, publication timestamp, trade date, units and correction history. |
-| Yield-factor model | Level, curvature and interpretation are partly fixed; slope is inferred from TLT CAGR. | TLT return is not a direct substitute for a yield-curve slope or a fitted term-structure factor. | Calculate level/slope/curvature from synchronized Treasury par/zero-coupon curve observations using a documented method. |
-| Competitor metrics | Peer cards use the current `Asset` objects and display market-cap strings without per-field provenance in the card. | Values may have different timestamps, currencies or data quality. | Add per-field source, as-of time, currency, and comparability warnings. |
+| Market quote fallbacks | The server substitutes literal prices/changes when provider fields are missing. | Stale or invented values appear live. | Keep missing fields null/unavailable; preserve provider observation time and retrieval time separately. |
+| Asset histories | `src/data.ts` generates random-walk price histories and synthetic intraday points. | Charts and derived metrics can look historical despite having no exchange observations. | Use provider OHLCV only; label any sample series as illustrative and exclude it from analytics. |
+| Macro indicators | `server.ts` uses hard-coded fallback rates, yields, CPI/M2-like values and other macro values. | False precision and stale macro claims. | Use official series with source, units, frequency, observation date and revision/vintage metadata. |
+| Central-bank dashboard | Policy rates, meeting dates, stances and cut probabilities are literal constants. | A static value can masquerade as a current policy update. | Fetch official releases/calendars; otherwise show unavailable. Do not invent probability. |
+| Yield-curve claims | Recession lead time and some yield-factor interpretations are fixed or inferred from unrelated ETF returns. | Model output has no defensible term-structure basis. | Calculate spreads from same-date official curve observations; document any fitted factors and uncertainty. |
+| Macro backtester | `server/macro_backtester.py` contains authored monthly return arrays and regime profiles. | Results are not empirical historical performance. | Do not run or port it. Rebuild from aligned adjusted total-return observations and explicit costs/rebalancing. |
+| Institutional flows | Named deals, investors, amounts, sector flows and monthly trends are hard-coded; fallback AI output is also used. | Unsupported financial claims about real entities. | Require exchange/regulatory disclosures or a licensed flow feed, with source document and trade/publication timestamps. |
+| Order book and dark pool | `VymxIntelligencePanel` synthesizes bid/ask depth, spread, volatility and sentiment values with random numbers. | Fabricated microstructure data presented as institutional telemetry. | Keep unavailable until a genuine market-depth provider is integrated. |
+| Risk correlations | The old risk dashboard uses sector similarity and random noise as a correlation proxy. | A heuristic is mislabeled as statistical correlation. | Use aligned return series, minimum sample rules and a documented Pearson/Spearman method. |
+| Volume analysis | The old component generates random volume multipliers. | Volume bars are unrelated to the instrument's trades. | Use timestamp-aligned provider OHLCV volume; otherwise no chart. |
+| Staking rewards | APY and continuous reward accrual are generated locally. | Implies a yield source, validator or reward entitlement that does not exist. | Require a real protocol/wallet/provider integration and clearly state custody, lock-up and smart-contract risks. |
+| News | Static fallback headlines are returned when news is unavailable. | Old headlines can be mistaken for current reporting. | Provider-backed headlines only, with publisher, URL, publication timestamp and fetch timestamp. |
+| Geopolitics | Gemini-generated narratives and static fallback hotspots can appear as verified events; source URLs and evidence are not enforced. | Hallucinated or stale conflict claims and unsupported severity scores. | Require cited reporting/official sources, event time, publication time, source links and a transparent impact methodology. |
+| AI analysis | Generic fallback research contains unsupported institutional-flow, order-book, support/resistance and causal claims. | AI prose appears evidence-based without data. | AI may interpret supplied observations, not manufacture facts; expose source snapshot and label interpretation/scenarios. |
+| World monitor | Country-level macro and equity fields are randomly generated. | False sovereign, GDP, debt, market-cap and valuation data. | Use official statistical sources with country/series coverage and vintage metadata. |
+| API security | The old server enables permissive CORS, accepts 50 MB JSON bodies and has weaker route/input boundaries. | Larger attack surface and resource-exhaustion exposure. | Keep current narrow body limits, validation, rate limits, origin controls and explicit server-side provider adapters. |
+| Credential handling | Provider credentials can be supplied through request headers; browser Gemini code reads a `VITE_*` key. | Credentials can leak through browser bundles, logs, proxies or client-controlled requests. | Secrets only in server-side environment; no API-key headers from browsers and no private `VITE_*` secrets. |
+| Order endpoint | The old `/api/alpaca/order` route forwards requests to a paper-trading API and accepts credentials from request headers. | Unreviewed order-submission surface; paper execution is still an external side effect. | Current product remains simulated-only. Do not restore this endpoint without a separate, explicitly authorized brokerage integration and full security/compliance review. |
+| Firestore | The archive's Firebase project configuration belongs to a different project; its rules are simpler and less constrained. | Cross-project data confusion and insufficient schema enforcement. | Never copy the archive's Firebase configuration. Preserve current Firebase identity, reviewed rules and emulator tests. |
+| Operational scripts | Patch scripts mutate source files using brittle string replacements; generated output files are included. | Accidental source corruption and unclear reproducibility. | Keep only maintained build/test scripts. One-off patch scripts are not application tooling. |
 
-## 3. Backtester design flaws to correct before any replacement
+## 4. Server endpoint inventory in the old snapshot
 
-The Python file is valuable as a list of desired output metrics, but its calculations and inputs are not ready for production.
+The legacy server declares routes for AI explanation, geopolitics, generic chat, financial chat, hedging, wealth advice, news, quizzes, narratives, exchange quotes, sector auras, institutional flows, economic calendar, health, quote retrieval, macro backtesting, macro indicators, intelligence, historical prices, Yahoo financials/screener, Alpaca paper orders, FMP, Finnhub, Twelve Data, FRED and a world monitor.
 
-1. **Synthetic inputs:** All regime returns are hard-coded. This invalidates any claim of empirical backtest performance.
-2. **No explicit price/total-return convention:** Dividends, distributions, corporate actions, futures rolls and FX conversion are not specified.
-3. **No transaction costs:** No commissions, bid/ask spread, slippage, market impact, financing, borrow cost or futures roll yield.
-4. **No rebalancing policy:** Portfolio returns are weighted asset returns, but the timing and mechanics of rebalancing are not defined.
-5. **No weight validation:** Unknown assets can remain in the normalized weights even though they are omitted from return aggregation. The resulting portfolio may be under-invested without disclosure.
-6. **Silent regime fallback:** Unknown regime IDs silently use the 2022–24 profile instead of returning a validation error.
-7. **Risk-free convention:** The code converts an annual risk-free rate to a monthly rate for Sharpe, but the Sortino numerator uses annual CAGR while the downside deviation is annualized. The numerator/denominator convention is inconsistent.
-8. **Benchmark alignment:** Benchmark matching is based only on equal array length, not dates, currency, missing observations or aligned month-end timestamps.
-9. **Metric conventions are underspecified:** VaR/CVaR confidence level, return frequency, finite-sample behavior, skewness/kurtosis estimator and annualization assumptions need explicit definitions.
-10. **Yield factors are not estimated:** The output's level and curvature are constants, while slope is derived from TLT CAGR.
-11. **No reproducibility metadata:** No source dataset version, retrieval timestamp, data hash, code version, parameter manifest or run ID is returned.
-12. **No out-of-sample protocol:** There is no walk-forward split, point-in-time data control, look-ahead prevention or survivorship-bias policy.
+The route count is not evidence of product completeness. Several endpoints return fallback constants or AI-generated data without a verifiable source contract. Some third-party endpoints accept API keys directly from request headers. The current server has a narrower, documented API contract and does not expose the old Alpaca order route. Keep that separation.
 
-The archive's backtest engine must therefore not be re-enabled by simply copying the Python file or removing the current 501 response.
+## 5. Component-by-component disposition
 
-## 4. Recommended VYMX architecture inspired by this archive
-
-### Layer 1 — Data acquisition
-
-- Provider adapters for FRED and official central-bank/statistical sources.
-- Market adapters for price, adjusted price, volume, FX and benchmark histories.
-- Per-provider timeout, retry/backoff, bounded concurrency and circuit-breaker behavior.
-- Explicit provider status: available, stale, partial, unavailable, or illustrative.
-- Preserve raw provider payloads or a normalized immutable observation record where licensing permits.
-
-### Layer 2 — Canonical observation model
-
-Every observation should carry:
-
-- `seriesId` / symbol.
-- Value and unit.
-- Currency, where relevant.
-- Source/provider.
-- Provider observation timestamp.
-- Publication/release timestamp, where relevant.
-- Retrieval timestamp.
-- Frequency and calendar.
-- Revision/vintage metadata, where available.
-- Quality state and validation notes.
-
-Do not merge observations with different frequencies or dates without an explicit transformation.
-
-### Layer 3 — Macro calculations
-
-Build documented calculations for:
-
-- Treasury curve spreads (10Y–2Y, 10Y–3M) from same-date yields.
-- Real yields using an explicitly selected inflation expectation or realized inflation measure.
-- Inflation and money-supply growth from official series.
-- Policy-rate history from official central-bank sources.
-- Cross-asset rolling correlation with aligned dates and minimum sample rules.
-- Regime classification only after a versioned methodology and validation set exist.
-
-### Layer 4 — Portfolio and backtest engine
-
-Use aligned adjusted total-return series and implement:
-
-- Rebalancing schedule and drift rules.
-- Transaction costs, slippage, financing and FX conversion.
-- TWR/MWR for investor portfolio performance (distinct from strategy backtest returns).
-- CAGR, annualized volatility, Sharpe, Sortino, max drawdown, Calmar, historical VaR/CVaR, beta, alpha and correlation.
-- Explicit null/insufficient-history states.
-- Walk-forward and out-of-sample evaluation.
-- Survivorship/look-ahead controls and point-in-time data.
-- Deterministic test fixtures that are labelled test data, never production market data.
-
-### Layer 5 — Research UX
-
-Keep the archive's high-level navigation and visual hierarchy, but make each metric expandable to show:
-
-- Definition and formula.
-- Input series and source.
-- Observation and retrieval dates.
-- Calculation window and annualization.
-- Missing-data treatment.
-- Confidence/limitations.
-- Downloadable methodology and reproducibility manifest.
-
-### Layer 6 — AI interpretation
-
-AI may explain validated inputs and compare scenarios, but it must not originate live numbers. Every generated statement should be traceable to the exact input snapshot. Label outputs as interpretation, not fact or investment advice.
-
-## 5. Prioritized implementation plan
-
-| Priority | Workstream | Acceptance criteria |
+| Archive component or group | Product value | Decision for current VYMX |
 |---|---|---|
-| P0 | Preserve current honest unavailable states | No fallback constants, fabricated flows, random volume or synthetic backtest results in production paths. |
-| P1 | Macro observation provenance | Every displayed market proxy has provider, as-of, fetched-at, currency/unit and availability state. |
-| P1 | Official macro series catalog | FRED/official series definitions, units, frequency, source and release metadata are explicit. |
-| P2 | Cross-asset historical data | Date-aligned adjusted total-return histories with documented gaps and corporate-action treatment. |
-| P2 | Statistical engine | Independently tested metrics with fixed conventions and deterministic fixtures. |
-| P3 | Reproducible backtesting | Costs, rebalancing, benchmark alignment, point-in-time data and run manifest. |
-| P3 | Macro regime research | Versioned regime rules, transparent classification, no hard-coded performance outcomes. |
-| P4 | Sovereign/geopolitical research | Cited events, official sources, event-time versus publication-time, and transparent impact methodology. |
-| P4 | Peer and volume analysis | Sourced peer fields and real candle-aligned volume only. |
+| `Dashboard`, `Navbar`, `Screener`, `AssetDetails`, `Heatmap`, `MarketTicker` | Core navigation and market discovery | Preserve the workflow; use verified quotes and explicit offline/sample states. |
+| `Portfolio`, `QuickTrade`, `SecurityLedger`, `GoogleIdSimulator`, `AuthPage` | Portfolio and account experience | Preserve the existing Firebase authentication and simulated ledger. Do not copy simulator identity/security claims or replace authentication. |
+| `TradingViewChart`, `BenchmarkComparisonChart`, `AssetCorrelation`, `WatchlistCorrelation`, `CorrelationMatrix`, `RiskDashboard`, `VolumeAnalysis`, `TrendPredictionChart` | Quantitative analysis | Use aligned provider histories and documented math. Keep unsupported fields unavailable; do not equate a regression line with a predictive model. |
+| `MacroeconomicAnalyzer`, `EconomicCalendar`, `Geopolitics`, `MarketNews`, `InstitutionalFlows`, `MarketAurasWidget`, `VymxIntelligencePanel` | Macro and market intelligence | Keep the research layout; require official/provider sources and per-field provenance. Institutional flow, geopolitical impact and unsupported telemetry remain unavailable. |
+| `WealthAdvisor`, `TradingChat`, `FinancialChatbot` | Guided research and AI assistance | Server-side AI only; no fallback facts. Clearly distinguish AI interpretation from observed data. |
+| `Academy`, `Walkthrough` | Education and onboarding | Safe to retain as static educational content with labelled examples. |
+| `MarketGlobe3D`, `Heatmap3D`, `Token3D`, `EventShockwave` | Visual exploration | Retain as visualization/simulation only. Randomized visual effects must never be used as data. |
+| `SectorBreakdown`, `PrecisionMetrics`, `DataIntegrityWidget`, `CommandCenter`, `DashboardNewsWidget`, `CompetitorDashboard` | Supporting analytics and status | Keep only when fields are sourced or visibly marked as unavailable/proxy. |
+| `CryptoStakingRewards` | Yield/reward exploration | No APY or reward accrual without a connected protocol/provider; current UI correctly reports unavailable. |
+| `ErrorBoundary`, `ChartContainer`, hooks, contexts and utilities | App infrastructure | Reuse patterns only after normal TypeScript, lifecycle and test review. |
 
-## 6. Repository and security handling
+## 6. Current repository comparison (main)
 
-- This archive is dated October 7, 2026 and contains an older app snapshot. Treat it as reference material, not as the current source of truth.
-- It includes patch scripts and generated output files. Do not run or import those scripts into the current repository without a separate code review.
-- It contains a Firebase web configuration for project `ceremonial-incentive-bln7n`. Do not copy that configuration into the current VYMX project. Firebase web API keys are client identifiers rather than server secrets, but the project identity and authorized domains/rules still matter.
-- The archive's package metadata is generic (`react-example`, version `0.0.0`) and its README describes an AI Studio app rather than a reproducible VYMX production deployment. Do not replace the current package metadata or deployment configuration with it.
-- Authentication implementation remains out of scope for the current remediation.
+The current `main` commit reviewed for this comparison is `8e77dbca2560d559d75d14b60391dc1a6544180f`.
+
+Already improved in the current repository:
+
+- Provider quote validation and freshness checks; simulated trades reject stale or mismatched submitted prices.
+- Missing daily change remains null rather than becoming a fake zero.
+- Historical OHLCV powers volume, asset comparison and risk/correlation calculations.
+- Portfolio risk analytics use timestamped, USD-normalized snapshots and explicitly state limitations around cash flows.
+- Market breadth and sector momentum are derived from provider observations; unsupported order-book, dark-pool and institutional metrics are withheld.
+- News and geopolitical panels no longer fill provider failures with invented headlines/events.
+- Macro UI distinguishes Yahoo market proxies from official FRED series and shows unavailable states when credentials/data are missing.
+- Synthetic macro backtesting is disabled rather than returning the archive's authored return profiles.
+- Firebase rules have emulator coverage; provider credentials remain server-side.
+- CI includes typechecking, analytics tests, production build/smoke checks, Firestore emulator tests, dependency audit and CodeQL.
+
+The current branch is therefore not missing the old app wholesale. Many of the archive's best product concepts already exist in safer forms. Reintroducing the old implementation would reverse that progress.
+
+## 7. Remaining implementation priorities
+
+### P0 — Keep the trust boundary intact
+
+- Do not restore old fallback prices, fake news, fabricated flows, random market data, fake staking APY or the old Python regime engine.
+- Do not restore the old Alpaca order endpoint or client-supplied provider-key headers.
+- Preserve Firebase authentication and the current Firestore ownership/schema tests.
+- Keep demo/sample data visually and programmatically separate from provider observations.
+
+### P1 — Complete provenance in every research panel
+
+For every market/macro/news observation, expose source, provider observation/publication date, retrieval time, currency/unit, frequency, status and any proxy limitation. AI summaries should reference the exact data snapshot they interpret.
+
+### P2 — Upgrade portfolio and statistical analytics
+
+- Implement external cash-flow-aware TWR and MWR before making investment-performance claims.
+- Document dividend/corporate-action treatment, FX conversion, missing observations and return frequency.
+- Share one tested correlation/return-statistics implementation across dashboard, asset and portfolio views.
+- Make insufficient sample size and non-overlapping calendars explicit.
+
+### P3 — Rebuild empirical backtesting
+
+Only after reliable historical total-return data exists: define benchmark, rebalancing schedule, fees, slippage, spread, financing, FX, dividends, survivorship/look-ahead controls, train/test windows and reproducibility metadata. Add deterministic fixtures and independent metric tests. A backtest must be reproducible from a run manifest and data snapshot.
+
+### P4 — Reintroduce intelligence feeds selectively
+
+- Geopolitics: cited source feed and event-time/publication-time separation.
+- Institutional activity: exchange/regulatory disclosures or licensed data.
+- Central banks: official calendars and release sources.
+- Sovereign data: official statistical series with coverage and vintage metadata.
+- Order book/dark pool: a licensed market-depth feed, not quote-volume heuristics.
+
+Do not begin these integrations by adding another UI mock. First define the provider, licensing, schema, provenance and failure contract.
+
+## 8. Archive-only scripts and configuration
+
+The uploaded archive contains patch scripts, generated outputs, a second lockfile and a Firebase applet configuration for project `ceremonial-incentive-bln7n`. These are not part of the current deployment contract.
+
+The current repository also contained legacy one-off patch scripts copied from the archive. They are not referenced by the package scripts or the maintained CI workflow, and they perform brittle in-place source rewrites. Those obsolete scripts and old manual probes have been removed from `main`; maintained analytics and Firestore tests remain.
+
+Do not import the archive's Firebase project ID, API settings, lockfiles, README, or AI Studio deployment assumptions into the current project.
 
 ## Final recommendation
 
-Use this archive to guide VYMX's product breadth and research workflow—especially the macro workspace, sovereign-risk analysis, peer comparison and structured AI research. Do not copy its data generation or backtesting implementation. The current repository's stricter data-quality behavior is the foundation to build on.
+**Retain the ambition; reject the shortcuts.** The archive is a product blueprint, not a technical baseline. VYMX should become a rigorous research terminal by connecting its visual breadth to auditable market and macro observations, not by restoring every panel with synthetic data.
 
-**Design principle:** retain the analytical ambition of the archive; replace every unsupported number with a sourced observation or an explicit unavailable state.
+The acceptance rule is simple: **every displayed number must be a sourced observation, a reproducible calculation, or an explicitly labelled illustrative example.** If none of those conditions is met, show unavailable.
