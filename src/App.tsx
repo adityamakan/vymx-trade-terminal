@@ -29,6 +29,7 @@ import { getAssetMarketStatus } from './utils/market';
 import { auth, onAuthStateChanged, signOut, db, doc, getDoc, setDoc, collection, getDocs, Timestamp } from './lib/firebase';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useDataIntegrity } from './contexts/DataIntegrityContext';
+import { isVerifiedProviderQuote } from './utils/providerQuote';
 
 interface PortfolioSnapshot {
   id: string;
@@ -216,12 +217,7 @@ export default function App() {
   const handlePriceUpdate = useCallback((prices: Record<string, any>) => {
     if (!prices || Object.keys(prices).length === 0) return;
     const now = Date.now();
-    const verifiedEntries = Object.entries(prices).filter(([, quote]) => {
-      const observedAt = typeof quote?.asOf === 'string' ? Date.parse(quote.asOf) : Number.NaN;
-      return Number.isFinite(quote?.price) && quote.price > 0 &&
-        Number.isFinite(observedAt) && observedAt <= now + 5 * 60_000 &&
-        now - observedAt <= 24 * 60 * 60_000;
-    });
+    const verifiedEntries = Object.entries(prices).filter(([, quote]) => isVerifiedProviderQuote(quote, now));
     if (verifiedEntries.length === 0) return;
     const verifiedPrices = Object.fromEntries(verifiedEntries);
     setIsDataOffline(false);
