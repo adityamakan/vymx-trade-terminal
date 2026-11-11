@@ -149,7 +149,7 @@ jobs:
           }
           const counts = report.metadata?.vulnerabilities ?? {};
           const lines = [
-            '## Dependency audit (report-only)',
+            '## Dependency audit (blocking)',
             '',
             '| Severity | Count |',
             '|---|---:|',
