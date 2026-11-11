@@ -525,7 +525,7 @@ export default function App() {
     }
 
     // Validation Wrapper: Ensure price and quantity are valid numbers
-    if (price === null || price === undefined || isNaN(price) || !isFinite(price) || price < 0) {
+    if (price === null || price === undefined || isNaN(price) || !isFinite(price) || price <= 0) {
       console.error(`[Data Integrity Error] Trade Submit Failed: Invalid price detected for ${symbol} - Price: ${price}`);
       return { success: false, message: 'Transaction rejected: Invalid or corrupted price data.' };
     }
