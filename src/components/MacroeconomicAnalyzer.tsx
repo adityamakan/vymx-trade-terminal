@@ -33,8 +33,8 @@ import { streamMacroeconomicSummary, streamFinancialChat } from '../lib/gemini';
 
 interface MacroQuote {
   price: number;
-  change: number;
-  changeAbs: number;
+  change: number | null;
+  changeAbs: number | null;
   currency: string | null;
   marketState: string | null;
   asOf: string | null;
@@ -776,8 +776,8 @@ export default function MacroeconomicAnalyzer() {
                     <div key={symbol} className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 font-mono">
                       <span className="text-[10px] text-zinc-500 block uppercase tracking-wider">{labels[symbol] || symbol}</span>
                       <span className="text-xl font-bold text-white block mt-1">{quote.price.toLocaleString(undefined, { maximumFractionDigits: 4 })}{symbol === '^TNX' ? '%' : ''}</span>
-                      <span className={`text-xs font-semibold ${quote.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {quote.change >= 0 ? '+' : ''}{quote.change.toFixed(2)}%
+                      <span className={`text-xs font-semibold ${quote.change == null ? 'text-zinc-500' : quote.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {quote.change == null ? 'N/A' : `${quote.change >= 0 ? '+' : ''}${quote.change.toFixed(2)}%`}
                       </span>
                       <span className="mt-2 block border-t border-zinc-800 pt-2 text-[9px] text-zinc-500">
                         Provider observation: {quote.asOf ? new Date(quote.asOf).toLocaleString() : 'Timestamp unavailable'}
