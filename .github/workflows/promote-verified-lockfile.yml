@@ -1,9 +1,7 @@
 name: Promote verified dependency lockfile
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
+  push:
     branches: [main]
 
 permissions:
@@ -12,7 +10,7 @@ permissions:
 
 jobs:
   promote:
-    if: github.event.workflow_run.id == 43879440978 && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main'
+    if: github.event.before == '64703b5437e4bfe6fd0db0973baa88dd5835e774'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -26,13 +24,13 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: dependency-lockfile-candidate
-          run-id: ${{ github.event.workflow_run.id }}
+          run-id: 43879440978
           github-token: ${{ github.token }}
           path: candidate
 
       - name: Validate candidate and ensure source is still in main history
         env:
-          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+          SOURCE_SHA: cbedae24d2f121016b6b22f2fbce24bdad259e61
         run: |
           set -euo pipefail
           test -s candidate/package-lock.json
