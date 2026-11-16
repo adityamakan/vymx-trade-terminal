@@ -3,6 +3,7 @@
   publish = "dist"
 
 [build.environment]
+  NODE_VERSION = "22.19.0"
   VITE_WS_URL = "wss://vymx-trade-terminal-2.onrender.com/api/prices"
 
 # Keep REST calls same-origin from the preview browser while routing them to Render.

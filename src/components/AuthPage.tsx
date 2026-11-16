@@ -17,7 +17,6 @@ import {
   Sparkles
 } from 'lucide-react';
 import { auth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, db } from '../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
 import SecurityLedger from './SecurityLedger';
 import { logSecurityEvent } from '../utils/security';
 
@@ -235,7 +234,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
     setIsLoading(true);
     try {
       if (!auth) {
-        throw new Error('Authentication service is initializing. Please try again.');
+        throw new Error('Firebase sign-in is not configured for this deployment. Persistent accounts and cloud sync are unavailable; use Demo Access or configure the VITE_FIREBASE_* deployment values.');
       }
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
@@ -248,23 +247,6 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
         authType: 'google_personal' as const,
         avatarUrl: user.photoURL || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&fit=crop&q=80',
       };
-
-      // Attempt to save basic user record to Firestore (requires firestore init later)
-      try {
-        if (db) {
-          await setDoc(doc(db, 'users', user.uid), {
-            uid: payload.uid,
-            name: payload.name,
-            email: payload.email,
-            authType: payload.authType,
-            avatarUrl: payload.avatarUrl,
-            lastLogin: new Date().toISOString()
-          }, { merge: true });
-        }
-      } catch (e) {
-        console.warn('Could not write user to firestore yet', e);
-      }
-
 
       logSecurityEvent(`Google authenticated session validated: ${payload.email}`, 'SUCCESS', 'low');
       onLoginSuccess(payload);
@@ -315,7 +297,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
       return;
     }
     if (!auth) {
-      setErrorText('Authentication service is unavailable. Please try Google Identity or Demo Access.');
+      setErrorText('Firebase sign-in is not configured for this deployment. Persistent accounts and cloud sync are unavailable; use Demo Access or configure the VITE_FIREBASE_* deployment values.');
       return;
     }
 
@@ -623,7 +605,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
           <div className="bg-zinc-900/20 border border-zinc-900/60 p-3.5 rounded-2xl flex items-start gap-2 text-[10px] leading-relaxed text-zinc-500" id="sandbox-saving-note">
             <Info className="h-4 w-4 text-zinc-500 shrink-0 mt-0.5" />
             <p className="text-left font-sans">
-              Firebase validates persistent sign-ins and Firestore rules protect account data. Google and enabled Firebase email/password sign-ins are verified by Firebase. Demo access is local-only and does not sync; phone OTP remains unavailable until a trusted SMS provider is configured.
+              {auth ? 'Firebase Authentication is configured for persistent sign-in.' : 'Firebase Authentication is not configured in this deployment; persistent sign-in is unavailable.'} {db ? 'Firestore cloud storage is configured and access is governed by deployed security rules.' : 'Firestore cloud sync is unavailable until the Firebase web configuration is supplied.'} Demo access is local-only and does not sync; phone OTP remains unavailable until a trusted SMS provider is configured.
             </p>
           </div>
 
