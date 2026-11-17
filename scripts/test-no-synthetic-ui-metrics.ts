@@ -23,6 +23,7 @@ const wealthAdvisor = readFileSync(new URL('../src/components/WealthAdvisor.tsx'
 const providerQuote = readFileSync(new URL('../src/utils/providerQuote.ts', import.meta.url), 'utf8');
 const marketGlobe = readFileSync(new URL('../src/components/MarketGlobe3D.tsx', import.meta.url), 'utf8');
 const financialChatbot = readFileSync(new URL('../src/components/FinancialChatbot.tsx', import.meta.url), 'utf8');
+const macroAnalyzer = readFileSync(new URL('../src/components/MacroeconomicAnalyzer.tsx', import.meta.url), 'utf8');
 
 assert.equal(screener.includes('charCodeAt'), false, 'Screener metrics must never be derived from ticker-symbol characters');
 assert.equal(heatmap.includes('charCodeAt'), false, 'Heatmap metrics must never be derived from ticker-symbol characters');
@@ -63,6 +64,9 @@ assert.match(riskDashboard, /every\(\(item\) => hasFreshQuote/, 'Risk dashboard 
 assert.match(server, /function isFreshProviderTimestamp/, 'Server must validate provider observation timestamps');
 assert.match(server, /!isFreshProviderTimestamp\(quote\.asOf\)/, 'Server intelligence must reject stale quotes');
 assert.match(server, /No fresh provider observations are available/, 'Server must fail closed when every provider observation is stale');
+assert.match(server, /const freshIndicators = Object\.fromEntries/, 'Macro market-proxy endpoint must filter stale observations');
+assert.match(server, /const unavailable = symbols\.filter\(\(symbol\) => !prices\[symbol\]\)/, 'Market snapshot endpoint must exclude stale and missing quotes');
+assert.match(macroAnalyzer, /Fresh provider market proxies/, 'Macro UI must not describe timestamp-gated quotes as unqualified live data');
 assert.match(server, /if \(!isFreshProviderTimestamp\(quote\.asOf\)\)/, 'FX conversion must reject stale provider observations');
 assert.match(server, /observations,\s*unavailable,\s*partial/, 'FX endpoint must expose per-currency observation provenance and partial coverage');
 assert.match(app, /fxObservationTimes: Record<string, string \| null>/, 'Portfolio snapshots must persist FX observation timestamps');
