@@ -347,11 +347,11 @@ export default function Screener({
                           {hasFreshProviderQuote(assetB) ? formatCurrency(assetB.price, assetB.symbol) : 'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-[80x] sm:text-[9px] text-zinc-400">
-                          {hasFreshProviderQuote(assetA) && hasFreshProviderQuote(assetB) ? (assetA.price > assetB.price ? (
-                            <span>{assetA.symbol} &gt; {assetB.symbol}</span>
-                          ) : (
-                            <span>{assetB.symbol} &gt; {assetA.symbol}</span>
-                          ) : <span>N/A — fresh quotes required</span>}
+                          {hasFreshProviderQuote(assetA) && hasFreshProviderQuote(assetB)
+                            ? (assetA.price > assetB.price
+                              ? <span>{assetA.symbol} &gt; {assetB.symbol}</span>
+                              : <span>{assetB.symbol} &gt; {assetA.symbol}</span>)
+                            : <span>N/A — fresh quotes required</span>}
                         </td>
                       </tr>
 
@@ -781,7 +781,7 @@ export default function Screener({
                         </td>
                         {/* Change */}
                         <td className="py-3.5 px-3 sm:px-5 text-right cursor-pointer font-mono text-xs" onClick={() => onSelectAsset(asset)}>
-                          <span className={`inline-flex rounded px-1 sm:px-1.5 py-0.5 font-bold text-[10px] sm:text-xs ${isUp ? 'text-emerald-400 bg-emerald-500/5' : 'text-rose-450 bg-rose-500/5'}`}>
+                          <span className={`inline-flex rounded px-1 sm:px-1.5 py-0.5 font-bold text-[10px] sm:text-xs ${!hasFreshProviderQuote(asset) || asset.change == null ? 'text-zinc-500 bg-zinc-500/5' : isUp ? 'text-emerald-400 bg-emerald-500/5' : 'text-rose-450 bg-rose-500/5'}`}>
                             {!hasFreshProviderQuote(asset) || asset.change == null ? 'N/A' : `${isUp ? '+' : ''}${asset.change.toFixed(2)}%`}
                           </span>
                         </td>
