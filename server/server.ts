@@ -513,8 +513,13 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
   const sensex = quote('^BSESN');
   const btc = quote('BTC-USD');
   const vix = quote('^VIX');
-  const freshQuoteCount = Object.values(result.prices).filter((item) => isFreshProviderTimestamp(item.asOf)).length;
-  if (freshQuoteCount === 0) return res.status(503).json({ success: false, error: 'No fresh provider observations are available', unavailable: result.errors });
+  const freshSymbols = symbols.filter((symbol) => {
+    const quote = result.prices[symbol];
+    return Boolean(quote && isFreshProviderTimestamp(quote.asOf));
+  });
+  const freshQuoteCount = freshSymbols.length;
+  const unavailableSymbols = symbols.filter((symbol) => !freshSymbols.includes(symbol));
+  if (freshQuoteCount === 0) return res.status(503).json({ success: false, error: 'No fresh provider observations are available', unavailable: unavailableSymbols });
   const providerObservationTimes = Object.values(result.prices).map((item) => item.asOf);
   const allReturnedQuotesFresh = providerObservationTimes.length === result.returned
     && providerObservationTimes.every((value) => isFreshProviderTimestamp(value));
@@ -526,7 +531,7 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
     generated: false,
     source: 'Yahoo Finance',
     fetchedAt: new Date().toISOString(),
-    unavailable: result.errors,
+    unavailable: unavailableSymbols,
     data: {
       spxPrice: spx?.price ?? null, spxChange: spx?.change ?? null,
       niftyPrice: nifty?.price ?? null, niftyChange: nifty?.change ?? null,
@@ -552,7 +557,7 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
       capitalInflows: null, capitalOutflows: null,
       // Use the oldest provider observation among the returned quotes.
       quoteSource: 'Yahoo Finance',
-      quoteCoverage: { fresh: freshQuoteCount, returned: result.returned, requested: symbols.length },
+      quoteCoverage: { fresh: freshQuoteCount, returned: result.returned, requested: symbols.length, unavailable: unavailableSymbols },
       quoteAsOf
     },
     note: 'Prices, ETF proxies, commodity futures, FX crosses and the US 10Y proxy are provider-backed. Fear/greed, institutional flows, order-book depth, dark-pool activity, algorithmic risk and unsupported Treasury tenors are not supplied by this feed.'
