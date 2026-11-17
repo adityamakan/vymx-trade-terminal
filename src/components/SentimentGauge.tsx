@@ -331,7 +331,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
         {/* Dynamic description of current range */}
         <p className="text-[10px] text-zinc-400 text-center px-4 font-sans leading-relaxed mt-2.5">
           {computedSentiment.advice}
-          <span className="block mt-1 text-[9px] text-zinc-600">Fresh observations: {computedSentiment.observations}/{assets.length}; minimum required: {Math.max(20, Math.ceil(assets.length * 0.5)}</span>
+          <span className="block mt-1 text-[9px] text-zinc-600">Fresh observations: {computedSentiment.observations}/{assets.length}; minimum required: {Math.max(20, Math.ceil(assets.length * 0.5))}</span>
         </p>
 
         {/* Mode options */}
