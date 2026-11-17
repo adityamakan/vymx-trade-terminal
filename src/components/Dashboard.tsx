@@ -471,14 +471,14 @@ export default function Dashboard({
             <div className="hidden lg:flex flex-col gap-1.5 bg-zinc-950/70 p-3 rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 backdrop-blur-md">
                <div className="flex items-center justify-between gap-6">
                   <span className="text-[9px] font-mono text-zinc-500 uppercase">Market quote feed</span>
-                  <span className={`text-[9px] font-mono font-bold ${isDataOffline ? 'text-amber-400' : 'text-emerald-400'}`}>{isDataOffline ? 'OFFLINE / SAMPLE DATA' : 'CONNECTED'}</span>
+                  <span className={`text-[9px] font-mono font-bold ${isDataOffline ? 'text-amber-400' : 'text-emerald-400'}`}>{verifiedQuoteAssets.length === 0 ? 'NO VERIFIED QUOTES' : verifiedQuoteAssets.length < assets.length ? 'PARTIAL QUOTE FEED' : 'FULL QUOTE COVERAGE'}</span>
                </div>
                <div className="flex items-center justify-between gap-6">
                   <span className="text-[9px] font-mono text-zinc-500 uppercase">Quote update status</span>
                   <span className="text-[9px] font-mono text-indigo-400 font-bold">{verifiedQuoteAssets.length === 0 ? 'WAITING' : verifiedQuoteAssets.length < assets.length ? 'PARTIAL COVERAGE' : 'FULL QUOTE COVERAGE'}</span>
                </div>
                <div className="w-full h-0.5 bg-zinc-800 rounded-full mt-1 overflow-hidden">
-                  <div className="h-full bg-indigo-500 shadow-[0_0_5px_#6366f1] transition-all"></div>
+                  <div className="h-full bg-indigo-500 shadow-[0_0_5px_#6366f1] transition-all" style={{ width: (assets.length ? verifiedQuoteAssets.length / assets.length * 100 : 0) + "%" }}></div>
                </div>
             </div>
           </div>
