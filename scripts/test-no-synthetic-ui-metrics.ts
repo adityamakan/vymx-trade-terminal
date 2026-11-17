@@ -10,6 +10,7 @@ const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 const portfolio = readFileSync(new URL('../src/components/Portfolio.tsx', import.meta.url), 'utf8');
 const data = readFileSync(new URL('../src/data.ts', import.meta.url), 'utf8');
 const navbar = readFileSync(new URL('../src/components/Navbar.tsx', import.meta.url), 'utf8');
+const macroBacktester = readFileSync(new URL('../server/macro_backtester.py', import.meta.url), 'utf8');
 
 assert.equal(screener.includes('charCodeAt'), false, 'Screener metrics must never be derived from ticker-symbol characters');
 assert.equal(heatmap.includes('charCodeAt'), false, 'Heatmap metrics must never be derived from ticker-symbol characters');
@@ -29,5 +30,7 @@ assert.match(portfolio, /filter\(\(snapshot\) => snapshot\.quoteCoverageComplete
 assert.equal(data.includes('export const newsArticles'), false, 'Bundled fabricated news must not be shipped as a fallback');
 assert.equal(navbar.includes('4.50%</span>'), false, 'Navigation must not display a hardcoded Fed policy rate');
 assert.equal(navbar.includes('Normalizing</span>'), false, 'Navigation must not display an unverified yield-curve regime');
+assert.equal(macroBacktester.includes('REGIME_PROFILES'), false, 'Synthetic historical macro return profiles must not remain executable');
+assert.match(macroBacktester, /MacroBacktestUnavailable/, 'Macro backtesting must fail closed until verified data is implemented');
 
 console.log('Synthetic UI metric regression tests passed.');
