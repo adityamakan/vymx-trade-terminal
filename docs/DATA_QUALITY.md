@@ -19,7 +19,7 @@ Never convert missing values to zero. Never fill missing observations with rando
 - Missing provider-reported daily percentage or absolute change remains `null`; the interface must display `N/A`, not a bundled demo value or a fabricated zero.
 - The screener does not currently receive an order-book depth feed, implied-volatility surface, calculated beta, RSI/MACD series or a verified volatility series. These fields must remain `N/A` until they are computed from documented provider observations.
 - Institutional ownership/flow, liquidity-pool depth and order-book imbalance are not supplied by the current quote adapter. They must not be inferred from price direction or quote volume.
-- The sentiment gauge is a heuristic proxy based on available price-change observations. It is not an official Fear & Greed index, a realized-volatility estimate, or a traded-volume breadth measure. Missing observations are excluded and unavailable components use neutral weighting.
+- The sentiment gauge is a heuristic proxy based on provider price-change observations. It is not an official Fear & Greed index, a realized-volatility estimate, or a traded-volume breadth measure. It is displayed only when broad quote coverage and required cross-asset inputs are present; otherwise the score and component metrics are unavailable.
 
 ## Provider provenance
 
@@ -56,7 +56,7 @@ Before presenting performance as investment-grade:
 
 A consumer must define a freshness threshold appropriate to the instrument and market session. A quote retrieved recently can still contain an old provider market timestamp, particularly outside market hours. Use the provider's market-observation timestamp for freshness decisions and expose server retrieval time separately as `fetchedAt`. If the provider timestamp is absent or invalid, keep `quoteAsOf` null; do not manufacture a timestamp from the API response time.
 
-- Market-closed is not the same as provider failure. Under the current strict 120-second live-metric gate, an old last-close quote is not counted as a fresh live observation; the UI should label it as the latest close rather than imply that the market is trading.
+- Market-closed is not the same as provider failure. Under the current strict 120-second live-metric gate, an old last-close quote is not counted as a fresh live observation and is hidden from live metrics. A future last-close view may display it only with an explicit market-close timestamp and a non-live label.
 - A server health response is not an upstream provider health check.
 - Partial quote batches must expose the unavailable symbols.
 - Provider timeouts and rate limits should return bounded, explicit errors.
