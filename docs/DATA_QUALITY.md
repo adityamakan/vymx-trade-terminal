@@ -83,3 +83,14 @@ A consumer must define a freshness threshold appropriate to the instrument and m
 - The Screener must not use bundled market-cap or P/E defaults to rank or filter assets. Fundamental filters remain unavailable until verified instrument fundamentals are supplied.
 - Heatmap RSI, dark-pool activity and AI-confidence fields must not use ticker-symbol-derived percentages or progress bars. Missing providers/models are shown as unavailable.
 - A connected transport is not proof that every symbol has a fresh quote. Quote freshness is evaluated per asset.
+
+## Portfolio valuation completeness
+
+- A portfolio snapshot may report aggregate USD equity only when every open position has a fresh provider quote and every required currency conversion is available.
+- Snapshots persist separate `quoteCoverageComplete` and `fxConversionComplete` flags. Quote completeness and currency-conversion completeness are distinct conditions.
+- Historical risk analytics exclude legacy snapshots that lack explicit quote-completeness proof. Missing proof is treated as unavailable, not assumed complete.
+- Current holdings, unrealized P&L, allocation charts and AI review context display unavailable when any open holding lacks a fresh quote; average entry cost is not substituted for a current market price.
+
+## News provenance
+
+- No bundled news headlines or invented source names are shipped as a fallback. News panels must display a provider-unavailable state until Finnhub returns actual articles.
