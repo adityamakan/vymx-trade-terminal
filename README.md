@@ -64,6 +64,7 @@ Without optional provider credentials, the corresponding endpoints return explic
 ### Health and market data
 
 - `GET /api/health` — process health and optional-provider configuration. This does not certify that every upstream quote is available.
+- `GET /api/providers/status` — process-local market-data request telemetry (successes, failures, timeouts, cache hits, latency and last success/failure); it is not durable monitoring and resets on restart.
 - `POST /api/prices` — validated quote batch. Accepts 1–100 symbols and reports per-symbol failures.
 - `GET /api/market-snapshot` — selected global benchmark quotes.
 - `GET /api/historical/:symbol?start=ISO_DATE&end=ISO_DATE&interval=1d` — provider-sourced OHLCV candles. Intraday ranges are more restrictive: 5m/15m/30m up to 60 days; 1h up to 730 days; daily/weekly/monthly up to five years.
