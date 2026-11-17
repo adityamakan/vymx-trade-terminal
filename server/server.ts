@@ -564,6 +564,7 @@ app.get('/api/ai/market-auras', async (_req: Request, res: Response) => {
       trend: quote.change > 0.25 ? 'Bullish' : quote.change < -0.25 ? 'Bearish' : 'Neutral',
       dailyChangePercent: quote.change,
       proxy: item.symbol,
+      asOf: quote.asOf,
       source: 'Yahoo Finance'
     }];
   });
