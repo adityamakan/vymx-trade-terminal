@@ -493,6 +493,7 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
   const btc = quote('BTC-USD');
   const vix = quote('^VIX');
   const freshQuoteCount = Object.values(result.prices).filter((item) => isFreshProviderTimestamp(item.asOf)).length;
+  if (freshQuoteCount === 0) return res.status(503).json({ success: false, error: 'No fresh provider observations are available', unavailable: result.errors });
   const providerObservationTimes = Object.values(result.prices).map((item) => item.asOf);
   const allReturnedQuotesFresh = providerObservationTimes.length === result.returned
     && providerObservationTimes.every((value) => isFreshProviderTimestamp(value));
