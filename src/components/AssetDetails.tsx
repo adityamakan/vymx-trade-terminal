@@ -46,6 +46,11 @@ export default function AssetDetails({
   const hasFreshQuote = Boolean(asset.quoteAsOf && Number.isFinite(Date.parse(asset.quoteAsOf)) &&
     Date.now() - Date.parse(asset.quoteAsOf) >= -60_000 &&
     Date.now() - Date.parse(asset.quoteAsOf) <= 120_000);
+  const [, setFreshnessTick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setFreshnessTick((tick) => tick + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const [timeframe, setTimeframe] = useState<'1D' | '1W' | '1M' | '1Y'>('1D');
   const { data: verifiedHistory, loading: historyLoading, error: historyError } = useHistoricalData(asset.symbol, '6M');
   const [quantity, setQuantity] = useState<number>(1);
