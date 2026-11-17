@@ -713,7 +713,7 @@ export default function Portfolio({
             {totalPnl == null ? 'N/A — incomplete quote coverage' : <><span>{totalPnl >= 0 ? '+' : ''}{formatCurrency(totalPnl)}</span></>}
           </div>
           <p className="text-[10px] font-bold text-zinc-500">
-            {totalPnlPercent == null ? 'ROI unavailable until all holdings have fresh quotes' : `${totalPnl >= 0 ? '+' : ''}${totalPnlPercent.toFixed(2)}% ROI`}
+            {totalPnlPercent == null ? 'ROI unavailable until all holdings have fresh quotes' : `${totalPnl != null && totalPnl >= 0 ? '+' : ''}${totalPnlPercent.toFixed(2)}% ROI`}
           </p>
           <div className="mt-3 pt-3 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex justify-between items-center text-[10px] font-mono w-full">
             <span className="text-zinc-500 uppercase">Alpha</span>
