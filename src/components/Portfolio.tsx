@@ -364,15 +364,18 @@ export default function Portfolio({
 
     // Position of asset coordinates mapped on the 3D Sphere's surface
     const assetCoordinates: { x: number; y: number; z: number; color: string; symbol: string; radiusSize: number }[] = [];
-    const totalEquity = virtualBalance + portfolio.reduce((acc, p) => {
-      const pPrice = assets.find(a => a.symbol === p.symbol)?.price || p.avgBuyPrice;
-      return acc + p.quantity * pPrice;
+    const freshPositions = portfolio.filter((position) =>
+      hasFreshProviderQuote(assets.find((asset) => asset.symbol === position.symbol))
+    );
+    const totalEquity = virtualBalance + freshPositions.reduce((acc, position) => {
+      const liveAsset = assets.find((asset) => asset.symbol === position.symbol)!;
+      return acc + position.quantity * liveAsset.price;
     }, 0);
 
-    portfolio.forEach((p, idx) => {
-      const pPrice = assets.find(a => a.symbol === p.symbol)?.price || p.avgBuyPrice;
+    freshPositions.forEach((p, idx) => {
+      const pPrice = assets.find(a => a.symbol === p.symbol)!.price;
       const pValue = p.quantity * pPrice;
-      const weight = totalEquity > 0 ? pValue / totalEquity : (1 / portfolio.length);
+      const weight = totalEquity > 0 ? pValue / totalEquity : (1 / Math.max(1, freshPositions.length));
 
       // Calculate spherical coordinates (longitude/latitude allocation placement on sphere surface)
       const latAngle = (idx % 2 === 0 ? 0.45 : -0.45) + (idx * 0.1);
