@@ -49,7 +49,7 @@ export default function Portfolio({
   }, []);
 
   const formatCurrency = (val: number, type: string = 'cash', assetCountry?: string) => {
-    const matchedAsset = assets.find(a => a.symbol === type || a.price === val);
+    const matchedAsset = assets.find(a => a.symbol === type);
     const country = assetCountry || matchedAsset?.country;
     return formatCurrencyProp(val, type, country);
   };
