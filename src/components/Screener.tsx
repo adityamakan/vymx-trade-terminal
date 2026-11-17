@@ -45,6 +45,13 @@ export default function Screener({
   const [compareB, setCompareB] = useState<string>('BTC');
   const [isComparisonOpen, setIsComparisonOpen] = useState<boolean>(true);
 
+  const hasFreshProviderQuote = (asset: Asset) => {
+    if (!asset.quoteAsOf) return false;
+    const observedAt = Date.parse(asset.quoteAsOf);
+    const ageMs = Date.now() - observedAt;
+    return Number.isFinite(observedAt) && ageMs >= -60_000 && ageMs <= 120_000;
+  };
+
   const getYearlyRangePercent = (price: number, low: number, high: number) => {
     if (high === low || !high || !low) return 50;
     const pct = ((price - low) / (high - low)) * 100;
@@ -120,11 +127,17 @@ export default function Screener({
     result.sort((a, b) => {
       let comparison = 0;
       if (sortBy === 'symbol') comparison = a.symbol.localeCompare(b.symbol);
-      else if (sortBy === 'price') comparison = a.price - b.price;
+      else if (sortBy === 'price') {
+        const aFresh = hasFreshProviderQuote(a);
+        const bFresh = hasFreshProviderQuote(b);
+        if (!aFresh) return bFresh ? 1 : a.symbol.localeCompare(b.symbol);
+        if (!bFresh) return -1;
+        comparison = a.price - b.price;
+      }
       else if (sortBy === 'change') {
         // Missing provider observations stay last in both sort directions.
-        if (a.change == null) return b.change == null ? 0 : 1;
-        if (b.change == null) return -1;
+        if (!hasFreshProviderQuote(a) || a.change == null) return (!hasFreshProviderQuote(b) || b.change == null) ? a.symbol.localeCompare(b.symbol) : 1;
+        if (!hasFreshProviderQuote(b) || b.change == null) return -1;
         comparison = a.change - b.change;
       } else if (sortBy === 'marketCap') comparison = a.symbol.localeCompare(b.symbol); // Fundamental market-cap metadata is not verified.
 
@@ -353,10 +366,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Price</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono font-bold text-white">
-                          {formatCurrency(assetA.price, assetA.symbol)}
+                          {hasFreshProviderQuote(assetA) ? formatCurrency(assetA.price, assetA.symbol) : 'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono font-bold text-white">
-                          {formatCurrency(assetB.price, assetB.symbol)}
+                          {hasFreshProviderQuote(assetB) ? formatCurrency(assetB.price, assetB.symbol) : 'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-[80x] sm:text-[9px] text-zinc-400">
                           {assetA.price > assetB.price ? (
@@ -372,12 +385,12 @@ export default function Screener({
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">24h Performance</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono">
                           <span className={`font-bold px-1.5 py-0.5 rounded text-[10px] sm:text-xs ${isAUp ? 'text-emerald-400 bg-emerald-500/5' : 'text-rose-450 bg-rose-500/5'}`}>
-                            {assetA.change == null ? 'N/A' : `${isAUp ? '+' : ''}${assetA.change.toFixed(2)}%`}
+                            {!hasFreshProviderQuote(assetA) || assetA.change == null ? 'N/A' : `${isAUp ? '+' : ''}${assetA.change.toFixed(2)}%`}
                           </span>
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono">
                           <span className={`font-bold px-1.5 py-0.5 rounded text-[10px] sm:text-xs ${isBUp ? 'text-emerald-400 bg-emerald-500/5' : 'text-rose-450 bg-rose-500/5'}`}>
-                            {assetB.change == null ? 'N/A' : `${isBUp ? '+' : ''}${assetB.change.toFixed(2)}%`}
+                            {!hasFreshProviderQuote(assetB) || assetB.change == null ? 'N/A' : `${isBUp ? '+' : ''}${assetB.change.toFixed(2)}%`}
                           </span>
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center">
@@ -395,10 +408,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Market Cap</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-semibold font-mono text-zinc-350 text-[10px] sm:text-xs">
-                          {assetA.marketCapDisplay}
+                          {'N/A — provider fundamentals unavailable'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-semibold font-mono text-zinc-350 text-[10px] sm:text-xs">
-                          {assetB.marketCapDisplay}
+                          {'N/A — provider fundamentals unavailable'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center">
                           {assetA.marketCap > assetB.marketCap ? (
@@ -417,14 +430,14 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Valuation Multiple (P/E)</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-350 text-[10px] sm:text-xs">
-                          {assetA.peRatio !== null ? assetA.peRatio.toFixed(1) : '―'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-350 text-[10px] sm:text-xs">
-                          {assetB.peRatio !== null ? assetB.peRatio.toFixed(1) : '―'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center">
                           {(() => {
-                             if (assetA.peRatio === null || assetB.peRatio === null) {
+                             if (true) {
                                return <span className="text-zinc-600 font-mono text-[8px] sm:text-[9px]">Alternative Asset metrics</span>;
                              }
                              if (assetA.peRatio < assetB.peRatio) {
@@ -448,10 +461,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">24h volume</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-semibold font-mono text-zinc-400 text-[10px] sm:text-xs">
-                          {assetA.volumeDisplay}
+                          {hasFreshProviderQuote(assetA) ? assetA.volumeDisplay : 'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-semibold font-mono text-zinc-400 text-[10px] sm:text-xs">
-                          {assetB.volumeDisplay}
+                          {hasFreshProviderQuote(assetB) ? assetB.volumeDisplay : 'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono font-bold text-zinc-500">
                           —
@@ -842,26 +855,17 @@ export default function Screener({
                         </td>
                         {/* Price */}
                         <td className="py-3.5 px-3 sm:px-5 text-right font-mono font-semibold cursor-pointer text-xs sm:text-sm" onClick={() => onSelectAsset(asset)}>
-                          {formatCurrency(asset.price, asset.symbol)}
+                          {hasFreshProviderQuote(asset) ? formatCurrency(asset.price, asset.symbol) : 'N/A — no fresh quote'}
                         </td>
                         {/* Change */}
                         <td className="py-3.5 px-3 sm:px-5 text-right cursor-pointer font-mono text-xs" onClick={() => onSelectAsset(asset)}>
                           <span className={`inline-flex rounded px-1 sm:px-1.5 py-0.5 font-bold text-[10px] sm:text-xs ${isUp ? 'text-emerald-400 bg-emerald-500/5' : 'text-rose-450 bg-rose-500/5'}`}>
-                            {asset.change == null ? 'N/A' : `${isUp ? '+' : ''}${asset.change.toFixed(2)}%`}
+                            {!hasFreshProviderQuote(asset) || asset.change == null ? 'N/A' : `${isUp ? '+' : ''}${asset.change.toFixed(2)}%`}
                           </span>
                         </td>
-                        {/* 52W Range Dense Bar */}
-                        <td className="py-3.5 px-5 text-right hidden xl:table-cell cursor-pointer" onClick={() => onSelectAsset(asset)}>
-                          <div className="flex flex-col items-end w-32 ml-auto">
-                            <div className="flex justify-between w-full text-[8px] font-mono text-zinc-500 mb-1">
-                              <span>{asset.low52w || (asset.price * 0.7).toFixed(2)}</span>
-                              <span>{asset.high52w || (asset.price * 1.3).toFixed(2)}</span>
-                            </div>
-                            <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden relative">
-                              <div className="absolute top-0 bottom-0 bg-blue-500/50 rounded-full" style={{ left: '20%', right: '20%' }}></div>
-                              <div className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] z-10" style={{ left: `${getYearlyRangePercent(asset.price, asset.low52w || asset.price * 0.7, asset.high52w || asset.price * 1.3)}%`, marginLeft: '-2px' }}></div>
-                            </div>
-                          </div>
+                        {/* 52W Range: unavailable until field-level provenance is supplied */}
+                        <td className="py-3.5 px-5 text-right hidden xl:table-cell font-mono text-zinc-500">
+                          N/A — verified 52-week range unavailable
                         </td>
                         {/* 100x Density AI Analysis Panel */}
                         <td className="py-2 px-5 hidden 2xl:table-cell w-[220px]">
