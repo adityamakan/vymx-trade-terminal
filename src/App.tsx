@@ -367,7 +367,7 @@ export default function App() {
       const newAlerts = prevAlerts.map(alert => {
         if (!alert.active) return alert;
         const liveAsset = liveAssets.find(a => a.symbol === alert.symbol);
-        if (!liveAsset) return alert;
+        if (!liveAsset || !isVerifiedProviderQuote(liveAsset)) return alert;
 
         let triggered = false;
         if (alert.direction === 'above' && liveAsset.price >= alert.targetPrice) {
