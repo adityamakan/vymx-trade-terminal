@@ -38,6 +38,7 @@ interface PortfolioSnapshot {
   positions: { symbol: string; quantity: number; price: number; marketValue: number; quoteCurrency: string | null; marketValueUSD: number | null }[];
   baseCurrency: 'USD';
   fxRates: Record<string, number>;
+  fxObservationTimes: Record<string, string | null>;
   totalEquityUSD: number | null;
   quoteCoverageComplete?: boolean;
   fxConversionComplete?: boolean;
@@ -446,12 +447,22 @@ export default function App() {
         .filter((position): position is NonNullable<typeof position> => position !== null);
       const currencies = [...new Set(validPositions.map((position) => position.quoteCurrency).filter((currency): currency is string => Boolean(currency)))];
       let fxRates: Record<string, number> = { USD: 1 };
+      let fxObservationTimes: Record<string, string | null> = { USD: null };
       try {
         if (currencies.length) {
           const fxResponse = await fetch(`/api/fx/rates?base=USD&currencies=${encodeURIComponent(currencies.join(','))}`, { signal: AbortSignal.timeout(12_000) });
           if (fxResponse.ok) {
             const fxPayload = await fxResponse.json();
-            if (fxPayload?.success && fxPayload.rates && typeof fxPayload.rates === 'object') fxRates = fxPayload.rates;
+            if (fxPayload?.success && fxPayload.observations && typeof fxPayload.observations === 'object') {
+              for (const currency of currencies) {
+                if (currency === 'USD') continue;
+                const observation = fxPayload.observations[currency];
+                if (observation && isVerifiedProviderQuote({ price: observation.rate, asOf: observation.asOf })) {
+                  fxRates[currency] = observation.rate;
+                  fxObservationTimes[currency] = observation.asOf;
+                }
+              }
+            }
           }
         }
       } catch (error) {
@@ -473,6 +484,7 @@ export default function App() {
         positions: normalizedPositions,
         baseCurrency: 'USD',
         fxRates,
+        fxObservationTimes,
         totalEquityUSD: quotesComplete && fxComplete ? current.virtualBalance + normalizedPositions.reduce((sum, position) => sum + (position.marketValueUSD || 0), 0) : null,
         quoteCoverageComplete: quotesComplete,
         fxConversionComplete: fxComplete,
