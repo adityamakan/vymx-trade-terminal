@@ -375,8 +375,8 @@ export default function AssetDetails({
               {hasFreshQuote ? formatCurrency(asset.price, asset.type) : 'N/A'}
             </div>
             <div className={`text-xs font-bold font-mono tracking-tight flex items-center justify-end gap-1 ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {asset.change == null || asset.changeAbs == null ? null : isUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-              <span>{asset.change == null || asset.changeAbs == null ? 'N/A' : `${isUp ? '+' : ''}${asset.changeAbs.toFixed(asset.type === 'forex' || asset.type === 'bond' ? 4 : 2)} (${isUp ? '+' : ''}${asset.change.toFixed(2)}%)`}</span>
+              {!hasFreshQuote || asset.change == null || asset.changeAbs == null ? null : isUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+              <span>{!hasFreshQuote || asset.change == null || asset.changeAbs == null ? 'N/A' : `${isUp ? '+' : ''}${asset.changeAbs.toFixed(asset.type === 'forex' || asset.type === 'bond' ? 4 : 2)} (${isUp ? '+' : ''}${asset.change.toFixed(2)}%)`}</span>
             </div>
           </div>
 
