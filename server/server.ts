@@ -300,8 +300,24 @@ app.get('/api/fx/rates', async (req: Request, res: Response) => {
 app.get('/api/market-snapshot', async (_req: Request, res: Response) => {
   const symbols = ['^NSEI', '^BSESN', '^GSPC', '^IXIC', 'BTC-USD', '^VIX'];
   const result = await getPrices(symbols);
-  if (!result.returned) return res.status(503).json({ success: false, ...result });
-  res.json({ success: true, ...result, source: 'Yahoo Finance', fetchedAt: new Date().toISOString() });
+  const prices = Object.fromEntries(
+    Object.entries(result.prices).filter(([, quote]) => isFreshProviderTimestamp(quote.asOf))
+  );
+  const unavailable = symbols.filter((symbol) => !prices[symbol]);
+  if (!Object.keys(prices).length) {
+    return res.status(503).json({ success: false, prices, errors: unavailable, requested: symbols.length, returned: 0, partial: true });
+  }
+  return res.json({
+    success: true,
+    prices,
+    errors: unavailable,
+    requested: symbols.length,
+    returned: Object.keys(prices).length,
+    partial: unavailable.length > 0,
+    source: 'Yahoo Finance',
+    fetchedAt: new Date().toISOString(),
+    quoteFreshnessWindowMs: MAX_PROVIDER_QUOTE_AGE_MS
+  });
 });
 
 // Real historical OHLCV candles from Yahoo Finance. Date ranges and intervals
