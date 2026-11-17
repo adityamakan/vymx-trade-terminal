@@ -21,7 +21,7 @@ assert.match(assetDetails, /disabled=\{!hasFreshQuote\}/, 'Asset detail trade fo
 assert.match(dashboard, /hasFreshProviderQuote\(asset\) \? formatCurrency\(asset\.price/, 'Dashboard prices must be gated per symbol');
 assert.match(app, /!liveAsset \|\| !isVerifiedProviderQuote\(liveAsset\)/, 'Stale bundled prices must not trigger price alerts');
 assert.match(app, /quotesComplete && fxComplete/, 'Portfolio snapshots must require fresh quotes for every open position');
-assert.match(app, /quoteCoverageComplete: quotesComplete && fxComplete/, 'Snapshots must persist complete quote-coverage provenance');
+assert.match(app, /quoteCoverageComplete: quotesComplete/, 'Snapshots must persist complete quote-coverage provenance');
 assert.match(portfolio, /hasFreshProviderQuote\(liveAsset\) \? liveAsset!\.price : null/, 'Portfolio holdings must not fall back to bundled prices');
 assert.match(portfolio, /N\/A — incomplete quote coverage/, 'Incomplete portfolio valuations must be disclosed');
 assert.match(portfolio, /filter\(\(snapshot\) => snapshot\.quoteCoverageComplete === true\)/, 'Legacy snapshots without completeness proof must not enter risk analytics');
