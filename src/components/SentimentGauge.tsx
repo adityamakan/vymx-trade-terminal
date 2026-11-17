@@ -321,7 +321,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
 
           {/* Centered Absolute values readouthub */}
           <div className="absolute inset-x-0 bottom-1 flex flex-col items-center justify-center text-center">
-            <span className="text-3xl font-black font-mono tracking-tight text-white">{computedSentiment.observations === 0 ? 'N/A' : computedSentiment.score}</span>
+            <span className="text-3xl font-black font-mono tracking-tight text-white">{!computedSentiment.isAvailable ? 'N/A' : computedSentiment.score}</span>
             <span className={`text-[11px] font-black uppercase tracking-widest ${computedSentiment.color} mt-0.5 leading-none`}>
               {computedSentiment.status}
             </span>
@@ -331,6 +331,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
         {/* Dynamic description of current range */}
         <p className="text-[10px] text-zinc-400 text-center px-4 font-sans leading-relaxed mt-2.5">
           {computedSentiment.advice}
+          <span className="block mt-1 text-[9px] text-zinc-600">Fresh observations: {computedSentiment.observations}/{assets.length}; minimum required: {Math.max(20, Math.ceil(assets.length * 0.5)}</span>
         </p>
 
         {/* Mode options */}
@@ -364,11 +365,11 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
         <div className="space-y-1">
           <div className="flex items-center justify-between text-[9px] font-mono">
             <span className="text-zinc-400">1. Equities Momentum</span>
-            <span className="font-bold text-zinc-200">{computedSentiment.observations === 0 ? 'N/A' : `${computedSentiment.metrics.equities} / 100`}</span>
+            <span className="font-bold text-zinc-200">{!computedSentiment.isAvailable ? 'N/A' : `${computedSentiment.metrics.equities} / 100`}</span>
           </div>
           <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
             <div
-              style={{ width: `${computedSentiment.observations === 0 ? 0 : computedSentiment.metrics.equities}%` }}
+              style={{ width: `${!computedSentiment.isAvailable ? 0 : computedSentiment.metrics.equities}%` }}
               className={`h-full transition-all duration-500 bg-amber-500`}
             />
           </div>
@@ -378,11 +379,11 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
         <div className="space-y-1">
           <div className="flex items-center justify-between text-[9px] font-mono">
             <span className="text-zinc-400">2. Crypto Volatility Velocity</span>
-            <span className="font-bold text-zinc-200">{computedSentiment.observations === 0 ? 'N/A' : `${computedSentiment.metrics.crypto} / 100`}</span>
+            <span className="font-bold text-zinc-200">{!computedSentiment.isAvailable ? 'N/A' : `${computedSentiment.metrics.crypto} / 100`}</span>
           </div>
           <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
             <div
-              style={{ width: `${computedSentiment.observations === 0 ? 0 : computedSentiment.metrics.crypto}%` }}
+              style={{ width: `${!computedSentiment.isAvailable ? 0 : computedSentiment.metrics.crypto}%` }}
               className="h-full transition-all duration-500 bg-violet-500"
             />
           </div>
@@ -392,11 +393,11 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
         <div className="space-y-1">
           <div className="flex items-center justify-between text-[9px] font-mono">
             <span className="text-zinc-400">3. Metal Hedge Gap Ratio</span>
-            <span className="font-bold text-zinc-200">{computedSentiment.observations === 0 ? 'N/A' : `${computedSentiment.metrics.safeHaven} / 100`}</span>
+            <span className="font-bold text-zinc-200">{!computedSentiment.isAvailable ? 'N/A' : `${computedSentiment.metrics.safeHaven} / 100`}</span>
           </div>
           <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
             <div
-              style={{ width: `${computedSentiment.observations === 0 ? 0 : computedSentiment.metrics.safeHaven}%` }}
+              style={{ width: `${!computedSentiment.isAvailable ? 0 : computedSentiment.metrics.safeHaven}%` }}
               className="h-full transition-all duration-500 bg-cyan-500"
             />
           </div>
@@ -412,7 +413,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm font-bold text-white">{computedSentiment.observations === 0 ? 'N/A' : `${computedSentiment.metrics.top5}/100`}</p>
+            <p className="text-sm font-bold text-white">{!computedSentiment.isAvailable ? 'N/A' : `${computedSentiment.metrics.top5}/100`}</p>
           </div>
         </div>
 
@@ -421,11 +422,11 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
         <div className="space-y-1">
           <div className="flex items-center justify-between text-[9px] font-mono">
             <span className="text-zinc-400">4. Market Advance/Decline Rate</span>
-            <span className="font-bold text-zinc-200">{computedSentiment.observations === 0 ? 'N/A' : `${computedSentiment.metrics.breadth} / 100`}</span>
+            <span className="font-bold text-zinc-200">{!computedSentiment.isAvailable ? 'N/A' : `${computedSentiment.metrics.breadth} / 100`}</span>
           </div>
           <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
             <div
-              style={{ width: `${computedSentiment.observations === 0 ? 0 : computedSentiment.metrics.breadth}%` }}
+              style={{ width: `${!computedSentiment.isAvailable ? 0 : computedSentiment.metrics.breadth}%` }}
               className="h-full transition-all duration-500 bg-indigo-500"
             />
           </div>
@@ -433,8 +434,8 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
 
         {/* Advancing/Declining ratio numbers */}
         <div className="text-[8px] font-mono text-zinc-600 flex items-center justify-between pt-1">
-          <span>Advancing tickers: {computedSentiment.observations === 0 ? 'N/A' : computedSentiment.advancingCount}</span>
-          <span>Declining: {computedSentiment.observations === 0 ? 'N/A' : computedSentiment.decliningCount}</span>
+          <span>Advancing tickers: {!computedSentiment.isAvailable ? 'N/A' : computedSentiment.advancingCount}</span>
+          <span>Declining: {!computedSentiment.isAvailable ? 'N/A' : computedSentiment.decliningCount}</span>
         </div>
       </div>
 
@@ -471,7 +472,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
                   Dynamic Market Sentiment Assessment Brief
                 </h3>
                 <p className="text-[10px] text-zinc-500 font-mono mt-0.5">
-                  Proxy score: <span className="font-bold text-white">{computedSentiment.observations === 0 ? 'N/A' : computedSentiment.score}</span>{computedSentiment.observations === 0 ? '' : '/100'} • Zone: <strong className={computedSentiment.color}>{computedSentiment.status.toUpperCase()}</strong>
+                  Proxy score: <span className="font-bold text-white">{!computedSentiment.isAvailable ? 'N/A' : computedSentiment.score}</span>{!computedSentiment.isAvailable ? '' : '/100'} • Zone: <strong className={computedSentiment.color}>{computedSentiment.status.toUpperCase()}</strong>
                 </p>
               </div>
               <button
