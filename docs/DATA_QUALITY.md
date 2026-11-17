@@ -100,3 +100,22 @@ A consumer must define a freshness threshold appropriate to the instrument and m
 - Per-instrument values require a provider observation no older than 120 seconds (with a 60-second allowance for clock skew).
 - Market-wide breadth and sentiment proxies require at least 20 fresh quote changes and at least 50% of the configured universe. The sentiment proxy additionally requires at least five equity/index observations, three crypto observations, and fresh gold plus S&P 500 quotes.
 - Server intelligence endpoints apply the same provider-timestamp freshness rule. Cached fetch time is never substituted for the provider observation timestamp.
+
+
+## FX conversion freshness
+
+- Non-USD FX conversions used in portfolio snapshots require a provider observation timestamp no older than 120 seconds, with a 60-second allowance for provider clock skew.
+- The FX endpoint returns per-currency rate, provider observation time, retrieval time and source. Missing or stale conversions are omitted and listed as unavailable.
+- Portfolio snapshots persist the FX observation timestamp separately from the numerical conversion rate. USD-to-USD is an identity conversion and does not require an external quote.
+- A present numerical FX rate without a fresh provider timestamp is not sufficient to mark conversion coverage complete.
+
+
+## Bundled instrument definitions and AI context
+
+- Bundled asset definitions contain instrument identity and classification metadata only. Runtime market fields start unavailable: price is zero with no provider timestamp, daily change is null, volume is null, 52-week range and previous close are null, and market-cap/P/E placeholders are not used for filtering or ranking.
+- Synthetic random-walk price histories have been removed from the asset model. Historical charts and quantitative calculations must use provider-returned dated observations.
+- The Financial Chatbot receives a sanitized asset context. An active quote is included only when its provider observation timestamp passes the same freshness validator used by the UI; otherwise the context explicitly says the quote is unavailable.
+- Profile-based AI allocation suggestions are not backtested, performance-ranked, or validated as suitable investments. Provider failure must not trigger a local pseudo-model substitute.
+- SIP calculations are illustrative compound-interest scenarios. The selected annual rate is a user assumption, not a forecast or claimed historical market average.
+- Sentiment AI receives a heuristic proxy object with its component values and limitations; the proxy score must never be disguised as an asset price.
+- Dashboard market breadth requires at least 20 fresh observations, 50% universe coverage, five equity/index observations, three crypto observations, and fresh S&P 500 and gold quotes. Sector leaders require at least three fresh observations in each displayed sector.

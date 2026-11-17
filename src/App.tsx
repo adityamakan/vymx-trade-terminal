@@ -38,6 +38,7 @@ interface PortfolioSnapshot {
   positions: { symbol: string; quantity: number; price: number; marketValue: number; quoteCurrency: string | null; marketValueUSD: number | null }[];
   baseCurrency: 'USD';
   fxRates: Record<string, number>;
+  fxObservationTimes: Record<string, string | null>;
   totalEquityUSD: number | null;
   quoteCoverageComplete?: boolean;
   fxConversionComplete?: boolean;
@@ -242,17 +243,6 @@ export default function App() {
         }
 
         changed = true;
-        const updatedHistory = { ...asset.history };
-        if (updatedHistory['1D'] && updatedHistory['1D'].length > 0) {
-          const updated1D = [...updatedHistory['1D']];
-          const lastIdx = updated1D.length - 1;
-          updated1D[lastIdx] = {
-            ...updated1D[lastIdx],
-            value: newPriceData.price
-          };
-          updatedHistory['1D'] = updated1D;
-        }
-
         return {
           ...asset,
           currency: typeof newPriceData.currency === 'string' ? newPriceData.currency.toUpperCase() : asset.currency ?? null,
@@ -262,10 +252,9 @@ export default function App() {
           price: (newPriceData.price !== undefined && !isNaN(newPriceData.price)) ? newPriceData.price : asset.price,
           change: typeof newPriceData.change === 'number' && Number.isFinite(newPriceData.change) ? newPriceData.change : null,
           changeAbs: typeof newPriceData.changeAbs === 'number' && Number.isFinite(newPriceData.changeAbs) ? newPriceData.changeAbs : null,
-          low52w: (newPriceData.low52w !== undefined && !isNaN(newPriceData.low52w)) ? newPriceData.low52w : asset.low52w,
-          high52w: (newPriceData.high52w !== undefined && !isNaN(newPriceData.high52w)) ? newPriceData.high52w : asset.high52w,
-          prevClose: (newPriceData.prevClose !== undefined && !isNaN(newPriceData.prevClose)) ? newPriceData.prevClose : asset.prevClose,
-          history: updatedHistory
+          low52w: typeof newPriceData.low52w === 'number' && Number.isFinite(newPriceData.low52w) ? newPriceData.low52w : null,
+          high52w: typeof newPriceData.high52w === 'number' && Number.isFinite(newPriceData.high52w) ? newPriceData.high52w : null,
+          prevClose: typeof newPriceData.prevClose === 'number' && Number.isFinite(newPriceData.prevClose) ? newPriceData.prevClose : null
         };
       });
 
@@ -446,12 +435,22 @@ export default function App() {
         .filter((position): position is NonNullable<typeof position> => position !== null);
       const currencies = [...new Set(validPositions.map((position) => position.quoteCurrency).filter((currency): currency is string => Boolean(currency)))];
       let fxRates: Record<string, number> = { USD: 1 };
+      let fxObservationTimes: Record<string, string | null> = { USD: null };
       try {
         if (currencies.length) {
           const fxResponse = await fetch(`/api/fx/rates?base=USD&currencies=${encodeURIComponent(currencies.join(','))}`, { signal: AbortSignal.timeout(12_000) });
           if (fxResponse.ok) {
             const fxPayload = await fxResponse.json();
-            if (fxPayload?.success && fxPayload.rates && typeof fxPayload.rates === 'object') fxRates = fxPayload.rates;
+            if (fxPayload?.success && fxPayload.observations && typeof fxPayload.observations === 'object') {
+              for (const currency of currencies) {
+                if (currency === 'USD') continue;
+                const observation = fxPayload.observations[currency];
+                if (observation && isVerifiedProviderQuote({ price: observation.rate, asOf: observation.asOf })) {
+                  fxRates[currency] = observation.rate;
+                  fxObservationTimes[currency] = observation.asOf;
+                }
+              }
+            }
           }
         }
       } catch (error) {
@@ -473,6 +472,7 @@ export default function App() {
         positions: normalizedPositions,
         baseCurrency: 'USD',
         fxRates,
+        fxObservationTimes,
         totalEquityUSD: quotesComplete && fxComplete ? current.virtualBalance + normalizedPositions.reduce((sum, position) => sum + (position.marketValueUSD || 0), 0) : null,
         quoteCoverageComplete: quotesComplete,
         fxConversionComplete: fxComplete,
@@ -844,6 +844,7 @@ export default function App() {
                   virtualBalance={virtualBalance}
                   assets={liveAssets}
                   setView={setView}
+                  onSelectAsset={handleSelectAsset}
                   formatCurrency={formatCurrency}
                 />
               </motion.div>

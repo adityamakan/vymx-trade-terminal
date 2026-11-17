@@ -4,6 +4,7 @@ import { Send, Bot, User, Sparkles, AlertCircle, Settings2, Trash2, Mic, MicOff 
 import ReactMarkdown from 'react-markdown';
 import { Asset, PortfolioItem } from '../types';
 import { streamFinancialChat } from '../lib/gemini';
+import { isVerifiedProviderQuote } from '../utils/providerQuote';
 
 interface FinancialChatbotProps {
   activeAsset?: Asset | null;
@@ -163,6 +164,22 @@ export default function FinancialChatbot({ activeAsset, portfolio, userId }: Fin
 
     const requestStorageKey = storageKey;
     const userMessage = input.trim();
+    const activeQuoteVerified = activeAsset ? isVerifiedProviderQuote(activeAsset) : false;
+    const activeAssetContext = activeAsset ? {
+      symbol: activeAsset.symbol,
+      name: activeAsset.name,
+      type: activeAsset.type,
+      sector: activeAsset.sector,
+      country: activeAsset.country,
+      quoteStatus: activeQuoteVerified ? 'fresh provider observation' : 'unavailable — bundled seed values are not current quotes',
+      currentQuote: activeQuoteVerified ? {
+        price: activeAsset.price,
+        currency: activeAsset.currency ?? null,
+        changePercent: activeAsset.change,
+        observedAt: activeAsset.quoteAsOf,
+        source: 'Yahoo Finance'
+      } : null
+    } : null;
     const updatedMessages = [
       ...messages,
       { role: 'user' as const, text: userMessage },
@@ -177,7 +194,7 @@ export default function FinancialChatbot({ activeAsset, portfolio, userId }: Fin
         userMessage,
         messages,
         persona,
-        { activeAsset, portfolio },
+        { activeAsset: activeAssetContext, portfolio: portfolio || [] },
         (accumulatedText) => {
           if (activeStorageKeyRef.current !== requestStorageKey) return;
           setMessages(prev => {

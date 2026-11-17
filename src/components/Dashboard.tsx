@@ -219,7 +219,12 @@ export default function Dashboard({
     hasFreshProviderQuote(asset) && asset.change != null
   ), [assets, timeTick]);
   const minimumCoverageCount = Math.max(20, Math.ceil(assets.length * 0.5));
-  const hasAdequateQuoteCoverage = verifiedQuoteAssets.length >= minimumCoverageCount;
+  const equityObservationCount = verifiedQuoteAssets.filter((asset) => asset.type === 'stock' || asset.type === 'index').length;
+  const cryptoObservationCount = verifiedQuoteAssets.filter((asset) => asset.type === 'crypto').length;
+  const hasFreshGoldQuote = assets.some((asset) => asset.symbol === 'GC=F' && hasFreshProviderQuote(asset));
+  const hasFreshSpxQuote = assets.some((asset) => asset.symbol === '.SPX' && hasFreshProviderQuote(asset));
+  const hasAdequateQuoteCoverage = verifiedQuoteAssets.length >= minimumCoverageCount &&
+    equityObservationCount >= 5 && cryptoObservationCount >= 3 && hasFreshGoldQuote && hasFreshSpxQuote;
   const advCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change > 0).length, [verifiedQuoteAssets]);
   const decCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change < 0).length, [verifiedQuoteAssets]);
   const flatCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change === 0).length, [verifiedQuoteAssets]);
@@ -235,7 +240,7 @@ export default function Dashboard({
   }, [verifiedQuoteAssets, advCount, decCount, hasAdequateQuoteCoverage]);
 
   const sectorStats = useMemo(() => {
-    if (!hasAdequateQuoteCoverage) return { topSector: { name: 'N/A', avgChange: 0 }, bottomSector: { name: 'N/A', avgChange: 0 } };
+    if (!hasAdequateQuoteCoverage) return { topSector: { name: 'N/A', avgChange: 0, count: 0 }, bottomSector: { name: 'N/A', avgChange: 0, count: 0 } };
     const sectorsMap: { [sec: string]: { sumChange: number; count: number } } = {};
     verifiedQuoteAssets.forEach(a => {
       const sectorName = a.sector || 'Other';
@@ -246,15 +251,17 @@ export default function Dashboard({
       sectorsMap[sectorName].count += 1;
     });
 
-    const list = Object.entries(sectorsMap).map(([name, data]) => ({
-      name,
-      avgChange: data.sumChange / data.count,
-      count: data.count
-    }));
+    const list = Object.entries(sectorsMap)
+      .filter(([, data]) => data.count >= 3)
+      .map(([name, data]) => ({
+        name,
+        avgChange: data.sumChange / data.count,
+        count: data.count
+      }));
     list.sort((a, b) => b.avgChange - a.avgChange);
     return {
-      topSector: list[0] || { name: 'N/A', avgChange: 0 },
-      bottomSector: list[list.length - 1] || { name: 'N/A', avgChange: 0 },
+      topSector: list[0] || { name: 'N/A', avgChange: 0, count: 0 },
+      bottomSector: list[list.length - 1] || { name: 'N/A', avgChange: 0, count: 0 },
       list
     };
   }, [verifiedQuoteAssets, hasAdequateQuoteCoverage]);
@@ -818,20 +825,20 @@ export default function Dashboard({
             {/* Sector Lead & Summary */}
             <div className="bg-zinc-950/20 p-4 border border-zinc-900 rounded-xl flex flex-col justify-between space-y-2">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono block mb-2">Sector Velocity Leaders</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono block mb-2">Sector Average Daily Change</span>
 
                 <div className="space-y-2 font-sans">
                   <div className="flex items-center justify-between text-[10px] font-mono">
                     <span className="text-zinc-500 font-sans">Top Leading Segment:</span>
                     <span className="text-emerald-400 font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/10">
-                      {!hasAdequateQuoteCoverage ? 'N/A — insufficient quote coverage' : `${sectorStats.topSector.name} (${sectorStats.topSector.avgChange >= 0 ? '+' : ''}${sectorStats.topSector.avgChange.toFixed(2)}%)`}
+                      {!hasAdequateQuoteCoverage ? 'N/A — insufficient quote coverage' : `${sectorStats.topSector.name} (${sectorStats.topSector.avgChange >= 0 ? '+' : ''}${sectorStats.topSector.avgChange.toFixed(2)}%, n=${sectorStats.topSector.count})`}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between text-[10px] font-mono">
                     <span className="text-zinc-500 font-sans">Underperforming:</span>
                     <span className="text-rose-400 font-bold px-1.5 py-0.5 rounded bg-rose-500/10 border border-rose-500/10 font-sans">
-                      {!hasAdequateQuoteCoverage ? 'N/A — insufficient quote coverage' : `${sectorStats.bottomSector.name} (${sectorStats.bottomSector.avgChange >= 0 ? '+' : ''}${sectorStats.bottomSector.avgChange.toFixed(2)}%)`}
+                      {!hasAdequateQuoteCoverage ? 'N/A — insufficient quote coverage' : `${sectorStats.bottomSector.name} (${sectorStats.bottomSector.avgChange >= 0 ? '+' : ''}${sectorStats.bottomSector.avgChange.toFixed(2)}%, n=${sectorStats.bottomSector.count})`}
                     </span>
                   </div>
                 </div>

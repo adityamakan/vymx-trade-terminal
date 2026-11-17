@@ -1,55 +1,5 @@
 import { Asset } from './types';
 
-// DEMO DATA ONLY: these price histories are synthetic geometric-Brownian-motion samples.
-// They are not exchange observations and must never be used for performance claims or backtests.
-const generateHistory = (
-  startPrice: number,
-  pointsCount: number,
-  volatility: number = 0.02
-): { date: string; value: number }[] => {
-  const points: { date: string; value: number }[] = [];
-  let currentPrice = startPrice;
-  const now = new Date();
-
-  for (let i = pointsCount - 1; i >= 0; i--) {
-    const pointDate = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-    // Random walk calculation
-    const changePercent = (Math.random() - 0.49) * volatility; // slightly upward drift
-    currentPrice = currentPrice * (1 + changePercent);
-
-    // Safety check
-    if (currentPrice < 0.01) currentPrice = 0.01;
-
-    points.push({
-      date: pointDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      value: parseFloat(currentPrice.toFixed(2)),
-    });
-  }
-  return points;
-};
-
-// DEMO DATA ONLY: generates synthetic hourly points; not actual intraday observations.
-const generate1DHistory = (startPrice: number, changePercent: number): { date: string; value: number }[] => {
-  const points: { date: string; value: number }[] = [];
-  const now = new Date();
-
-  // Backcalculate starting price 24h ago
-  let currentPrice = startPrice / (1 + changePercent / 100);
-  const step = changePercent / 24;
-
-  for (let i = 0; i < 24; i++) {
-    const pointTime = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
-    const noise = (Math.random() - 0.5) * 0.4; // random market noise
-    currentPrice = currentPrice * (1 + (step + noise) / 100);
-
-    points.push({
-      date: pointTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
-      value: parseFloat(currentPrice.toFixed(2)),
-    });
-  }
-  return points;
-};
-
 const baseSectors = {
   stock: ['Technology', 'Financials', 'Healthcare', 'Consumer Cyclical', 'Automotive', 'Energy'],
   crypto: ['Layer 1', 'Layer 2', 'DeFi', 'Meme Coins'],
@@ -1423,22 +1373,27 @@ const rawAssets = [
   },
 ];
 
-// Enrich the raw assets with multi-timeframe historical records
-export const assets: Asset[] = rawAssets.map((raw) => {
-  const changeAbs = raw.price * (raw.change / 100);
-  const driftVolatility = raw.type === 'crypto' ? 0.05 : raw.type === 'forex' ? 0.005 : 0.015;
-
-  return {
-    ...raw,
-    changeAbs: parseFloat(changeAbs.toFixed(raw.type === 'forex' ? 4 : 2)),
-    history: {
-      '1D': generate1DHistory(raw.price, raw.change),
-      '1W': generateHistory(raw.price, 7, driftVolatility),
-      '1M': generateHistory(raw.price, 30, driftVolatility),
-      '1Y': generateHistory(raw.price, 120, driftVolatility), // 120 data points representation of 1Y
-    },
-  };
-});
+// Raw asset definitions provide instrument metadata and illustrative seed values only.
+// Current prices and changes are unavailable until a timestamped provider quote arrives.
+export const assets: Asset[] = rawAssets.map((raw) => ({
+  ...raw,
+  // Bundled instrument definitions contain classification metadata only.
+  // All numerical market fields remain unavailable until a provider quote arrives.
+  price: 0,
+  change: null,
+  changeAbs: null,
+  currency: null,
+  quoteAsOf: null,
+  marketCap: 0,
+  marketCapDisplay: 'N/A',
+  peRatio: null,
+  volume: null,
+  volumeDisplay: 'N/A',
+  high52w: null,
+  low52w: null,
+  openPrice: null,
+  prevClose: null
+}));
 
 // No bundled market-news fallback. Headlines must come from the configured provider.
 export const sectors = [

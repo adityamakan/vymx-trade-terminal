@@ -4,9 +4,9 @@ export interface PriceQuote {
   price: number;
   change: number | null;
   changeAbs: number | null;
-  low52w: number;
-  high52w: number;
-  prevClose: number;
+  low52w: number | null;
+  high52w: number | null;
+  prevClose: number | null;
   currency?: string | null;
   volume?: number | null;
   volumeDisplay?: string | null;

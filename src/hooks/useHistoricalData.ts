@@ -30,8 +30,8 @@ const inFlightRequests = new Map<string, Promise<HistoricalDataState>>();
 
 /**
  * Fetches actual historical candles from the server-side Yahoo Finance adapter.
- * The bundled asset.history arrays are synthetic demo samples and are never
- * used by provider-backed analysis components.
+ * No bundled asset history is stored. Every analysis component receives
+ * provider-returned candles from this endpoint or displays an unavailable state.
  *
  * Requests are normalized to stable time boundaries and deduplicated across
  * components so the same symbol/range does not trigger parallel upstream calls.

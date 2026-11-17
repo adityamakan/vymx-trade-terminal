@@ -222,8 +222,8 @@ export default function Heatmap({
   };
 
   const getTimeframeChange = (asset: Asset): number | null => {
-    // Bundled asset.history contains synthetic demo samples. Only 1D provider
-    // quote changes are valid here until interval-specific candles are wired in.
+    // No bundled history is stored. Only 1D provider quote changes are valid
+    // here until interval-specific provider candles are wired in.
     return hasFreshQuote(asset) && heatmapTimeframe === "1D" ? asset.change : null;
   };
 

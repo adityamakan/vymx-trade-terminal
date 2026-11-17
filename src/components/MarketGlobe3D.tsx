@@ -169,21 +169,8 @@ export default function MarketGlobe3D() {
       // never imply that an arbitrary set of exchanges represents user holdings.
       MARKERS.forEach(m => p.push({ ...m, size: 0.1, color: '#64748b' }));
     } else if (mode === 'earningsSeason') {
-       MARKERS.forEach(m => {
-         p.push({ ...m, size: 0.1 });
-         if (['NYSE', 'TSE', 'LSE'].includes(m.label)) {
-            // scatter small dots around
-            for(let i=0; i<10; i++) {
-               p.push({
-                 label: 'Earn',
-                 lat: m.lat + (Math.random() - 0.5) * 5,
-                 lng: m.lng + (Math.random() - 0.5) * 5,
-                 size: 0.02,
-                 color: '#fef08a'
-               });
-            }
-         }
-       });
+       // No verified earnings calendar is connected; show reference exchanges only.
+       MARKERS.forEach(m => p.push({ ...m, size: 0.1 }));
     } else if (mode === 'timeMachine') {
        MARKERS.forEach(m => {
          p.push({ ...m, size: 0.1 });
@@ -405,12 +392,6 @@ export default function MarketGlobe3D() {
           htmlElementsData={points}
           htmlElement={(d: any) => {
             const el = document.createElement('div');
-            // Hide custom styling for tiny 'earnings' particles
-            if(d.label === 'Earn') {
-               el.innerHTML = `<div class="w-1.5 h-1.5 rounded-full" style="background-color: ${d.color}; box-shadow: 0 0 5px ${d.color};"></div>`;
-               return el;
-            }
-
             // Normal Exchanges & Custom nodes
             const isCustom = ['Israel/Gaza', 'Ukraine', 'Taiwan Strait', 'Red Sea', 'Panama Canal', 'Suez Canal', 'Strait of Malacca', 'Oil (Saudi Arabia)', 'Copper (Chile)', 'Lithium (Australia)'].includes(d.label);
             // Exchange markers show geography only. The selected exchange panel

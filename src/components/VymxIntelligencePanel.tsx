@@ -62,7 +62,10 @@ export default function VymxIntelligencePanel({ mode }: Props) {
     sectors: {},
     commodities: {},
     currencies: {},
-    bonds: {}
+    bonds: {},
+    quoteCoverage: null,
+    quoteAsOf: null,
+    fetchedAt: null
   });
 
   // Fetch real data from our new pipeline
@@ -77,7 +80,8 @@ export default function VymxIntelligencePanel({ mode }: Props) {
         sensexPrice: null, sensexChange: null,
         btcPrice: null, btcHigh: null, btcLow: null,
         vixPrice: null, vixChange: null,
-        sectors: {}, commodities: {}, currencies: {}, bonds: {}
+        sectors: {}, commodities: {}, currencies: {}, bonds: {},
+        quoteCoverage: null, quoteAsOf: null, fetchedAt: null
       }));
     };
     const fetchLiveIntelligence = async () => {
@@ -88,8 +92,11 @@ export default function VymxIntelligencePanel({ mode }: Props) {
         const json = await res.json().catch(() => ({}));
         if (!isActive) return;
         if (res.ok && json.success && json.data) {
-          setRealtimeData((previous: any) => ({ ...previous, ...json.data }));
-          setQuoteFeedStatus(Array.isArray(json.unavailable) && json.unavailable.length > 0 ? 'partial' : 'connected');
+          setRealtimeData((previous: any) => ({ ...previous, ...json.data, fetchedAt: json.fetchedAt || null }));
+          const coverage = json.data.quoteCoverage;
+          setQuoteFeedStatus(coverage && coverage.requested > 0 && coverage.fresh === coverage.requested
+            ? 'connected'
+            : coverage && coverage.fresh > 0 ? 'partial' : 'unavailable');
         } else {
           clearQuoteData();
           setQuoteFeedStatus('unavailable');
@@ -246,6 +253,9 @@ export default function VymxIntelligencePanel({ mode }: Props) {
 
         <div className="relative z-10 mb-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[9px] leading-relaxed text-amber-200/80">
           Index, crypto, VIX, sector ETF, commodity, FX and US 10Y quotes are fetched from Yahoo Finance. Sentiment, regional-flow, order-book, dark-pool and institutional-flow datasets are not connected and are shown as unavailable.
+          {realtimeData.quoteCoverage && (
+            <span className="block mt-1">Fresh provider quotes: {realtimeData.quoteCoverage.fresh}/{realtimeData.quoteCoverage.requested}. {realtimeData.quoteAsOf ? 'All returned observations as of ' + new Date(realtimeData.quoteAsOf).toLocaleString() + '.' : 'Coverage is partial; no single all-symbol observation time is asserted.'} {realtimeData.fetchedAt ? 'Retrieved ' + new Date(realtimeData.fetchedAt).toLocaleTimeString() + '.' : ''}</span>
+          )}
         </div>
 
         {/* --- PROVIDER-QUOTED MARKET SNAPSHOT --- */}

@@ -121,31 +121,31 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
       colorClass = 'text-rose-500';
       strokeColor = '#ef4444';
       gradientFrom = 'from-rose-500';
-      adviceText = 'Severe protective hedging detected. Potential systematic accumulation discounts are opening up.';
+      adviceText = 'The observed cross-asset price-change proxy is in its lowest band. This does not measure hedging, investor positioning, or whether assets are undervalued.';
     } else if (finalScore <= 45) {
       statusText = 'Fear';
       colorClass = 'text-amber-550';
       strokeColor = '#f97316';
       gradientFrom = 'from-amber-500';
-      adviceText = 'Traders are actively trimming high-beta exposure. Conservative cash reserves are expanding.';
+      adviceText = 'Observed equity, crypto and safe-haven price changes lean negative under this heuristic. No investor flows or cash allocations are measured.';
     } else if (finalScore <= 55) {
       statusText = 'Neutral';
       colorClass = 'text-yellow-450';
       strokeColor = '#eab308';
       gradientFrom = 'from-yellow-500';
-      adviceText = 'Consolidation phase. Wait for breakout confirmations on high volume.';
+      adviceText = 'The weighted price-change proxy is near its midpoint. It does not establish consolidation, predict a breakout, or measure trading volume.';
     } else if (finalScore <= 75) {
       statusText = 'Greed';
       colorClass = 'text-lime-400';
       strokeColor = '#84cc16';
       gradientFrom = 'from-lime-400';
-      adviceText = 'Bullish accumulation momentum. Be careful of buying highly overextended parabolic peaks.';
+      adviceText = 'Observed cross-asset price changes are positive under this heuristic. This does not establish accumulation, investor intent, or future returns.';
     } else {
       statusText = 'Extreme Greed';
       colorClass = 'text-emerald-400';
       strokeColor = '#10b981';
       gradientFrom = 'from-emerald-400';
-      adviceText = 'Unchecked speculative volume. Consider taking structured profits into high strength.';
+      adviceText = 'The observed proxy is in its upper band. The top-five component measures daily-move magnitude, not speculative volume or realized volatility.';
     }
 
     const minimumObservationCount = Math.max(20, Math.ceil(assets.length * 0.5));
@@ -204,12 +204,25 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          symbol: 'FGI-INDEX',
-          name: `Vymx Market Sentiment Proxy (${computedSentiment.status})`,
-          type: 'complex macroeconomic sentiment indices',
-          price: computedSentiment.score,
-          change: parseFloat(((computedSentiment.score - 50) / 50 * 100).toFixed(2)),
-          analysisType: 'newsSentiment'
+          prompt: 'Explain this heuristic cross-asset price-change proxy. Do not describe it as an official Fear & Greed index, measured investor positioning, institutional flows, traded volume, realized volatility, or a forecast. Explain the formula and its limitations in plain language.',
+          contextData: {
+            proxyName: 'VYMX cross-asset market sentiment proxy',
+            score: computedSentiment.score,
+            status: computedSentiment.status,
+            componentScores: computedSentiment.metrics,
+            observations: computedSentiment.observations,
+            requiredObservations: Math.max(20, Math.ceil(assets.length * 0.5)),
+            advancingAssets: computedSentiment.advancingCount,
+            decliningAssets: computedSentiment.decliningCount,
+            formula: 'Weighted combination of fresh provider-reported daily price changes, equity/index changes, crypto changes, S&P 500 versus gold change gap, and advance/decline ratio.',
+            limitations: [
+              'Not an official Fear & Greed index',
+              'No news, investor positioning, institutional flow, order-book, or traded-volume data',
+              'Top-five component is daily-move magnitude, not realized volatility',
+              'Not a forecast or investment recommendation'
+            ]
+          },
+          systemInstruction: 'Use only the supplied proxy values. Do not invent market causes, investor actions, live events, volume, or future returns. Explicitly call this a heuristic proxy.'
         }),
       });
 
@@ -358,7 +371,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
       {/* 3. Sub-indicator breakdown meters */}
       <div className="space-y-2 border-t border-zinc-900 pt-3" id="sentiment-breakdown-panel">
         <span className="text-[8.5px] font-bold font-mono text-zinc-500 uppercase tracking-widest block">
-          Sector Sentiment Velocities
+          Cross-asset proxy components
         </span>
 
         {/* Meter row: Equities Strength */}
@@ -378,7 +391,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
         {/* Meter row: Crypto Velocity */}
         <div className="space-y-1">
           <div className="flex items-center justify-between text-[9px] font-mono">
-            <span className="text-zinc-400">2. Crypto Volatility Velocity</span>
+            <span className="text-zinc-400">2. Crypto Price-Change Momentum</span>
             <span className="font-bold text-zinc-200">{!computedSentiment.isAvailable ? 'N/A' : `${computedSentiment.metrics.crypto} / 100`}</span>
           </div>
           <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
@@ -408,8 +421,8 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
           <div className="flex items-center space-x-3">
             <Activity className="w-5 h-5 text-indigo-400" />
             <div>
-              <p className="text-sm font-medium text-zinc-200">Top 5 Volatility & Volume</p>
-              <p className="text-xs text-zinc-500">Gauge uses top 5 asset momentum.</p>
+              <p className="text-sm font-medium text-zinc-200">Top-5 Daily-Move Magnitude</p>
+              <p className="text-xs text-zinc-500">Average absolute daily price change among the five largest observed movers; not realized volatility or traded volume.</p>
             </div>
           </div>
           <div className="text-right">

@@ -249,38 +249,75 @@ app.get('/api/fx/rates', async (req: Request, res: Response) => {
   }
   const currencies = [...new Set(requested)];
   const rates: Record<string, number> = { USD: 1 };
+  const observations: Record<string, { rate: number; asOf: string | null; fetchedAt: string | null; source: string }> = {
+    USD: { rate: 1, asOf: null, fetchedAt: null, source: 'USD identity conversion' }
+  };
   const unavailable: string[] = [];
   for (let index = 0; index < currencies.length; index += 6) {
     const batch = currencies.slice(index, index + 6);
     const results = await Promise.all(batch.map(async (currency) => {
-      if (currency === 'USD') return [currency, 1] as const;
+      if (currency === 'USD') return { currency, rate: 1, quote: null as PriceQuote | null };
       const config = USD_FX_QUOTES[currency];
-      if (!config) return [currency, null] as const;
+      if (!config) return { currency, rate: null, quote: null as PriceQuote | null };
       try {
         const quote = await fetchQuote(config.symbol);
+        if (!isFreshProviderTimestamp(quote.asOf)) return { currency, rate: null, quote };
         const rate = config.invert ? 1 / quote.price : quote.price;
-        return [currency, Number.isFinite(rate) && rate > 0 ? rate : null] as const;
+        return { currency, rate: Number.isFinite(rate) && rate > 0 ? rate : null, quote };
       } catch {
-        return [currency, null] as const;
+        return { currency, rate: null, quote: null as PriceQuote | null };
       }
     }));
-    for (const [currency, rate] of results) {
-      if (rate == null) unavailable.push(currency);
-      else rates[currency] = rate;
+    for (const { currency, rate, quote } of results) {
+      if (rate == null || (currency !== 'USD' && (!quote || !isFreshProviderTimestamp(quote.asOf)))) {
+        unavailable.push(currency);
+        continue;
+      }
+      rates[currency] = rate;
+      if (currency !== 'USD' && quote) {
+        observations[currency] = {
+          rate,
+          asOf: quote.asOf,
+          fetchedAt: quote.fetchedAt,
+          source: quote.source
+        };
+      }
     }
   }
   return res.json({
-    success: true, base: 'USD', rates, unavailable,
-    source: 'Yahoo Finance FX quotes', fetchedAt: new Date().toISOString(),
-    note: 'Rates are indicative provider quotes, not executable conversion prices. Historical valuations use the latest retrieved rate available at snapshot time.'
+    success: true,
+    base: 'USD',
+    rates,
+    observations,
+    unavailable,
+    partial: unavailable.length > 0,
+    source: 'Yahoo Finance FX quotes',
+    fetchedAt: new Date().toISOString(),
+    note: 'Non-USD conversion rates are returned only when their provider observation timestamp is fresh (120 seconds maximum, 60 seconds future clock-skew allowance). Rates are indicative, not executable. USD is an identity conversion.'
   });
 });
 
 app.get('/api/market-snapshot', async (_req: Request, res: Response) => {
   const symbols = ['^NSEI', '^BSESN', '^GSPC', '^IXIC', 'BTC-USD', '^VIX'];
   const result = await getPrices(symbols);
-  if (!result.returned) return res.status(503).json({ success: false, ...result });
-  res.json({ success: true, ...result, source: 'Yahoo Finance', fetchedAt: new Date().toISOString() });
+  const prices = Object.fromEntries(
+    Object.entries(result.prices).filter(([, quote]) => isFreshProviderTimestamp(quote.asOf))
+  );
+  const unavailable = symbols.filter((symbol) => !prices[symbol]);
+  if (!Object.keys(prices).length) {
+    return res.status(503).json({ success: false, prices, errors: unavailable, requested: symbols.length, returned: 0, partial: true });
+  }
+  return res.json({
+    success: true,
+    prices,
+    errors: unavailable,
+    requested: symbols.length,
+    returned: Object.keys(prices).length,
+    partial: unavailable.length > 0,
+    source: 'Yahoo Finance',
+    fetchedAt: new Date().toISOString(),
+    quoteFreshnessWindowMs: MAX_PROVIDER_QUOTE_AGE_MS
+  });
 });
 
 // Real historical OHLCV candles from Yahoo Finance. Date ranges and intervals
@@ -416,19 +453,24 @@ app.get('/api/macro/indicators', async (_req: Request, res: Response) => {
     getPrices(symbols),
     fetchFredMacroSeries()
   ]);
+  const freshIndicators = Object.fromEntries(
+    Object.entries(marketResult.prices).filter(([, quote]) => isFreshProviderTimestamp(quote.asOf))
+  );
+  const unavailableSymbols = symbols.filter((symbol) => !freshIndicators[symbol]);
   const officialAvailable = officialSeries.some((series) => series.status === 'available');
-  const success = marketResult.returned > 0 || officialAvailable;
+  const success = Object.keys(freshIndicators).length > 0 || officialAvailable;
   return res.status(success ? 200 : 503).json({
     success,
-    indicators: marketResult.prices,
-    unavailable: marketResult.errors,
+    indicators: freshIndicators,
+    unavailable: unavailableSymbols,
+    quoteCoverage: { fresh: Object.keys(freshIndicators).length, requested: symbols.length, unavailable: unavailableSymbols },
     officialSeries,
     sources: {
       marketProxies: 'Yahoo Finance (unofficial market-data provider)',
       officialMacro: 'Federal Reserve Bank of St. Louis FRED'
     },
     fetchedAt: new Date().toISOString(),
-    note: 'Market quotes are cross-asset proxies, not official macroeconomic releases. FRED observations are official published series and retain their observation dates; retrieval time is not substituted for observation time. CPI and core CPI are shown as index levels, not inflation rates.'
+    note: 'Only provider market quotes with observation timestamps within the live freshness window are returned. Market quotes are cross-asset proxies, not official macroeconomic releases. FRED observations are official published series and retain their observation dates; retrieval time is not substituted for observation time. CPI and core CPI are shown as index levels, not inflation rates.'
   });
 });
 
@@ -492,8 +534,13 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
   const sensex = quote('^BSESN');
   const btc = quote('BTC-USD');
   const vix = quote('^VIX');
-  const freshQuoteCount = Object.values(result.prices).filter((item) => isFreshProviderTimestamp(item.asOf)).length;
-  if (freshQuoteCount === 0) return res.status(503).json({ success: false, error: 'No fresh provider observations are available', unavailable: result.errors });
+  const freshSymbols = symbols.filter((symbol) => {
+    const quote = result.prices[symbol];
+    return Boolean(quote && isFreshProviderTimestamp(quote.asOf));
+  });
+  const freshQuoteCount = freshSymbols.length;
+  const unavailableSymbols = symbols.filter((symbol) => !freshSymbols.includes(symbol));
+  if (freshQuoteCount === 0) return res.status(503).json({ success: false, error: 'No fresh provider observations are available', unavailable: unavailableSymbols });
   const providerObservationTimes = Object.values(result.prices).map((item) => item.asOf);
   const allReturnedQuotesFresh = providerObservationTimes.length === result.returned
     && providerObservationTimes.every((value) => isFreshProviderTimestamp(value));
@@ -505,7 +552,7 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
     generated: false,
     source: 'Yahoo Finance',
     fetchedAt: new Date().toISOString(),
-    unavailable: result.errors,
+    unavailable: unavailableSymbols,
     data: {
       spxPrice: spx?.price ?? null, spxChange: spx?.change ?? null,
       niftyPrice: nifty?.price ?? null, niftyChange: nifty?.change ?? null,
@@ -531,7 +578,7 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
       capitalInflows: null, capitalOutflows: null,
       // Use the oldest provider observation among the returned quotes.
       quoteSource: 'Yahoo Finance',
-      quoteCoverage: { fresh: freshQuoteCount, returned: result.returned, requested: symbols.length },
+      quoteCoverage: { fresh: freshQuoteCount, returned: result.returned, requested: symbols.length, unavailable: unavailableSymbols },
       quoteAsOf
     },
     note: 'Prices, ETF proxies, commodity futures, FX crosses and the US 10Y proxy are provider-backed. Fear/greed, institutional flows, order-book depth, dark-pool activity, algorithmic risk and unsupported Treasury tenors are not supplied by this feed.'
@@ -756,11 +803,21 @@ app.all('/api/ai/:feature', aiRequestLimiter, async (req: Request, res: Response
         const allocation = parsed.allocation || {};
         const keys = ['stock', 'crypto', 'forex', 'commodity', 'index', 'bond'];
         const values = keys.map((key) => Number(allocation[key]));
-        if (values.some((value) => !Number.isFinite(value) || value < 0 || value > 100) || values.reduce((sum, value) => sum + value, 0) !== 100) {
+        if (values.some((value) => !Number.isFinite(value) || value < 0 || value > 100) || Math.abs(values.reduce((sum, value) => sum + value, 0) - 100) > 0.01) {
           return res.status(502).json({ success: false, error: 'AI advisor allocation failed validation; percentages must sum to 100' });
         }
-        const reasoning = answer.replace(/```json[\s\S]*?```/gi, '').trim();
-        return res.json({ ...common, result: { ...parsed, allocation, reasoning } });
+        const recommendedAssets = Array.isArray(parsed.recommendedAssets)
+          ? parsed.recommendedAssets
+              .filter((value: unknown): value is string => typeof value === 'string' && /^[A-Za-z0-9.^=_-]{1,20}$/.test(value.trim()))
+              .map((value: string) => value.trim().toUpperCase())
+              .slice(0, 8)
+          : [];
+        if (!recommendedAssets.length || typeof parsed.wealthProtectionTip !== 'string' || !parsed.wealthProtectionTip.trim()) {
+          return res.status(502).json({ success: false, error: 'AI advisor returned incomplete recommendations or risk considerations' });
+        }
+        const reasoning = answer.replace(/\x60\x60\x60json[\s\S]*?\x60\x60\x60/gi, '').trim();
+        if (!reasoning) return res.status(502).json({ success: false, error: 'AI advisor returned no explanatory reasoning' });
+        return res.json({ ...common, result: { ...parsed, allocation, recommendedAssets, reasoning } });
       } catch {
         return res.status(502).json({ success: false, error: 'AI advisor returned invalid structured output' });
       }
