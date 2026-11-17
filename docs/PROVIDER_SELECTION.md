@@ -42,7 +42,7 @@ The table is an initial shortlist, not a vendor approval. Prices and entitlement
 
 NSE now exposes an official MCP surface with historical Bhavcopy data and a CM market feed described as approximately 1–3 minutes delayed. Its own disclaimer restricts this MCP access to educational/informational purposes and explicitly excludes commercial deployment. Treat it as a research/prototype integration only; it is not a production redistribution license. For production real-time or delayed display, use NSE Data & Analytics' paid subscription/data-vending route or an authorized vendor and execute the relevant agreement. Sources: https://www.nseindia.com/nse-mcp and https://www.nseindia.com/static/market-data/real-time-data-subscription.
 
-## 4. Current licensing and cost conclusion
+## 5. Current licensing and cost conclusion
 
 As of 18 November 2026, Twelve Data's published individual Grow ($79/month) and Pro ($229/month) plans are not suitable for public market-data display. Its Venture business tier is listed at $499/month billed monthly (or $414/month when billed annually); the vendor states client-facing display is possible subject to exchange licensing, with redistribution and some non-US market data requiring additional approval. Its exchange directory lists NSE and BSE as EOD on Grow/Venture, so it does not solve a live Indian-equities requirement by itself. Sources: https://twelvedata.com/pricing, https://twelvedata.com/pricing-business, https://support.twelvedata.com/en/articles/5332349-commercial-and-personal-usage, https://twelvedata.com/exchanges.
 
@@ -50,7 +50,7 @@ Massive states that public display to anyone other than the subscriber requires 
 
 These published prices are indicative only; exchange agreements, professional classification, user counts, redistribution, and data add-ons can materially change the quote. No subscription or API key has been purchased or enabled.
 
-## 5. Required decision inputs
+## 6. Required decision inputs
 
 Before enabling a provider, confirm:
 
@@ -61,7 +61,7 @@ Before enabling a provider, confirm:
 5. **Historical requirements:** intraday retention, daily history, adjusted/unadjusted prices, splits, dividends, symbol changes and delisted instruments.
 6. **Operational terms:** rate limits, SLA, support, WebSocket reconnect policy, maintenance notices and outage status.
 
-## 6. Implementation gate
+## 7. Implementation gate
 
 A second provider should be added only after the above is decided. The implementation must:
 
@@ -75,6 +75,6 @@ A second provider should be added only after the above is decided. The implement
 - Test primary success, primary timeout, secondary success, both unavailable, stale secondary, unsupported symbol, currency mismatch and conflicting prices.
 - Confirm the vendor license allows the intended display, storage, derived analytics and user audience.
 
-## 7. Current engineering stance
+## 8. Current engineering stance
 
 Until a provider is approved, VYMX should prefer an explicit unavailable state over an unlicensed or semantically incompatible fallback. A second provider is not automatically better: two feeds with different exchange coverage, timestamp semantics, corporate-action treatment or display rights can make the terminal less trustworthy if blended without controls.
