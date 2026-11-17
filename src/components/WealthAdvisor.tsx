@@ -30,6 +30,7 @@ interface WealthAdvisorProps {
   virtualBalance: number;
   assets: Asset[];
   setView: (view: any) => void;
+  onSelectAsset: (asset: Asset) => void;
   formatCurrency: (val: number, type?: string, country?: string) => string;
 }
 
@@ -61,6 +62,7 @@ export default function WealthAdvisor({
   virtualBalance,
   assets,
   setView,
+  onSelectAsset,
   formatCurrency,
 }: WealthAdvisorProps) {
   // Wizard flow states
@@ -577,7 +579,7 @@ export default function WealthAdvisor({
                       return (
                         <div
                           key={sym}
-                          onClick={() => { setView('details'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                          onClick={() => { onSelectAsset(matchedRaw); setView('details'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                           className="rounded-xl border border-zinc-850 bg-zinc-900/30 p-3 hover:bg-zinc-900 hover:border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 transition-all cursor-pointer flex flex-col justify-between"
                         >
                           <div className="flex justify-between items-start gap-1">
