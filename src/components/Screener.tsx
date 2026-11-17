@@ -737,7 +737,7 @@ export default function Screener({
                   <th className="py-3 px-3 sm:px-5 cursor-pointer hover:text-zinc-300 text-right" onClick={() => toggleSort('change')}>24h Change</th>
                   <th className="py-3 px-5 text-right hidden xl:table-cell cursor-pointer hover:text-zinc-300">52W Range</th>
                   <th className="py-3 px-5 hidden 2xl:table-cell text-left">Advanced (100x Density)</th>
-                  <th className="py-3 px-5 cursor-pointer hover:text-zinc-300 text-right hidden sm:table-cell" onClick={() => toggleSort('marketCap')}>Market Cap</th>
+<th className="py-3 px-5 text-right hidden sm:table-cell">Market Cap (N/A)</th>
                   <th className="py-3 px-4 text-center hidden md:table-cell">Vol (M)</th>
                   <th className="py-3 px-4 text-center hidden lg:table-cell">RSI(14)</th>
                   <th className="py-3 px-4 text-center hidden lg:table-cell">Beta</th>
