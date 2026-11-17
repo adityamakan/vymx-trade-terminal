@@ -18,6 +18,7 @@ const competitorDashboard = readFileSync(new URL('../src/components/CompetitorDa
 const hedgeEngine = readFileSync(new URL('../src/utils/hedgeEngine.ts', import.meta.url), 'utf8');
 const sectorBreakdown = readFileSync(new URL('../src/components/SectorBreakdown.tsx', import.meta.url), 'utf8');
 const riskDashboard = readFileSync(new URL('../src/components/RiskDashboard.tsx', import.meta.url), 'utf8');
+const server = readFileSync(new URL('../server/server.ts', import.meta.url), 'utf8');
 
 assert.equal(screener.includes('charCodeAt'), false, 'Screener metrics must never be derived from ticker-symbol characters');
 assert.equal(heatmap.includes('charCodeAt'), false, 'Heatmap metrics must never be derived from ticker-symbol characters');
@@ -47,5 +48,8 @@ assert.match(competitorDashboard, /hasFreshQuote\(comp\) \? formatCurrency/, 'Co
 assert.match(hedgeEngine, /quoteAgeMs > 120_000\) return \[\]/, 'Hedge suggestions must not use stale price moves');
 assert.match(sectorBreakdown, /every\(\(item\) => hasFreshQuote/, 'Sector breakdown must require fresh quotes for all holdings');
 assert.match(riskDashboard, /every\(\(item\) => hasFreshQuote/, 'Risk dashboard valuations must require fresh quotes for all holdings');
+assert.match(server, /function isFreshProviderTimestamp/, 'Server must validate provider observation timestamps');
+assert.match(server, /!isFreshProviderTimestamp\(quote\.asOf\)/, 'Server intelligence must reject stale quotes');
+assert.match(server, /No fresh provider observations are available/, 'Server must fail closed when every provider observation is stale');
 
 console.log('Synthetic UI metric regression tests passed.');
