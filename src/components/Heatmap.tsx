@@ -780,13 +780,7 @@ export default function Heatmap({
 
                         {/* Mid Section for extra data */}
                         <div className="my-1 flex justify-between items-center text-[8px] font-mono text-zinc-300 opacity-80">
-                          <span>
-                            RSI:{" "}
-                            {(
-                              20 +
-                              ((asset.symbol.charCodeAt(0) * 7) % 60)
-                            ).toFixed(1)}
-                          </span>
+                          <span>RSI: N/A — verified candle series unavailable</span>
                           <span>Vol: {asset.volumeDisplay}</span>
                         </div>
 
@@ -1099,15 +1093,11 @@ export default function Heatmap({
               </div>
               <div className="flex justify-between items-center col-span-2">
                 <span className="text-zinc-500">Dark-pool data</span>
-                <div className="w-1/2 bg-zinc-900 rounded-full h-1.5 overflow-hidden">
-                   <div className="bg-purple-500 h-full" style={{ width: `${30 + ((hoveredAsset.symbol.charCodeAt(0) * 5) % 50)}%` }}></div>
-                </div>
+                <span className="font-bold text-zinc-500">N/A — no dark-pool provider</span>
               </div>
               <div className="flex justify-between items-center col-span-2">
-                <span className="text-zinc-500">AI Confidence</span>
-                <div className="w-1/2 bg-zinc-900 rounded-full h-1.5 overflow-hidden">
-                   <div className="bg-emerald-500 h-full" style={{ width: `${40 + ((hoveredAsset.symbol.charCodeAt(0) * 2) % 55)}%` }}></div>
-                </div>
+                <span className="text-zinc-500">AI confidence score</span>
+                <span className="font-bold text-zinc-500">N/A — no validated scoring model</span>
               </div>
             </div>
 
