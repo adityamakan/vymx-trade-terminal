@@ -163,7 +163,7 @@ The GitHub branch API reported `protected: false` for `main` on 12 November 2026
 
 ## Market-data request reliability (Phase: infrastructure)
 
-- Yahoo Finance client queue concurrency is capped at four requests and quote/chart/fundamentals calls carry a 10-second abort timeout (the library queue has a 12-second ceiling).
+- Yahoo Finance client queue concurrency is capped at four requests and quote/chart/fundamentals calls carry a 10-second abort timeout.
 - Quote fetches are coalesced per normalized request symbol while in flight. The 30-second bounded in-memory quote cache remains process-local; cache hits never refresh provider observation timestamps.
 - `GET /api/providers/status` reports process-local Yahoo request counters, success/failure/timeout counts, cache hits, in-flight joins, recent latency, last success/failure and a derived status. It is not a scheduled probe, durable metric store, or guarantee of per-symbol coverage.
 - Do not add automatic failover to Finnhub merely because `FINNHUB_API_KEY` exists: the current Finnhub integration is news-only. A second quote provider needs a deliberate symbol/asset-class mapping, entitlement check, normalization, freshness policy, and licensing review.
