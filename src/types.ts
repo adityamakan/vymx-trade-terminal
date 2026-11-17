@@ -14,10 +14,10 @@ export interface Asset {
   country: string; // e.g. "United States", "Global", "Germany", "Japan", "Switzerland"
   volume: number | null; // null until supplied by the provider.
   volumeDisplay: string; // 'N/A' until supplied by the provider.
-  high52w: number; // Zero sentinel until provider quote metadata is available.
-  low52w: number; // Zero sentinel until provider quote metadata is available.
-  openPrice: number; // Zero sentinel until provider quote metadata is available.
-  prevClose: number; // Zero sentinel until provider quote metadata is available.
+  high52w: number | null;
+  low52w: number | null;
+  openPrice: number | null;
+  prevClose: number | null;
 }
 
 export interface PortfolioItem {
