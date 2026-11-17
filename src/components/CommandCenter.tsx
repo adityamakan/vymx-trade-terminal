@@ -33,6 +33,12 @@ export default function CommandCenter({ isOpen, onClose, setView, assets, onSele
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [, setFreshnessTick] = useState(0);
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = window.setInterval(() => setFreshnessTick((tick) => tick + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
