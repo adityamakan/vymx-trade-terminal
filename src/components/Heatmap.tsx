@@ -180,11 +180,17 @@ export default function Heatmap({
     return Object.entries(groups)
       .map(([name, items]) => {
         // Sort by absolute provider-reported daily move; market-cap metadata is not refreshed by the quote feed.
-        const sortedItems = [...items].sort((a, b) => Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0));
+        const sortedItems = [...items].sort((a, b) => {
+          const aFresh = hasFreshQuote(a);
+          const bFresh = hasFreshQuote(b);
+          if (!aFresh) return bFresh ? 1 : a.symbol.localeCompare(b.symbol);
+          if (!bFresh) return -1;
+          return Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0);
+        });
         return { name, items: sortedItems };
       })
       .sort((a, b) => b.items.length - a.items.length); // Larger groups first
-  }, [filteredAssets, groupBy]);
+  }, [filteredAssets, groupBy, freshnessTick]);
 
   // Helper stats calculations
   const summaryStats = useMemo(() => {
