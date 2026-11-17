@@ -41,6 +41,9 @@ jobs:
         run: npm run build:artifacts
 
       # Exercise the exact Node entry point Render starts, not only the bundler.
+      - name: Prune build-only dependencies before runtime smoke test
+        run: npm prune --omit=dev
+
       - name: Smoke test production server
         run: |
           PORT=4179 API_RATE_LIMIT_PER_MINUTE=2 WEBSOCKET_ALLOWED_ORIGINS=https://preview.example.net,https://deploy-preview-*--vymxtrade.netlify.app node dist-server/server.cjs > server-smoke.log 2>&1 &
