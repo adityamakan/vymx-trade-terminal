@@ -708,6 +708,7 @@ export default function Dashboard({
               </div>
 
               {/* Advanced Tracking Pointer */}
+              {verifiedQuoteAssets.length > 0 && (
               <motion.div
                 className="absolute top-0 bottom-0 w-1.5 bg-white shadow-[0_0_10px_rgba(255,255,255,1)] z-10"
                 initial={{ left: 0 }}
@@ -717,6 +718,7 @@ export default function Dashboard({
                  <div className="absolute -top-2 -ml-[3px] w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-white"></div>
                  <div className="absolute -bottom-2 -ml-[3px] w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-l-transparent border-r-transparent border-b-white"></div>
               </motion.div>
+              )}
             </div>
 
             <div className="flex justify-between items-center text-[9px] font-mono font-bold uppercase tracking-widest px-1">
