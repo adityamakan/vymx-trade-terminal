@@ -170,7 +170,7 @@ jobs:
             '|---|---|---:|',
             ...Object.entries(quoteCoverage.symbols).map(([symbol, quote]) => `| ${symbol} | ${quote.asOf} | ${quote.ageHours} |`)
           ];
-          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary.join('\\n') + '\\n');
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary.join('\n') + '\n');
           NODE
 
       - name: Retain structured production health sample
