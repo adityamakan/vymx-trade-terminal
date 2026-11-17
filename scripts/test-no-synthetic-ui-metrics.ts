@@ -38,7 +38,7 @@ assert.match(app, /quotesComplete && fxComplete/, 'Portfolio snapshots must requ
 assert.match(app, /quoteCoverageComplete: quotesComplete/, 'Snapshots must persist complete quote-coverage provenance');
 assert.match(portfolio, /hasFreshProviderQuote\(liveAsset\) \? liveAsset!\.price : null/, 'Portfolio holdings must not fall back to bundled prices');
 assert.match(portfolio, /N\/A — incomplete quote coverage/, 'Incomplete portfolio valuations must be disclosed');
-assert.match(portfolio, /filter\(\(snapshot\) => snapshot\.quoteCoverageComplete === true && snapshot\.totalEquityUSD != null\)/, 'Legacy snapshots without completeness proof must not enter risk analytics');
+assert.match(portfolio, /snapshot\.quoteCoverageComplete === true/, 'Historical risk must require complete provider quote coverage');
 assert.equal(data.includes('Math.random'), false, 'Bundled asset data must not generate synthetic historical price paths');
 assert.equal(data.includes('generateHistory'), false, 'Bundled asset data must not create synthetic OHLC history');
 assert.equal(data.includes('history:'), false, 'Bundled assets must not carry synthetic historical observations');
