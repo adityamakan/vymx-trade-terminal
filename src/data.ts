@@ -1389,10 +1389,10 @@ export const assets: Asset[] = rawAssets.map((raw) => ({
   peRatio: null,
   volume: null,
   volumeDisplay: 'N/A',
-  high52w: 0,
-  low52w: 0,
-  openPrice: 0,
-  prevClose: 0
+  high52w: null,
+  low52w: null,
+  openPrice: null,
+  prevClose: null
 }));
 
 // No bundled market-news fallback. Headlines must come from the configured provider.
