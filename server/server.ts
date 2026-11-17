@@ -91,6 +91,14 @@ type PriceQuote = {
   source: 'Yahoo Finance';
 };
 
+const MAX_PROVIDER_QUOTE_AGE_MS = 120_000;
+function isFreshProviderTimestamp(value: string | null | undefined): boolean {
+  if (!value) return false;
+  const observedAt = Date.parse(value);
+  const ageMs = Date.now() - observedAt;
+  return Number.isFinite(observedAt) && ageMs >= -60_000 && ageMs <= MAX_PROVIDER_QUOTE_AGE_MS;
+}
+
 const quoteCache = new Map<string, { value: PriceQuote; expiresAt: number }>();
 const historyCache = new Map<string, { value: unknown; expiresAt: number }>();
 const financialCache = new Map<string, { value: unknown; expiresAt: number }>();
@@ -474,7 +482,7 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
   const quote = (symbol: string) => result.prices[symbol];
   const metric = (symbol: string) => {
     const item = quote(symbol);
-    return item ? { price: item.price, change: item.change, currency: item.currency } : null;
+    return item && isFreshProviderTimestamp(item.asOf) ? { price: item.price, change: item.change, currency: item.currency, asOf: item.asOf } : null;
   };
   const spx = quote('^GSPC');
   const nifty = quote('^NSEI');
@@ -482,9 +490,10 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
   const btc = quote('BTC-USD');
   const vix = quote('^VIX');
   const providerObservationTimes = Object.values(result.prices).map((item) => item.asOf);
-  const quoteAsOf = providerObservationTimes.length === result.returned
-    && providerObservationTimes.every((value): value is string => Boolean(value))
-    ? new Date(Math.min(...providerObservationTimes.map((value) => Date.parse(value)))).toISOString()
+  const allReturnedQuotesFresh = providerObservationTimes.length === result.returned
+    && providerObservationTimes.every((value) => isFreshProviderTimestamp(value));
+  const quoteAsOf = allReturnedQuotesFresh
+    ? new Date(Math.min(...providerObservationTimes.map((value) => Date.parse(value!)))).toISOString()
     : null;
   return res.json({
     success: true,
@@ -541,7 +550,7 @@ app.get('/api/ai/market-auras', async (_req: Request, res: Response) => {
   const result = await getPrices(proxies.map((item) => item.symbol));
   const auras = proxies.flatMap((item) => {
     const quote = result.prices[item.symbol];
-    if (!quote || quote.change == null) return [];
+    if (!quote || !isFreshProviderTimestamp(quote.asOf) || quote.change == null) return [];
     const score = Math.max(0, Math.min(100, Math.round(50 + quote.change * 10)));
     return [{
       sector: item.sector,
@@ -564,7 +573,7 @@ app.get('/api/ai/narrative', async (_req: Request, res: Response) => {
   if (!result.returned) return res.status(503).json({ success: false, error: 'Market snapshot unavailable', unavailable: result.errors });
   const describe = (label: string, symbol: string) => {
     const quote = result.prices[symbol];
-    if (!quote) return `${label}: unavailable`;
+    if (!quote || !isFreshProviderTimestamp(quote.asOf)) return `${label}: unavailable (no fresh provider observation)`;
     const direction = quote.change == null ? 'change unavailable' : quote.change > 0 ? 'up' : quote.change < 0 ? 'down' : 'unchanged';
     const changeText = quote.change == null ? '' : ` ${Math.abs(quote.change).toFixed(2)}% on the provider's quoted change`;
     return `${label}: ${quote.price.toLocaleString('en-US', { maximumFractionDigits: 2 })}, ${direction}${changeText}`;
@@ -616,7 +625,7 @@ app.get('/api/ai/exchange-latest', async (req: Request, res: Response) => {
   if (!index) return res.status(503).json({ success: false, code: 'EXCHANGE_FEED_NOT_CONFIGURED', error: `No verified index quote mapping is configured for ${exchange || 'this exchange'}.` });
   const result = await getPrices([index.symbol]);
   const quote = result.prices[index.symbol];
-  if (!quote) return res.status(503).json({ success: false, error: 'Exchange index quote unavailable', unavailable: result.errors });
+  if (!quote || !isFreshProviderTimestamp(quote.asOf)) return res.status(503).json({ success: false, error: 'Fresh exchange index quote unavailable', unavailable: result.errors });
   const change = quote.change == null ? 'N/A' : `${quote.change >= 0 ? '+' : ''}${quote.change.toFixed(2)}%`;
   return res.json({
     success: true,
