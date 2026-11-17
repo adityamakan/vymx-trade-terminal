@@ -861,18 +861,16 @@ export default function Heatmap({
                               {asset.type === "bond" ? "YIELD" : "PRICE"}
                             </span>
                             <span className="text-xs font-black font-mono tracking-tight text-white block">
-                              {asset.type === "bond"
-                                ? asset.price.toFixed(4) + "%"
-                                : asset.type === "forex"
-                                  ? asset.price.toFixed(4)
-                                  : new Intl.NumberFormat("en-US", {
-                                      style: "currency",
-                                      currency:
-                                        asset.country === "India" &&
-                                        asset.type === "stock"
-                                          ? "INR"
-                                          : "USD",
-                                    }).format(asset.price)}
+                              {hasFreshQuote(asset)
+                                ? asset.type === "bond"
+                                  ? asset.price.toFixed(4) + "%"
+                                  : asset.type === "forex"
+                                    ? asset.price.toFixed(4)
+                                    : new Intl.NumberFormat("en-US", {
+                                        style: "currency",
+                                        currency: asset.country === "India" && asset.type === "stock" ? "INR" : "USD",
+                                      }).format(asset.price)
+                                : "N/A — no fresh quote"}
                             </span>
                           </div>
 
@@ -1038,7 +1036,7 @@ export default function Heatmap({
                   Reference Market Cap (static)
                 </p>
                 <p className="font-bold text-zinc-100">
-                  {hoveredAsset.marketCapDisplay}
+                  N/A — provider fundamentals unavailable
                 </p>
               </div>
               <div>
