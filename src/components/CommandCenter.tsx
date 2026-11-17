@@ -11,6 +11,13 @@ interface CommandCenterProps {
   onSelectAsset: (asset: Asset) => void;
 }
 
+const hasFreshQuote = (asset: Asset) => {
+  if (!asset.quoteAsOf) return false;
+  const observedAt = Date.parse(asset.quoteAsOf);
+  const ageMs = Date.now() - observedAt;
+  return Number.isFinite(observedAt) && ageMs >= -60_000 && ageMs <= 120_000;
+};
+
 const MODULES = [
   { id: 'dashboard', label: 'Dashboard & Globe', icon: Globe2, view: 'dashboard' },
   { id: 'screener', label: 'Asset Screener', icon: BarChart2, view: 'screener' },
@@ -166,9 +173,9 @@ export default function CommandCenter({ isOpen, onClose, setView, assets, onSele
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-mono text-sm">${asset.price.toLocaleString()}</div>
-                          <div className={`text-xs ${asset.change == null ? 'text-zinc-500' : asset.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            {asset.change == null ? 'N/A' : `${asset.change >= 0 ? '+' : ''}${asset.change}%`}
+                          <div className="font-mono text-sm">${hasFreshQuote(asset) ? `${asset.price.toLocaleString()}` : 'N/A'}</div>
+                          <div className={`text-xs ${!hasFreshQuote(asset) || asset.change == null ? 'text-zinc-500' : asset.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {!hasFreshQuote(asset) || asset.change == null ? 'N/A' : `${asset.change >= 0 ? '+' : ''}${asset.change}%`}
                           </div>
                         </div>
                       </button>
