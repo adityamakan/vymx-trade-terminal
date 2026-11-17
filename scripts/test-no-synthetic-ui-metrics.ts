@@ -62,6 +62,8 @@ assert.equal(sentimentGauge.includes('Unchecked speculative volume'), false, 'Da
 assert.equal(sentimentGauge.includes("price: computedSentiment.score"), false, 'Sentiment proxy score must not be sent to AI as a market price');
 assert.match(sentimentGauge, /proxyName: 'VYMX cross-asset market sentiment proxy'/, 'AI sentiment analysis must receive an explicitly labelled heuristic proxy');
 assert.match(dashboard, /Math\.max\(20, Math\.ceil\(assets\.length \* 0\.5\)\)/, 'Dashboard market breadth must require minimum universe coverage');
+assert.match(dashboard, /equityObservationCount >= 5 && cryptoObservationCount >= 3 && hasFreshGoldQuote && hasFreshSpxQuote/, 'Dashboard market-wide breadth must require representative cross-asset coverage');
+assert.match(dashboard, /filter\(\(\[, data\]\) => data\.count >= 3\)/, 'Sector leadership must require at least three fresh observations per sector');
 assert.match(heatmap3D, /assets\.filter\(hasFreshQuote\)/, '3D heatmap must exclude stale assets');
 assert.match(commandCenter, /hasFreshQuote\(asset\) \? `\$\{asset\.price\.toLocaleString\(\)\}` : 'N\/A'/, 'Command search must not show stale asset prices');
 assert.match(competitorDashboard, /hasFreshQuote\(comp\) \? formatCurrency/, 'Competitor prices must be quote-gated');
