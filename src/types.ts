@@ -1,8 +1,3 @@
-export interface HistoricalDataPoint {
-  date: string;
-  value: number;
-}
-
 export interface Asset {
   symbol: string;
   name: string;
@@ -23,9 +18,6 @@ export interface Asset {
   low52w: number;
   openPrice: number;
   prevClose: number;
-  history: {
-    [key: string]: HistoricalDataPoint[]; // '1D' | '1W' | '1M' | '1Y'
-  };
 }
 
 export interface PortfolioItem {
