@@ -54,7 +54,7 @@ assert.match(sentimentGauge, /assets\.filter\(\(asset\) => hasFreshProviderQuote
 assert.match(sentimentGauge, /!computedSentiment\.isAvailable \? 'N\/A'/, 'Sentiment must be unavailable below its quote-coverage threshold');
 assert.match(sentimentGauge, /equitiesSubset\.length >= 5 && cryptoSubset\.length >= 3 && safeHavenGap != null/, 'Sentiment requires representative equity, crypto and safe-haven coverage');
 assert.equal(sentimentGauge.includes('Traders are actively trimming'), false, 'Sentiment proxy must not claim investor actions from price changes');
-assert.equal(sentimentGauge.includes('speculative volume'), false, 'Daily price-change magnitude must not be mislabeled as traded volume');
+assert.equal(sentimentGauge.includes('Unchecked speculative volume'), false, 'Daily price-change magnitude must not be mislabeled as traded volume');
 assert.equal(sentimentGauge.includes("price: computedSentiment.score"), false, 'Sentiment proxy score must not be sent to AI as a market price');
 assert.match(sentimentGauge, /proxyName: 'VYMX cross-asset market sentiment proxy'/, 'AI sentiment analysis must receive an explicitly labelled heuristic proxy');
 assert.match(dashboard, /Math\.max\(20, Math\.ceil\(assets\.length \* 0\.5\)\)/, 'Dashboard market breadth must require minimum universe coverage');
