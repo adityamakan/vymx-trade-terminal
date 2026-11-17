@@ -691,7 +691,7 @@ export default function Dashboard({
             <div className="flex justify-between items-baseline">
               <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono">Advance / Decline Proxy Scale</span>
               <span className="text-xl font-extrabold text-zinc-100 font-mono flex items-baseline gap-1">
-                {verifiedQuoteAssets.length ? sentimentScore : 'N/A'}
+                {hasAdequateQuoteCoverage ? sentimentScore : 'N/A'}
                 <span className="text-xs font-bold text-zinc-500">{verifiedQuoteAssets.length ? '/ 100' : 'no quotes'}</span>
               </span>
             </div>
@@ -749,7 +749,7 @@ export default function Dashboard({
                     ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                     : 'bg-red-500/10 text-red-500 border border-red-500/20'
                 }`}>
-                  {verifiedQuoteAssets.length === 0 ? 'Unavailable — no verified quotes' : sentimentScore >= 75
+                  {!hasAdequateQuoteCoverage ? 'Insufficient coverage' : sentimentScore >= 75
                     ? 'Strongly positive breadth'
                     : sentimentScore >= 55
                     ? 'Positive breadth'
@@ -774,7 +774,7 @@ export default function Dashboard({
                 {/* Advancers */}
                 <div>
                   <div className="flex justify-between text-[10px] pb-1">
-                    <span className="text-emerald-400 font-bold flex items-center gap-1">▲ Advancers ({advCount})</span>
+                    <span className="text-emerald-400 font-bold flex items-center gap-1">▲ Advancers ({hasAdequateQuoteCoverage ? advCount : 'N/A'})</span>
                     <span className="text-zinc-400 font-semibold">{!hasAdequateQuoteCoverage ? 'N/A' : `${Math.round((advCount / verifiedQuoteAssets.length) * 100)}%`}</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
@@ -788,7 +788,7 @@ export default function Dashboard({
                 {/* Decliners */}
                 <div>
                   <div className="flex justify-between text-[10px] pb-1">
-                    <span className="text-rose-400 font-bold flex items-center gap-1">▼ Decliners ({decCount})</span>
+                    <span className="text-rose-400 font-bold flex items-center gap-1">▼ Decliners ({hasAdequateQuoteCoverage ? decCount : 'N/A'})</span>
                     <span className="text-zinc-400 font-semibold">{!hasAdequateQuoteCoverage ? 'N/A' : `${Math.round((decCount / verifiedQuoteAssets.length) * 100)}%`}</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
@@ -831,7 +831,7 @@ export default function Dashboard({
                   <div className="flex items-center justify-between text-[10px] font-mono">
                     <span className="text-zinc-500 font-sans">Underperforming:</span>
                     <span className="text-rose-400 font-bold px-1.5 py-0.5 rounded bg-rose-500/10 border border-rose-500/10 font-sans">
-                      {verifiedQuoteAssets.length === 0 ? 'N/A — no verified quotes' : `${sectorStats.bottomSector.name} (${sectorStats.bottomSector.avgChange >= 0 ? '+' : ''}${sectorStats.bottomSector.avgChange.toFixed(2)}%)`}
+                      {!hasAdequateQuoteCoverage ? 'N/A — insufficient quote coverage' : `${sectorStats.bottomSector.name} (${sectorStats.bottomSector.avgChange >= 0 ? '+' : ''}${sectorStats.bottomSector.avgChange.toFixed(2)}%)`}
                     </span>
                   </div>
                 </div>
