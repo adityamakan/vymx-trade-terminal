@@ -766,7 +766,7 @@ export default function Dashboard({
                 <div>
                   <div className="flex justify-between text-[10px] pb-1">
                     <span className="text-emerald-400 font-bold flex items-center gap-1">▲ Advancers ({advCount})</span>
-                    <span className="text-zinc-400 font-semibold">{Math.round((advCount / (verifiedQuoteAssets.length || 1)) * 100)}%</span>
+                    <span className="text-zinc-400 font-semibold">{verifiedQuoteAssets.length === 0 ? 'N/A' : `${Math.round((advCount / verifiedQuoteAssets.length) * 100)}%`}</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
                     <div
@@ -780,7 +780,7 @@ export default function Dashboard({
                 <div>
                   <div className="flex justify-between text-[10px] pb-1">
                     <span className="text-rose-400 font-bold flex items-center gap-1">▼ Decliners ({decCount})</span>
-                    <span className="text-zinc-400 font-semibold">{Math.round((decCount / (verifiedQuoteAssets.length || 1)) * 100)}%</span>
+                    <span className="text-zinc-400 font-semibold">{verifiedQuoteAssets.length === 0 ? 'N/A' : `${Math.round((decCount / verifiedQuoteAssets.length) * 100)}%`}</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
                     <div
@@ -794,7 +794,7 @@ export default function Dashboard({
                 <div>
                   <div className="flex justify-between text-[10px] pb-1">
                     <span className="text-zinc-500 font-semibold flex items-center gap-1">■ Neutral / Flat ({flatCount})</span>
-                    <span className="text-zinc-500">{Math.round((flatCount / (verifiedQuoteAssets.length || 1)) * 100)}%</span>
+                    <span className="text-zinc-500">{verifiedQuoteAssets.length === 0 ? 'N/A' : `${Math.round((flatCount / verifiedQuoteAssets.length) * 100)}%`}</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900/55 rounded-full overflow-hidden">
                     <div
@@ -815,14 +815,14 @@ export default function Dashboard({
                   <div className="flex items-center justify-between text-[10px] font-mono">
                     <span className="text-zinc-500 font-sans">Top Leading Segment:</span>
                     <span className="text-emerald-400 font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/10">
-                      {sectorStats.topSector.name} ({sectorStats.topSector.avgChange >= 0 ? '+' : ''}{sectorStats.topSector.avgChange.toFixed(2)}%)
+                      {verifiedQuoteAssets.length === 0 ? 'N/A — no verified quotes' : `${sectorStats.topSector.name} (${sectorStats.topSector.avgChange >= 0 ? '+' : ''}${sectorStats.topSector.avgChange.toFixed(2)}%)`}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between text-[10px] font-mono">
                     <span className="text-zinc-500 font-sans">Underperforming:</span>
                     <span className="text-rose-400 font-bold px-1.5 py-0.5 rounded bg-rose-500/10 border border-rose-500/10 font-sans">
-                      {sectorStats.bottomSector.name} ({sectorStats.bottomSector.avgChange >= 0 ? '+' : ''}{sectorStats.bottomSector.avgChange.toFixed(2)}%)
+                      {verifiedQuoteAssets.length === 0 ? 'N/A — no verified quotes' : `${sectorStats.bottomSector.name} (${sectorStats.bottomSector.avgChange >= 0 ? '+' : ''}${sectorStats.bottomSector.avgChange.toFixed(2)}%)`}
                     </span>
                   </div>
                 </div>
@@ -1232,9 +1232,11 @@ export default function Dashboard({
                 <div>
                   <p className="text-xs font-semibold text-indigo-300">Watchlist Intelligence</p>
                   <p className="text-[10px] text-indigo-200/70 mt-1 leading-relaxed">
-                    {watchlistAssets.filter(a => hasFreshProviderQuote(a) && a.change != null && a.change > 2).length > 0
-                      ? `${watchlistAssets.filter(a => hasFreshProviderQuote(a) && a.change != null && a.change > 2).length} assets in your watchlist are showing unusually high bullish momentum today. Consider setting up price alerts.`
-                      : `No verified daily quote moves above 2% are present in the current watchlist. This does not assess earnings, correlation or volatility.`}
+                    {watchlistAssets.filter((asset) => hasFreshProviderQuote(asset) && asset.change != null).length === 0
+                      ? 'Unavailable — no fresh quotes for the current watchlist.'
+                      : watchlistAssets.filter((asset) => hasFreshProviderQuote(asset) && asset.change != null && asset.change > 2).length > 0
+                        ? `${watchlistAssets.filter((asset) => hasFreshProviderQuote(asset) && asset.change != null && asset.change > 2).length} assets in your watchlist have verified daily moves above 2%. This is a descriptive observation, not a trading signal.`
+                        : 'No verified daily quote moves above 2% are present in the current watchlist. This does not assess earnings, correlation or volatility.'}
                   </p>
                 </div>
               </div>
