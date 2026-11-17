@@ -97,27 +97,8 @@ export default function Screener({
       result = result.filter((asset) => asset.country === filters.country);
     }
 
-    // 4. PE Ratio ranges filter
-    if (filters.peRatio !== 'all') {
-      result = result.filter((asset) => {
-        return false; // No verified fundamentals feed: do not screen against bundled P/E defaults.
-        if (filters.peRatio === 'undervalued') return asset.peRatio <= 15;
-        if (filters.peRatio === 'reasonable') return asset.peRatio > 15 && asset.peRatio <= 30;
-        if (filters.peRatio === 'premium') return asset.peRatio > 30;
-        return true;
-      });
-    }
-
-    // 5. Market Cap ranges filter
-    if (filters.marketCap !== 'all') {
-      result = result.filter((asset) => {
-        return false; // No verified fundamentals feed: do not screen against bundled market-cap defaults.
-        if (filters.marketCap === 'micro_mid') return asset.marketCap < 50; // Under 50B
-        if (filters.marketCap === 'large') return asset.marketCap >= 50 && asset.marketCap <= 500; // 50B-500B
-        if (filters.marketCap === 'mega') return asset.marketCap > 500; // Over 500B
-        return true;
-      });
-    }
+    // Fundamental filters are intentionally unavailable until source-backed fields exist.
+    if (filters.peRatio !== 'all' || filters.marketCap !== 'all') result = [];
 
     // Apply Sorting logic
     result.sort((a, b) => {
