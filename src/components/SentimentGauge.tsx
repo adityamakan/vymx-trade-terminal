@@ -204,12 +204,25 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          symbol: 'FGI-INDEX',
-          name: `Vymx Market Sentiment Proxy (${computedSentiment.status})`,
-          type: 'complex macroeconomic sentiment indices',
-          price: computedSentiment.score,
-          change: parseFloat(((computedSentiment.score - 50) / 50 * 100).toFixed(2)),
-          analysisType: 'newsSentiment'
+          prompt: 'Explain this heuristic cross-asset price-change proxy. Do not describe it as an official Fear & Greed index, measured investor positioning, institutional flows, traded volume, realized volatility, or a forecast. Explain the formula and its limitations in plain language.',
+          contextData: {
+            proxyName: 'VYMX cross-asset market sentiment proxy',
+            score: computedSentiment.score,
+            status: computedSentiment.status,
+            componentScores: computedSentiment.metrics,
+            observations: computedSentiment.observations,
+            requiredObservations: Math.max(20, Math.ceil(assets.length * 0.5)),
+            advancingAssets: computedSentiment.advancingCount,
+            decliningAssets: computedSentiment.decliningCount,
+            formula: 'Weighted combination of fresh provider-reported daily price changes, equity/index changes, crypto changes, S&P 500 versus gold change gap, and advance/decline ratio.',
+            limitations: [
+              'Not an official Fear & Greed index',
+              'No news, investor positioning, institutional flow, order-book, or traded-volume data',
+              'Top-five component is daily-move magnitude, not realized volatility',
+              'Not a forecast or investment recommendation'
+            ]
+          },
+          systemInstruction: 'Use only the supplied proxy values. Do not invent market causes, investor actions, live events, volume, or future returns. Explicitly call this a heuristic proxy.'
         }),
       });
 
