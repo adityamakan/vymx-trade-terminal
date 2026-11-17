@@ -771,7 +771,7 @@ export default function Heatmap({
                         {/* Mid Section for extra data */}
                         <div className="my-1 flex justify-between items-center text-[8px] font-mono text-zinc-300 opacity-80">
                           <span>RSI: N/A — verified candle series unavailable</span>
-                          <span>Vol: {asset.volumeDisplay}</span>
+                          <span>Vol: {hasFreshQuote(asset) && asset.volume != null ? asset.volumeDisplay : 'N/A'}</span>
                         </div>
 
 
@@ -1001,7 +1001,7 @@ export default function Heatmap({
                             hoveredAsset.type === "stock"
                               ? "INR"
                               : "USD",
-                        }).format(hoveredAsset.price)}
+                        }).format(hoveredAsset.price) : 'N/A'}
                 </p>
               </div>
               <div>
@@ -1009,15 +1009,15 @@ export default function Heatmap({
                   24h Fluctuation
                 </p>
                 <p
-                  className={`font-bold flex items-center gap-1 ${hoveredAsset.change == null ? "text-zinc-500" : hoveredAsset.change >= 0 ? "text-emerald-400" : "text-rose-455"}`}
+                  className={`font-bold flex items-center gap-1 ${!hasFreshQuote(hoveredAsset) || hoveredAsset.change == null ? "text-zinc-500" : hoveredAsset.change >= 0 ? "text-emerald-400" : "text-rose-455"}`}
                 >
-                  {hoveredAsset.change == null ? null : hoveredAsset.change >= 0 ? (
+                  {!hasFreshQuote(hoveredAsset) || hoveredAsset.change == null ? null : hoveredAsset.change >= 0 ? (
                     <TrendingUp className="h-3 w-3" />
                   ) : (
                     <TrendingDown className="h-3 w-3" />
                   )}
                   <span>
-                    {hoveredAsset.change == null ? 'N/A' : `${hoveredAsset.change >= 0 ? '+' : ''}${hoveredAsset.change}%`}
+                    {!hasFreshQuote(hoveredAsset) || hoveredAsset.change == null ? 'N/A' : `${hoveredAsset.change >= 0 ? '+' : ''}${hoveredAsset.change}%`}
                   </span>
                 </p>
               </div>
@@ -1034,7 +1034,7 @@ export default function Heatmap({
                   Provider-reported volume
                 </p>
                 <p className="font-bold text-zinc-100">
-                  {hoveredAsset.volumeDisplay}
+                  {hasFreshQuote(hoveredAsset) && hoveredAsset.volume != null ? hoveredAsset.volumeDisplay : 'N/A'}
                 </p>
               </div>
             </div>
