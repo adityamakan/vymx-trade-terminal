@@ -19,6 +19,8 @@ const hedgeEngine = readFileSync(new URL('../src/utils/hedgeEngine.ts', import.m
 const sectorBreakdown = readFileSync(new URL('../src/components/SectorBreakdown.tsx', import.meta.url), 'utf8');
 const riskDashboard = readFileSync(new URL('../src/components/RiskDashboard.tsx', import.meta.url), 'utf8');
 const server = readFileSync(new URL('../server/server.ts', import.meta.url), 'utf8');
+const wealthAdvisor = readFileSync(new URL('../src/components/WealthAdvisor.tsx', import.meta.url), 'utf8');
+const providerQuote = readFileSync(new URL('../src/utils/providerQuote.ts', import.meta.url), 'utf8');
 
 assert.equal(screener.includes('charCodeAt'), false, 'Screener metrics must never be derived from ticker-symbol characters');
 assert.equal(heatmap.includes('charCodeAt'), false, 'Heatmap metrics must never be derived from ticker-symbol characters');
@@ -53,5 +55,15 @@ assert.match(riskDashboard, /every\(\(item\) => hasFreshQuote/, 'Risk dashboard 
 assert.match(server, /function isFreshProviderTimestamp/, 'Server must validate provider observation timestamps');
 assert.match(server, /!isFreshProviderTimestamp\(quote\.asOf\)/, 'Server intelligence must reject stale quotes');
 assert.match(server, /No fresh provider observations are available/, 'Server must fail closed when every provider observation is stale');
+assert.equal(wealthAdvisor.includes("getLocalAssetsRecommendations"), false, 'Advisor must not silently substitute a local pseudo-model when Gemini is unavailable');
+assert.equal(wealthAdvisor.includes("Expected Max Drawdown"), false, 'Advisor must not invent drawdown estimates from risk labels');
+assert.equal(wealthAdvisor.includes("AI Confidence"), false, 'Advisor must not display fabricated model confidence');
+assert.equal(wealthAdvisor.includes("Back-Tested Assets"), false, 'Profile-based AI suggestions must not be mislabeled as backtested');
+assert.equal(wealthAdvisor.includes("riskTolerance === 'aggressive' ? '1.92'"), false, 'Advisor must not fabricate Sharpe ratios from risk labels');
+assert.match(wealthAdvisor, /AI recommendation unavailable/, 'Advisor must explicitly disclose provider failure');
+assert.match(wealthAdvisor, /isVerifiedProviderQuote\(matchedRaw\)/, 'Advisor asset cards must not display bundled sample prices as current');
+assert.match(wealthAdvisor, /Illustrative Annual Return Assumption/, 'SIP return must be labeled as a scenario input, not an expected return');
+assert.match(wealthAdvisor, /not a return forecast/, 'SIP calculator must disclose that its output is not a forecast');
+assert.match(providerQuote, /observedAt <= now \+ 60 \* 1_000/, 'Quote future timestamp tolerance must match the documented one-minute clock-skew allowance');
 
 console.log('Synthetic UI metric regression tests passed.');
