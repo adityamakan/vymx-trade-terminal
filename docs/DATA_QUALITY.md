@@ -75,3 +75,11 @@ A consumer must define a freshness threshold appropriate to the instrument and m
 - [ ] Formula and assumptions documented.
 - [ ] Tests cover missing, invalid, duplicate, out-of-order, stale, and boundary observations.
 - [ ] No synthetic fallback is labeled as live or historical provider data.
+
+
+## UI anti-fabrication controls
+
+- Screener comparison fields such as RSI, MACD, beta, dividend yield, P/B, EPS, ROE, debt-to-equity, current ratio, P/S, short interest, ATR, institutional ownership and free cash flow must display unavailable until a source-backed value or documented calculation is implemented. Ticker-symbol-derived placeholders are prohibited.
+- The Screener must not use bundled market-cap or P/E defaults to rank or filter assets. Fundamental filters remain unavailable until verified instrument fundamentals are supplied.
+- Heatmap RSI, dark-pool activity and AI-confidence fields must not use ticker-symbol-derived percentages or progress bars. Missing providers/models are shown as unavailable.
+- A connected transport is not proof that every symbol has a fresh quote. Quote freshness is evaluated per asset.
