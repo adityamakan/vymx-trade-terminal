@@ -475,10 +475,10 @@ export default function Dashboard({
                </div>
                <div className="flex items-center justify-between gap-6">
                   <span className="text-[9px] font-mono text-zinc-500 uppercase">Quote update status</span>
-                  <span className="text-[9px] font-mono text-indigo-400 font-bold">{isDataOffline ? 'WAITING' : 'PROVIDER DATA'}</span>
+                  <span className="text-[9px] font-mono text-indigo-400 font-bold">{verifiedQuoteAssets.length === 0 ? 'WAITING' : verifiedQuoteAssets.length < assets.length ? 'PARTIAL COVERAGE' : 'FULL QUOTE COVERAGE'}</span>
                </div>
                <div className="w-full h-0.5 bg-zinc-800 rounded-full mt-1 overflow-hidden">
-                  <div className={`h-full ${isDataOffline ? 'w-0' : 'w-full'} bg-indigo-500 shadow-[0_0_5px_#6366f1] transition-all`}></div>
+                  <div className="h-full bg-indigo-500 shadow-[0_0_5px_#6366f1] transition-all"></div>
                </div>
             </div>
           </div>
