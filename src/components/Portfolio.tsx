@@ -41,7 +41,7 @@ export default function Portfolio({
     const ageMs = Date.now() - observedAt;
     return Number.isFinite(observedAt) && ageMs >= -60_000 && ageMs <= 120_000;
   };
-  const [, setFreshnessTick] = useState(0);
+  const [freshnessTick, setFreshnessTick] = useState(0);
   useEffect(() => {
     const timer = window.setInterval(() => setFreshnessTick((tick) => tick + 1), 15_000);
     return () => window.clearInterval(timer);
@@ -561,7 +561,7 @@ export default function Portfolio({
       canvas.removeEventListener('mouseleave', mouseLeaveHandler);
       cancelAnimationFrame(animId);
     };
-  }, [portfolio, assets, virtualBalance]);
+  }, [portfolio, assets, virtualBalance, freshnessTick]);
 
   // 1. Calculate active portfolio stats from fresh per-symbol provider observations only.
   let totalHoldingsValue = 0;
