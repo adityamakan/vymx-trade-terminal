@@ -46,13 +46,13 @@ export async function streamWealthAdvisorAllocation(
   onChunk: (accumulatedReasoning: string) => void
 ): Promise<AdvisorOutput> {
   const data = await requestAI<{ result?: AdvisorOutput }>('advisor', input as unknown as Record<string, unknown>);
-  if (!data.result?.allocation || !data.result.reasoning) {
+  if (!data.result?.allocation || !data.result.reasoning || !Array.isArray(data.result.recommendedAssets) || data.result.recommendedAssets.length === 0 || typeof data.result.wealthProtectionTip !== 'string' || !data.result.wealthProtectionTip.trim()) {
     throw new Error('AI advisor returned an incomplete structured recommendation.');
   }
   const allocation = data.result.allocation;
   const total = allocation.stock + allocation.crypto + allocation.forex +
     allocation.commodity + allocation.index + allocation.bond;
-  if (total !== 100) throw new Error('AI advisor allocation failed validation.');
+  if (Math.abs(total - 100) > 0.01) throw new Error('AI advisor allocation failed validation.');
   onChunk(data.result.reasoning);
   return data.result;
 }
