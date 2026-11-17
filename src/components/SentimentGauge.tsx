@@ -409,7 +409,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm font-bold text-white">{computedSentiment.observations === 0 ? 'N/A' : computedSentiment.metrics.top5}<span className="text-xs text-zinc-500 font-normal">/100</span></p>
+            <p className="text-sm font-bold text-white">{computedSentiment.observations === 0 ? 'N/A' : `${computedSentiment.metrics.top5}/100`}</p>
           </div>
         </div>
 
