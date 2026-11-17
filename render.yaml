@@ -8,6 +8,7 @@ services:
     runtime: node
     region: virginia
     branch: main
+    autoDeployTrigger: checksPass
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /health
