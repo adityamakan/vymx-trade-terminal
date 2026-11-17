@@ -9,7 +9,7 @@
     "start": "node dist-server/server.cjs",
     "clean": "rm -rf dist dist-server",
     "lint": "tsc --noEmit",
-    "test": "tsx scripts/test-financial-analytics.ts && tsx scripts/test-firebase-config.ts && tsx scripts/test-no-synthetic-ui-metrics.ts",
+    "test": "tsx scripts/test-financial-analytics.ts && tsx scripts/test-firebase-config.ts && tsx scripts/test-no-synthetic-ui-metrics.ts && tsx scripts/test-market-data-telemetry.ts",
     "build:artifacts": "vite build && esbuild server/server.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist-server/server.cjs"
   },
   "devDependencies": {
