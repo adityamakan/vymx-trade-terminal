@@ -169,3 +169,8 @@ The GitHub branch API reported `protected: false` for `main` on 12 November 2026
 - Do not add automatic failover to Finnhub merely because `FINNHUB_API_KEY` exists: the current Finnhub integration is news-only. A second quote provider needs a deliberate symbol/asset-class mapping, entitlement check, normalization, freshness policy, and licensing review.
 - The Render health check should target `/health` (process health only). The current service dashboard configuration must be changed separately; this repository does not currently manage the existing service through a Render Blueprint.
 - Align the Render build command with CI by setting `npm ci && npm run build`. This remains a dashboard setting until a reviewed Blueprint is adopted.
+
+
+## Dependency audit boundary
+
+Vite, Tailwind, TypeScript, esbuild, and tsx are build/test tooling and belong in `devDependencies`. Render's build phase installs development dependencies to create `dist/` and `dist-server/`; the running server uses runtime dependencies. CI blocks on `npm audit --omit=dev` and also publishes the full audit report. Any remaining development-only advisory must be documented with the affected dependency path and upgraded as soon as a compatible upstream fix is available; do not force a semver-incompatible override.
