@@ -149,13 +149,13 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
     }
 
     const minimumObservationCount = Math.max(20, Math.ceil(assets.length * 0.5));
-    const isAvailable = totalAssetsCount >= minimumObservationCount;
+    const isAvailable = totalAssetsCount >= minimumObservationCount && equitiesSubset.length >= 5 && cryptoSubset.length >= 3 && safeHavenGap != null;
     if (!isAvailable) {
       statusText = 'Insufficient coverage';
       colorClass = 'text-zinc-500';
       strokeColor = '#71717a';
       gradientFrom = 'from-zinc-500';
-      adviceText = `Only ${totalAssetsCount}/${assets.length} fresh quote changes are available; at least ${minimumObservationCount} are required to calculate this market-wide proxy.`;
+      adviceText = `Insufficient representative data: ${totalAssetsCount}/${assets.length} fresh quote changes; need at least ${minimumObservationCount} total, 5 equity/index observations, 3 crypto observations, and fresh gold plus S&P 500 quotes.`;
     }
 
     return {
