@@ -100,3 +100,11 @@ A consumer must define a freshness threshold appropriate to the instrument and m
 - Per-instrument values require a provider observation no older than 120 seconds (with a 60-second allowance for clock skew).
 - Market-wide breadth and sentiment proxies require at least 20 fresh quote changes and at least 50% of the configured universe. The sentiment proxy additionally requires at least five equity/index observations, three crypto observations, and fresh gold plus S&P 500 quotes.
 - Server intelligence endpoints apply the same provider-timestamp freshness rule. Cached fetch time is never substituted for the provider observation timestamp.
+
+
+## FX conversion freshness
+
+- Non-USD FX conversions used in portfolio snapshots require a provider observation timestamp no older than 120 seconds, with a 60-second allowance for provider clock skew.
+- The FX endpoint returns per-currency rate, provider observation time, retrieval time and source. Missing or stale conversions are omitted and listed as unavailable.
+- Portfolio snapshots persist the FX observation timestamp separately from the numerical conversion rate. USD-to-USD is an identity conversion and does not require an external quote.
+- A present numerical FX rate without a fresh provider timestamp is not sufficient to mark conversion coverage complete.
