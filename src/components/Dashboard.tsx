@@ -867,7 +867,7 @@ export default function Dashboard({
                 </div>
                 <div className="mt-2 flex items-baseline justify-between gap-2">
                   <h3 className="text-xl font-bold font-mono tracking-tight text-white">{hasFreshProviderQuote(idx) ? idx.price.toLocaleString() : 'N/A'}</h3>
-                  <div className={`flex items-center gap-1 text-xs font-semibold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  <div className={`flex items-center gap-1 text-xs font-semibold ${!hasFreshProviderQuote(idx) || idx.change == null ? 'text-zinc-500' : isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {isUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
                     <span>{!hasFreshProviderQuote(idx) || idx.change == null ? 'N/A' : `${isUp ? '+' : ''}${idx.change.toFixed(2)}%`}</span>
                   </div>
@@ -1293,7 +1293,7 @@ export default function Dashboard({
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-bold font-mono text-zinc-200">{hasFreshProviderQuote(stk) ? formatCurrency(stk.price, stk.symbol, stk.country) : 'N/A'}</span>
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${isUp ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${!hasFreshProviderQuote(stk) || stk.change == null ? 'bg-zinc-500/5 text-zinc-500' : isUp ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                             {!hasFreshProviderQuote(stk) || stk.change == null ? 'N/A' : `${isUp ? '+' : ''}${stk.change}%`}
                           </span>
                         </div>
@@ -1321,7 +1321,7 @@ export default function Dashboard({
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-bold font-mono text-zinc-200">{hasFreshProviderQuote(cry) ? formatCurrency(cry.price, cry.symbol, cry.country) : 'N/A'}</span>
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${isUp ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${!hasFreshProviderQuote(cry) || cry.change == null ? 'bg-zinc-500/5 text-zinc-500' : isUp ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                             {!hasFreshProviderQuote(cry) || cry.change == null ? 'N/A' : `${isUp ? '+' : ''}${cry.change}%`}
                           </span>
                         </div>
@@ -1351,7 +1351,7 @@ export default function Dashboard({
                       </div>
                       <div className="text-right">
                         <span className="text-xs font-bold font-mono text-zinc-200">{hasFreshProviderQuote(comm) ? formatCurrency(comm.price, comm.symbol, comm.country) : 'N/A'}</span>
-                        <div className={`text-[10px] font-semibold flex items-center justify-end gap-1 ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        <div className={`text-[10px] font-semibold flex items-center justify-end gap-1 ${!hasFreshProviderQuote(comm) || comm.change == null ? 'text-zinc-500' : isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
                           <span>{!hasFreshProviderQuote(comm) || comm.change == null ? 'N/A' : `${isUp ? '+' : ''}${comm.change}%`}</span>
                         </div>
                       </div>
