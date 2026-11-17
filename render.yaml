@@ -1,7 +1,7 @@
 # This Blueprint is intentionally scoped to the existing production web service.
 # The name matches the Render service so the first sync can be planned as an adoption.
-# Plan, auto-deploy, IP allowlist, instance count, and environment variables are omitted
-# to preserve the existing service's current values during adoption.
+# Compute plan, IP allowlist, instance count, and environment variables are omitted
+# to preserve existing values. Auto-deploy is explicitly gated on passing CI checks.
 services:
   - type: web
     name: vymx-trade-terminal-2
