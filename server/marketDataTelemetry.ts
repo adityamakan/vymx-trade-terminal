@@ -76,8 +76,9 @@ export class ProviderTelemetry {
 
   snapshot(now = Date.now()): ProviderTelemetrySnapshot {
     const lastSuccessMs = this.lastSuccessAt ? Date.parse(this.lastSuccessAt) : Number.NaN;
-    const recentSuccess = Number.isFinite(lastSuccessMs) && now - lastSuccessMs <= 5 * 60_000;
-    const status: ProviderStatus = !this.successes
+    const successAgeMs = now - lastSuccessMs;
+    const recentSuccess = Number.isFinite(lastSuccessMs) && successAgeMs >= 0 && successAgeMs <= 5 * 60_000;
+    const status: ProviderStatus = this.requests === 0
       ? 'not_verified'
       : recentSuccess && this.consecutiveFailures === 0
         ? 'healthy'
