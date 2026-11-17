@@ -24,6 +24,7 @@ const providerQuote = readFileSync(new URL('../src/utils/providerQuote.ts', impo
 const marketGlobe = readFileSync(new URL('../src/components/MarketGlobe3D.tsx', import.meta.url), 'utf8');
 const financialChatbot = readFileSync(new URL('../src/components/FinancialChatbot.tsx', import.meta.url), 'utf8');
 const macroAnalyzer = readFileSync(new URL('../src/components/MacroeconomicAnalyzer.tsx', import.meta.url), 'utf8');
+const gemini = readFileSync(new URL('../src/lib/gemini.ts', import.meta.url), 'utf8');
 
 assert.equal(screener.includes('charCodeAt'), false, 'Screener metrics must never be derived from ticker-symbol characters');
 assert.equal(heatmap.includes('charCodeAt'), false, 'Heatmap metrics must never be derived from ticker-symbol characters');
@@ -84,6 +85,11 @@ assert.match(wealthAdvisor, /AI recommendation unavailable/, 'Advisor must expli
 assert.match(wealthAdvisor, /isVerifiedProviderQuote\(matchedRaw\)/, 'Advisor asset cards must not display bundled sample prices as current');
 assert.match(wealthAdvisor, /Illustrative Annual Return Assumption/, 'SIP return must be labeled as a scenario input, not an expected return');
 assert.match(wealthAdvisor, /not a return forecast/, 'SIP calculator must disclose that its output is not a forecast');
+assert.match(wealthAdvisor, /onSelectAsset\(matchedRaw\)/, 'Selecting an advisor suggestion must open the selected instrument, not a previous asset');
+assert.match(gemini, /recommendedAssets\.length === 0/, 'Client must reject incomplete AI advisor output before rendering');
+assert.match(gemini, /Math\.abs\(total - 100\) > 0\.01/, 'AI advisor allocation validation must tolerate harmless floating-point rounding');
+assert.match(server, /Math\.abs\(values\.reduce\(\(sum, value\) => sum \+ value, 0\) - 100\) > 0\.01/, 'Server must validate allocations with a small rounding tolerance');
+assert.match(server, /incomplete recommendations or risk considerations/, 'Server must reject missing advisor recommendations and risk guidance');
 assert.match(providerQuote, /observedAt <= now \+ 60_000/, 'Quote future timestamp tolerance must match the documented one-minute clock-skew allowance');
 assert.equal(marketGlobe.includes("label: 'Earn'"), false, 'Unavailable earnings mode must not generate random pseudo-event markers');
 assert.match(financialChatbot, /activeQuoteVerified \? \{/, 'Financial chatbot must send active-asset quote fields only when the quote is fresh');
