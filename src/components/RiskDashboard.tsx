@@ -53,13 +53,27 @@ function pearsonCorrelation(left: ReturnSeries, right: ReturnSeries): { value: n
   return { value: Math.max(-1, Math.min(1, covariance / Math.sqrt(varianceX * varianceY))), observations: dates.length };
 }
 
+const hasFreshQuote = (asset: Asset | undefined) => {
+  if (!asset?.quoteAsOf) return false;
+  const observedAt = Date.parse(asset.quoteAsOf);
+  const ageMs = Date.now() - observedAt;
+  return Number.isFinite(observedAt) && ageMs >= -60_000 && ageMs <= 120_000;
+};
+
 export default function RiskDashboard({ portfolio, assets }: RiskDashboardProps) {
-  const { sectorData, totalValue } = useMemo(() => {
+  const [freshnessTick, setFreshnessTick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setFreshnessTick((tick) => tick + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const { sectorData, totalValue, valuationComplete } = useMemo(() => {
     const sectorMap: Record<string, number> = {};
     let total = 0;
+    const complete = portfolio.every((item) => hasFreshQuote(assets.find((asset) => asset.symbol === item.symbol)));
+    if (!complete) return { sectorData: [], totalValue: 0, valuationComplete: false };
     portfolio.forEach((item) => {
       const asset = assets.find((candidate) => candidate.symbol === item.symbol);
-      if (!asset || !Number.isFinite(asset.price) || asset.price <= 0) return;
+      if (!asset || !hasFreshQuote(asset) || !Number.isFinite(asset.price) || asset.price <= 0) return;
       const currentValue = asset.price * item.quantity;
       const targetSector = asset.sector || 'Other';
       sectorMap[targetSector] = (sectorMap[targetSector] || 0) + currentValue;
@@ -67,9 +81,10 @@ export default function RiskDashboard({ portfolio, assets }: RiskDashboardProps)
     });
     return {
       sectorData: Object.entries(sectorMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value),
-      totalValue: total
+      totalValue: total,
+      valuationComplete: true
     };
-  }, [portfolio, assets]);
+  }, [portfolio, assets, freshnessTick]);
 
   const holdings = useMemo(() => portfolio
     .filter((item) => assets.some((asset) => asset.symbol === item.symbol))
@@ -171,7 +186,7 @@ export default function RiskDashboard({ portfolio, assets }: RiskDashboardProps)
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-xs text-zinc-500 font-mono">No valid market values available</div>
+          <div className="flex-1 flex items-center justify-center text-xs text-zinc-500 font-mono">{valuationComplete ? 'No valid market values available' : 'Sector valuation unavailable — fresh quotes required for every holding.'}</div>
         )}
       </div>
 

@@ -9,7 +9,7 @@ interface NavbarProps {
   selectedAsset: Asset | null;
   setSelectedAsset: (asset: Asset | null) => void;
   virtualBalance: number;
-  totalEquity: number;
+  totalEquity: number | null;
   theme: 'dark' | 'light';
   toggleTheme: () => void;
   currencyMode: 'AUTO' | 'USD' | 'INR';
@@ -97,13 +97,13 @@ export default function Navbar({
 
           {/* Right: Desktop Navigation & Macro Radar Badge */}
           <div className="hidden lg:flex items-center gap-4">
-            <div id="macro-radar-badge" className="flex items-center gap-2 rounded-full border border-zinc-800/80 bg-zinc-900/50 px-3.5 py-1.5 text-xs text-zinc-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-zinc-500">Fed Target:</span>
-              <span className="font-mono font-bold text-indigo-300">4.50%</span>
+            <div id="macro-radar-badge" className="flex items-center gap-2 rounded-full border border-zinc-800/80 bg-zinc-900/50 px-3.5 py-1.5 text-xs text-zinc-400" title="Official policy-rate and yield-curve observations are not connected to this navigation widget.">
+              <span className="w-2 h-2 rounded-full bg-amber-400" />
+              <span className="text-zinc-500">Official Fed target:</span>
+              <span className="font-mono font-bold text-amber-300">N/A</span>
               <span className="text-zinc-700">|</span>
               <span className="text-zinc-500">10Y-2Y:</span>
-              <span className="font-mono font-bold text-emerald-400">Normalizing</span>
+              <span className="font-mono font-bold text-zinc-400">Not verified</span>
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -386,7 +386,7 @@ export default function Navbar({
             <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Trading Account balance</p>
             <div className="flex items-center justify-between text-xs">
               <span className="text-zinc-400">Net Portfolio Equity</span>
-              <span className="font-semibold text-emerald-400">{formatCurrency(totalEquity)}</span>
+              <span className="font-semibold text-emerald-400">{totalEquity == null ? 'N/A — quote coverage incomplete' : formatCurrency(totalEquity)}</span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-zinc-400">Available virtual Cash</span>

@@ -1,4 +1,4 @@
-import { Asset, NewsArticle } from './types';
+import { Asset } from './types';
 
 // DEMO DATA ONLY: these price histories are synthetic geometric-Brownian-motion samples.
 // They are not exchange observations and must never be used for performance claims or backtests.
@@ -1440,73 +1440,7 @@ export const assets: Asset[] = rawAssets.map((raw) => {
   };
 });
 
-// Financial news articles focused on global markets and AI explanations
-export const newsArticles: NewsArticle[] = [
-  {
-    id: '1',
-    title: 'NVIDIA Stock Smashes Records as Blackwell AI Chips Draw Global Enterprise Rush',
-    source: 'Vymx Wall Street Feed',
-    time: '2 hours ago',
-    summary: 'NVIDIA CEO Jensen Huang announced unparalleled order rates for the upcoming Blackwell B200 architectures. Analysts project substantial EPS beats in future quarters, maintaining a robust bullish momentum across technology stocks.',
-    sentiment: 'positive',
-    symbolAffected: 'NVDA',
-  },
-  {
-    id: '2',
-    title: 'Solana Network Velocity Surpasses Ethereum Amid Stablecoin Liquidity Explosion',
-    source: 'HedgeLink Web3',
-    time: '4 hours ago',
-    summary: 'High transaction throughput and fractional transaction fees pushed Solana decentralization metrics past historic levels. DeFi volumes on Raydium and Orca have climbed 32% since Monday, attracting substantial trading volumes.',
-    sentiment: 'positive',
-    symbolAffected: 'SOL',
-  },
-  {
-    id: '3',
-    title: 'Federal Reserve Signals Higher-for-Longer Rates, Raising S&P 500 Headwinds',
-    source: 'MacroInsight',
-    time: '6 hours ago',
-    summary: 'Federal Reserve governors remain cautious regarding inflation progress. The latest FOMC minutes indicated reluctance to initiate rate cuts until core CPI shows highly consistent cooling, weighing down consumer cyclical assets.',
-    sentiment: 'negative',
-    symbolAffected: '.SPX',
-  },
-  {
-    id: '4',
-    title: 'Bitcoin Consolidates Around $67K as SEC Evaluates Crypto Exchange Index Funds',
-    source: 'TokenScreener',
-    time: '8 hours ago',
-    summary: 'The SEC officially logged draft files of diversified cryptocurrency index funds, hinting at possible spot index structures. Meanwhile, miner balance liquidation remains flat, establishing a high-volume base at current support lines.',
-    sentiment: 'neutral',
-    symbolAffected: 'BTC',
-  },
-  {
-    id: '5',
-    title: 'Gold Price Eyes New Heights as Central Banks Boost Sovereign Bullion Reserves',
-    source: 'Sovereign Metal Dispatch',
-    time: '12 hours ago',
-    summary: 'A continuous appetite for safe-haven assets among major central banks pushed gold spot trading within margin of all-time-high indicators. Investors remain confident as geoeconomic hedges support premium metals pricing.',
-    sentiment: 'positive',
-    symbolAffected: 'GC=F',
-  },
-  {
-    id: '6',
-    title: 'Tesla Facing Competitive Margins in EU Market as EV Demands Stabilize Short-Term',
-    source: 'AutoVolt Report',
-    time: '1 day ago',
-    summary: 'Tesla stock consolidated below multi-week levels as European delivery quotas faced domestic battery factory adjustments. Investors look forward to the Robotaxi announcements in late summer for structural validation.',
-    sentiment: 'negative',
-    symbolAffected: 'TSLA',
-  },
-  {
-    id: '7',
-    title: 'Crude Oil Adjusts Lower as Inventory Replenishment Minimizes Global Friction Premium',
-    source: 'PetroScale Market',
-    time: '1 day ago',
-    summary: 'US inventory statistics demonstrated a larger-than-expected accumulation of petroleum stockpiles, cooling immediate supply stress. OPEC+ delegates are keeping discussions active relative to seasonal output adjustments.',
-    sentiment: 'negative',
-    symbolAffected: 'CL=F',
-  },
-];
-
+// No bundled market-news fallback. Headlines must come from the configured provider.
 export const sectors = [
   'All Sectors',
   'Technology',

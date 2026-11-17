@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Asset } from '../types';
 import { TrendingUp, TrendingDown, Users } from 'lucide-react';
 
@@ -8,13 +8,25 @@ interface CompetitorDashboardProps {
   formatCurrency: (val: number, type?: string, country?: string) => string;
 }
 
+const hasFreshQuote = (item: Asset) => {
+  if (!item.quoteAsOf) return false;
+  const observedAt = Date.parse(item.quoteAsOf);
+  const ageMs = Date.now() - observedAt;
+  return Number.isFinite(observedAt) && ageMs >= -60_000 && ageMs <= 120_000;
+};
+
 export default function CompetitorDashboard({ asset, assets, formatCurrency }: CompetitorDashboardProps) {
+  const [freshnessTick, setFreshnessTick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setFreshnessTick((tick) => tick + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const topCompetitors = useMemo(() => {
     return assets
       .filter((a) => a.sector === asset.sector && a.symbol !== asset.symbol)
-      .sort((a, b) => b.marketCap - a.marketCap)
+      .sort((a, b) => a.symbol.localeCompare(b.symbol))
       .slice(0, 3);
-  }, [asset, assets]);
+  }, [asset, assets, freshnessTick]);
 
   if (topCompetitors.length === 0) return null;
 
@@ -24,7 +36,7 @@ export default function CompetitorDashboard({ asset, assets, formatCurrency }: C
         <Users className="h-4 w-4 text-emerald-400" />
         <h3 className="text-xs font-bold tracking-wider uppercase text-zinc-300">Sector Competitor Reference ({asset.sector})</h3>
       </div>
-      <p className="text-[9px] text-zinc-500">Sector membership and market-cap ranking use bundled reference metadata. Prices and daily changes update from the quote feed when available.</p>
+      <p className="text-[9px] text-zinc-500">Sector membership is bundled classification metadata. Competitor ordering is alphabetical; market-cap ranking is unavailable without verified fundamentals.</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {topCompetitors.map((comp) => (
@@ -34,20 +46,20 @@ export default function CompetitorDashboard({ asset, assets, formatCurrency }: C
                 <p className="text-xs font-bold text-white">{comp.symbol}</p>
                 <p className="text-[10px] text-zinc-400 line-clamp-1">{comp.name}</p>
               </div>
-              <div className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded ${comp.change >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                {comp.change >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                {Math.abs(comp.change).toFixed(2)}%
+              <div className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded ${!hasFreshQuote(comp) || comp.change == null ? 'bg-zinc-500/5 text-zinc-500' : comp.change >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                {!hasFreshQuote(comp) || comp.change == null ? null : comp.change >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                {!hasFreshQuote(comp) || comp.change == null ? 'N/A' : `${Math.abs(comp.change).toFixed(2)}%`}
               </div>
             </div>
 
             <div className="flex justify-between items-end mt-2">
               <div>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Price</p>
-                <p className="text-sm font-semibold text-zinc-200">{formatCurrency(comp.price, comp.type, comp.country)}</p>
+                <p className="text-sm font-semibold text-zinc-200">{hasFreshQuote(comp) ? formatCurrency(comp.price, comp.type, comp.country) : 'N/A'}</p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Mkt Cap</p>
-                <p className="text-xs font-medium text-zinc-400">{comp.marketCapDisplay}</p>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Mkt Cap (N/A)</p>
+                <p className="text-xs font-medium text-zinc-400">N/A — provider fundamentals unavailable</p>
               </div>
             </div>
           </div>

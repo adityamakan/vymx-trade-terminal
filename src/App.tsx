@@ -39,8 +39,10 @@ interface PortfolioSnapshot {
   baseCurrency: 'USD';
   fxRates: Record<string, number>;
   totalEquityUSD: number | null;
+  quoteCoverageComplete?: boolean;
+  fxConversionComplete?: boolean;
   source: 'provider-quote-snapshot';
-  currencyNormalization: 'provider-fx-to-usd' | 'incomplete';
+  currencyNormalization: 'provider-fx-to-usd' | 'incomplete' | 'incomplete-quotes' | 'incomplete-fx';
 }
 
 export default function App() {
@@ -367,7 +369,7 @@ export default function App() {
       const newAlerts = prevAlerts.map(alert => {
         if (!alert.active) return alert;
         const liveAsset = liveAssets.find(a => a.symbol === alert.symbol);
-        if (!liveAsset) return alert;
+        if (!liveAsset || !isVerifiedProviderQuote(liveAsset)) return alert;
 
         let triggered = false;
         if (alert.direction === 'above' && liveAsset.price >= alert.targetPrice) {
@@ -432,8 +434,8 @@ export default function App() {
       if (lastSnapshotBucketRef.current === bucket || snapshotInFlightBucketRef.current === bucket) return;
       snapshotInFlightBucketRef.current = bucket;
       const current = portfolioSnapshotRef.current;
-      const validPositions = current.portfolio
-        .filter((position) => position.quantity > 0)
+      const openPositions = current.portfolio.filter((position) => position.quantity > 0);
+      const validPositions = openPositions
         .map((position) => {
           const quote = current.assets.find((asset) => asset.symbol === position.symbol);
           const currency = typeof quote?.currency === 'string' && /^[A-Z]{3}$/.test(quote.currency) ? quote.currency : null;
@@ -461,6 +463,7 @@ export default function App() {
           ? position.marketValue * fxRates[position.quoteCurrency]
           : null
       }));
+      const quotesComplete = validPositions.length === openPositions.length;
       const fxComplete = normalizedPositions.every((position) => position.marketValueUSD != null);
       const capturedAt = Date.now();
       const snapshot: PortfolioSnapshot = {
@@ -470,9 +473,11 @@ export default function App() {
         positions: normalizedPositions,
         baseCurrency: 'USD',
         fxRates,
-        totalEquityUSD: fxComplete ? current.virtualBalance + normalizedPositions.reduce((sum, position) => sum + (position.marketValueUSD || 0), 0) : null,
+        totalEquityUSD: quotesComplete && fxComplete ? current.virtualBalance + normalizedPositions.reduce((sum, position) => sum + (position.marketValueUSD || 0), 0) : null,
+        quoteCoverageComplete: quotesComplete,
+        fxConversionComplete: fxComplete,
         source: 'provider-quote-snapshot',
-        currencyNormalization: fxComplete ? 'provider-fx-to-usd' : 'incomplete'
+        currencyNormalization: !quotesComplete ? 'incomplete-quotes' : fxComplete ? 'provider-fx-to-usd' : 'incomplete-fx'
       };
       try {
         if (auth.currentUser?.uid !== uid) return;
@@ -509,14 +514,17 @@ export default function App() {
 
   // Portfolio items valuations calculators
   const getPortfolioValue = () => {
-    return portfolio.reduce((sum, item) => {
-      const liveAsset = liveAssets.find((a) => a.symbol === item.symbol);
-      const currentPrice = liveAsset ? liveAsset.price : item.avgBuyPrice;
-      return sum + item.quantity * currentPrice;
-    }, 0);
+    let total = 0;
+    for (const item of portfolio) {
+      const liveAsset = liveAssets.find((asset) => asset.symbol === item.symbol);
+      if (!liveAsset || !isVerifiedProviderQuote(liveAsset)) return null;
+      total += item.quantity * liveAsset.price;
+    }
+    return total;
   };
 
-  const totalEquity = virtualBalance + getPortfolioValue();
+  const portfolioValue = getPortfolioValue();
+  const totalEquity = portfolioValue == null ? null : virtualBalance + portfolioValue;
 
   // Handle Order Settlement logic (Buy & Sell simulated transactions)
   const handleTradeSubmit = (

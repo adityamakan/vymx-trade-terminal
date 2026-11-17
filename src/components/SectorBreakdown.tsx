@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Asset, PortfolioItem } from '../types';
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { ChartContainer } from './ChartContainer';
@@ -9,15 +9,30 @@ interface SectorBreakdownProps {
   assets: Asset[];
 }
 
+const hasFreshQuote = (asset: Asset | undefined) => {
+  if (!asset?.quoteAsOf) return false;
+  const observedAt = Date.parse(asset.quoteAsOf);
+  const ageMs = Date.now() - observedAt;
+  return Number.isFinite(observedAt) && ageMs >= -60_000 && ageMs <= 120_000;
+};
+
 export default function SectorBreakdown({ portfolio, assets }: SectorBreakdownProps) {
-  const { data, totalValue } = useMemo(() => {
+  const [freshnessTick, setFreshnessTick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setFreshnessTick((tick) => tick + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const { data, totalValue, valuationComplete } = useMemo(() => {
     // We want to calculate the total current value of the portfolio for each sector
     const sectorMap: Record<string, number> = {};
     let total = 0;
 
+    const complete = portfolio.every((item) => hasFreshQuote(assets.find((asset) => asset.symbol === item.symbol)));
+    if (!complete) return { data: [], totalValue: 0, valuationComplete: false };
+
     portfolio.forEach(item => {
       const asset = assets.find(a => a.symbol === item.symbol);
-      if (asset) {
+      if (asset && hasFreshQuote(asset)) {
         const currentValue = asset.price * item.quantity;
         const targetSector = asset.sector || 'Other';
         sectorMap[targetSector] = (sectorMap[targetSector] || 0) + currentValue;
@@ -30,8 +45,8 @@ export default function SectorBreakdown({ portfolio, assets }: SectorBreakdownPr
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value); // Sort biggest sectors first
 
-    return { data: chartData, totalValue: total };
-  }, [portfolio, assets]);
+    return { data: chartData, totalValue: total, valuationComplete: true };
+  }, [portfolio, assets, freshnessTick]);
 
   // Elegant predefined palette to color the sectors dynamically
   const COLORS = [
@@ -68,6 +83,16 @@ export default function SectorBreakdown({ portfolio, assets }: SectorBreakdownPr
     }
     return null;
   };
+
+  if (portfolio.length > 0 && !valuationComplete) {
+    return (
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 min-h-[300px] flex flex-col justify-center items-center text-center">
+        <PieChartIcon className="w-8 h-8 text-zinc-700 mb-3" />
+        <h3 className="text-sm font-bold text-zinc-400">Sector Exposure Breakdown</h3>
+        <p className="text-xs text-amber-300 mt-1 max-w-[240px]">Unavailable until every open holding has a fresh provider quote.</p>
+      </div>
+    );
+  }
 
   if (portfolio.length === 0 || totalValue === 0) {
     return (

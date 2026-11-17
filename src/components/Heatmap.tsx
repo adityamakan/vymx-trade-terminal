@@ -180,11 +180,17 @@ export default function Heatmap({
     return Object.entries(groups)
       .map(([name, items]) => {
         // Sort by absolute provider-reported daily move; market-cap metadata is not refreshed by the quote feed.
-        const sortedItems = [...items].sort((a, b) => Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0));
+        const sortedItems = [...items].sort((a, b) => {
+          const aFresh = hasFreshQuote(a);
+          const bFresh = hasFreshQuote(b);
+          if (!aFresh) return bFresh ? 1 : a.symbol.localeCompare(b.symbol);
+          if (!bFresh) return -1;
+          return Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0);
+        });
         return { name, items: sortedItems };
       })
       .sort((a, b) => b.items.length - a.items.length); // Larger groups first
-  }, [filteredAssets, groupBy]);
+  }, [filteredAssets, groupBy, freshnessTick]);
 
   // Helper stats calculations
   const summaryStats = useMemo(() => {
@@ -202,28 +208,18 @@ export default function Heatmap({
 
   const activeMarketCapTotal = 'Not supplied by quote feed';
 
-  // Compute cell display value according to metric setting
+  // Compute cell display value according to metric setting.
+  // Only provider-backed fields with a valid, fresh observation are shown.
   const getCellMetricDisplay = (asset: Asset) => {
     if (!hasFreshQuote(asset)) return 'N/A';
     if (metricView === "volume") {
-      return asset.volumeDisplay || 'N/A';
+      return asset.volume != null && Number.isFinite(asset.volume) ? asset.volumeDisplay : 'N/A';
     }
-    if (metricView === "range52w") {
-      const spread = asset.high52w - asset.low52w;
-      if (spread === 0) return "50%";
-      const relativePosition = ((asset.price - asset.low52w) / spread) * 100;
-      return `${relativePosition.toFixed(0)}% Range`;
-    }
-    if (metricView === "flowVelocity") {
-      return 'N/A';
-    }
-    if (metricView === "volatility") {
-      return 'N/A';
-    }
+    if (metricView === "range52w") return 'N/A — verified 52-week range unavailable';
+    if (metricView === "flowVelocity" || metricView === "volatility") return 'N/A';
     const timeframeChange = getTimeframeChange(asset);
     return timeframeChange == null ? 'N/A' : `${timeframeChange >= 0 ? "+" : ""}${timeframeChange.toFixed(2)}%`;
   };
-
 
   const getTimeframeChange = (asset: Asset): number | null => {
     // Bundled asset.history contains synthetic demo samples. Only 1D provider
@@ -233,18 +229,18 @@ export default function Heatmap({
 
   const getCellMetricColorIntensityStyle = (asset: Asset) => {
     if (!hasFreshQuote(asset)) return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
-    if (metricView === "volume") return asset.volume != null && asset.volume > 10000000 ? "bg-indigo-950/90 text-indigo-300 border-indigo-500/30" : "bg-zinc-900 text-zinc-400 border-zinc-800/60";
-    if (metricView === "range52w") {
-      const spread = asset.high52w - asset.low52w;
-      if (spread <= 0) return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
-      const pct = ((asset.price - asset.low52w) / spread) * 100;
-      if (pct > 80) return "bg-emerald-950/80 text-emerald-300 border-emerald-500/20";
-      if (pct < 20) return "bg-rose-950/80 text-rose-300 border-rose-500/20";
-      return "bg-zinc-900 text-zinc-400 border-zinc-800/60";
+    if (metricView === "volume") {
+      return asset.volume != null && asset.volume > 10_000_000
+        ? "bg-indigo-950/90 text-indigo-300 border-indigo-500/30"
+        : "bg-zinc-900 text-zinc-400 border-zinc-800/60";
     }
-    if (metricView === "flowVelocity" || metricView === "volatility") return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
+    if (metricView === "range52w" || metricView === "flowVelocity" || metricView === "volatility") {
+      return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
+    }
     const timeframeChange = getTimeframeChange(asset);
-    return timeframeChange == null ? "bg-zinc-900 text-zinc-500 border-zinc-800/60" : getChangeBgColor(timeframeChange, colorScheme);
+    return timeframeChange == null
+      ? "bg-zinc-900 text-zinc-500 border-zinc-800/60"
+      : getChangeBgColor(timeframeChange, colorScheme);
   };
 
   return (
@@ -700,7 +696,7 @@ export default function Heatmap({
               {/* Uniform tiles: verified market-cap weighting is not available in this quote feed. */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
                 {group.items.map((asset) => {
-                  const relativeUp = asset.change != null && asset.change >= 0;
+                  const relativeUp = hasFreshQuote(asset) && asset.change != null && asset.change >= 0;
                   const isFlash = flashUpdateSym[asset.symbol];
 
                   let sizeClass = "col-span-1 row-span-1 h-24";
@@ -780,14 +776,8 @@ export default function Heatmap({
 
                         {/* Mid Section for extra data */}
                         <div className="my-1 flex justify-between items-center text-[8px] font-mono text-zinc-300 opacity-80">
-                          <span>
-                            RSI:{" "}
-                            {(
-                              20 +
-                              ((asset.symbol.charCodeAt(0) * 7) % 60)
-                            ).toFixed(1)}
-                          </span>
-                          <span>Vol: {asset.volumeDisplay}</span>
+                          <span>RSI: N/A — verified candle series unavailable</span>
+                          <span>Vol: {hasFreshQuote(asset) && asset.volume != null ? asset.volumeDisplay : 'N/A'}</span>
                         </div>
 
 
@@ -800,9 +790,9 @@ export default function Heatmap({
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex justify-between text-[10px] text-zinc-300 font-mono bg-black/20 p-1 rounded">
-                              <span className="flex flex-col"><span>O</span><span className="font-bold text-white">{asset.openPrice.toFixed(2)}</span></span>
-                              <span className="flex flex-col text-center"><span>H</span><span className="font-bold text-emerald-400">{asset.high52w.toFixed(2)}</span></span>
-                              <span className="flex flex-col text-right"><span>L</span><span className="font-bold text-rose-400">{asset.low52w.toFixed(2)}</span></span>
+                              <span className="flex flex-col"><span>O</span><span className="font-bold text-white">{'N/A'}</span></span>
+                              <span className="flex flex-col text-center"><span>H</span><span className="font-bold text-emerald-400">{'N/A'}</span></span>
+                              <span className="flex flex-col text-right"><span>L</span><span className="font-bold text-rose-400">{'N/A'}</span></span>
                             </div>
 
                             <div className="h-12 w-full mt-1 bg-black/10 rounded">
@@ -821,18 +811,20 @@ export default function Heatmap({
                                 onClick={(e) => e.stopPropagation()}
                               />
                               <button
+                                disabled={!hasFreshQuote(asset)}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (onTradeSubmit) onTradeSubmit('BUY', asset.symbol, tradeQuantity[asset.symbol] || 1, asset.price);
+                                  if (onTradeSubmit && hasFreshQuote(asset)) onTradeSubmit('BUY', asset.symbol, tradeQuantity[asset.symbol] || 1, asset.price);
                                 }}
                                 className="flex-1 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30 rounded text-[10px] font-bold uppercase py-1 flex items-center justify-center gap-1 transition-colors"
                               >
                                 <ShoppingCart className="w-3 h-3" /> Buy
                               </button>
                               <button
+                                disabled={!hasFreshQuote(asset)}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (onTradeSubmit) onTradeSubmit('SELL', asset.symbol, tradeQuantity[asset.symbol] || 1, asset.price);
+                                  if (onTradeSubmit && hasFreshQuote(asset)) onTradeSubmit('SELL', asset.symbol, tradeQuantity[asset.symbol] || 1, asset.price);
                                 }}
                                 className="flex-1 bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 border border-rose-500/30 rounded text-[10px] font-bold uppercase py-1 flex items-center justify-center gap-1 transition-colors"
                               >
@@ -867,18 +859,16 @@ export default function Heatmap({
                               {asset.type === "bond" ? "YIELD" : "PRICE"}
                             </span>
                             <span className="text-xs font-black font-mono tracking-tight text-white block">
-                              {asset.type === "bond"
-                                ? asset.price.toFixed(4) + "%"
-                                : asset.type === "forex"
-                                  ? asset.price.toFixed(4)
-                                  : new Intl.NumberFormat("en-US", {
-                                      style: "currency",
-                                      currency:
-                                        asset.country === "India" &&
-                                        asset.type === "stock"
-                                          ? "INR"
-                                          : "USD",
-                                    }).format(asset.price)}
+                              {hasFreshQuote(asset)
+                                ? asset.type === "bond"
+                                  ? asset.price.toFixed(4) + "%"
+                                  : asset.type === "forex"
+                                    ? asset.price.toFixed(4)
+                                    : new Intl.NumberFormat("en-US", {
+                                        style: "currency",
+                                        currency: asset.country === "India" && asset.type === "stock" ? "INR" : "USD",
+                                      }).format(asset.price)
+                                : "N/A — no fresh quote"}
                             </span>
                           </div>
 
@@ -1007,35 +997,31 @@ export default function Heatmap({
                 <p className="text-zinc-500 text-[9px] uppercase font-bold">
                   Standard Price
                 </p>
-                <p className="font-bold text-zinc-100">
-                  {hoveredAsset.type === "bond"
-                    ? hoveredAsset.price.toFixed(4) + "%"
-                    : hoveredAsset.type === "forex"
-                      ? hoveredAsset.price.toFixed(4)
-                      : new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency:
-                            hoveredAsset.country === "India" &&
-                            hoveredAsset.type === "stock"
-                              ? "INR"
-                              : "USD",
-                        }).format(hoveredAsset.price)}
-                </p>
+                <p className="font-bold text-zinc-100">{hasFreshQuote(hoveredAsset)
+                    ? (hoveredAsset.type === "bond"
+                      ? hoveredAsset.price.toFixed(4) + "%"
+                      : hoveredAsset.type === "forex"
+                        ? hoveredAsset.price.toFixed(4)
+                        : new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency: hoveredAsset.country === "India" && hoveredAsset.type === "stock" ? "INR" : "USD",
+                          }).format(hoveredAsset.price))
+                    : 'N/A — no fresh quote'}</p>
               </div>
               <div>
                 <p className="text-zinc-500 text-[9px] uppercase font-bold">
                   24h Fluctuation
                 </p>
                 <p
-                  className={`font-bold flex items-center gap-1 ${hoveredAsset.change == null ? "text-zinc-500" : hoveredAsset.change >= 0 ? "text-emerald-400" : "text-rose-455"}`}
+                  className={`font-bold flex items-center gap-1 ${!hasFreshQuote(hoveredAsset) || hoveredAsset.change == null ? "text-zinc-500" : hoveredAsset.change >= 0 ? "text-emerald-400" : "text-rose-455"}`}
                 >
-                  {hoveredAsset.change == null ? null : hoveredAsset.change >= 0 ? (
+                  {!hasFreshQuote(hoveredAsset) || hoveredAsset.change == null ? null : hoveredAsset.change >= 0 ? (
                     <TrendingUp className="h-3 w-3" />
                   ) : (
                     <TrendingDown className="h-3 w-3" />
                   )}
                   <span>
-                    {hoveredAsset.change == null ? 'N/A' : `${hoveredAsset.change >= 0 ? '+' : ''}${hoveredAsset.change}%`}
+                    {!hasFreshQuote(hoveredAsset) || hoveredAsset.change == null ? 'N/A' : `${hoveredAsset.change >= 0 ? '+' : ''}${hoveredAsset.change}%`}
                   </span>
                 </p>
               </div>
@@ -1044,7 +1030,7 @@ export default function Heatmap({
                   Reference Market Cap (static)
                 </p>
                 <p className="font-bold text-zinc-100">
-                  {hoveredAsset.marketCapDisplay}
+                  N/A — provider fundamentals unavailable
                 </p>
               </div>
               <div>
@@ -1052,7 +1038,7 @@ export default function Heatmap({
                   Provider-reported volume
                 </p>
                 <p className="font-bold text-zinc-100">
-                  {hoveredAsset.volumeDisplay}
+                  {hasFreshQuote(hoveredAsset) && hoveredAsset.volume != null ? hoveredAsset.volumeDisplay : 'N/A'}
                 </p>
               </div>
             </div>
@@ -1099,24 +1085,20 @@ export default function Heatmap({
               </div>
               <div className="flex justify-between items-center col-span-2">
                 <span className="text-zinc-500">Dark-pool data</span>
-                <div className="w-1/2 bg-zinc-900 rounded-full h-1.5 overflow-hidden">
-                   <div className="bg-purple-500 h-full" style={{ width: `${30 + ((hoveredAsset.symbol.charCodeAt(0) * 5) % 50)}%` }}></div>
-                </div>
+                <span className="font-bold text-zinc-500">N/A — no dark-pool provider</span>
               </div>
               <div className="flex justify-between items-center col-span-2">
-                <span className="text-zinc-500">AI Confidence</span>
-                <div className="w-1/2 bg-zinc-900 rounded-full h-1.5 overflow-hidden">
-                   <div className="bg-emerald-500 h-full" style={{ width: `${40 + ((hoveredAsset.symbol.charCodeAt(0) * 2) % 55)}%` }}></div>
-                </div>
+                <span className="text-zinc-500">AI confidence score</span>
+                <span className="font-bold text-zinc-500">N/A — no validated scoring model</span>
               </div>
             </div>
 
             <div className="h-px bg-zinc-900" />
 
             <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
-              <span className="flex items-center gap-1 text-emerald-500">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
-                Live ticks sync active
+              <span className={`flex items-center gap-1 ${isDataOffline ? "text-amber-400" : "text-emerald-500"}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${isDataOffline ? "bg-amber-400" : "bg-emerald-500"}`} />
+                {isDataOffline ? 'Provider feed offline' : 'Provider transport connected · per-asset freshness enforced'}
               </span>
               <span
                 className="flex items-center gap-1 text-zinc-400 group-hover:text-white pb-0.5 hover:underline cursor-pointer"

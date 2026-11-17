@@ -43,6 +43,14 @@ export default function AssetDetails({
   isDataOffline,
   assets,
 }: AssetDetailsProps) {
+  const hasFreshQuote = Boolean(asset.quoteAsOf && Number.isFinite(Date.parse(asset.quoteAsOf)) &&
+    Date.now() - Date.parse(asset.quoteAsOf) >= -60_000 &&
+    Date.now() - Date.parse(asset.quoteAsOf) <= 120_000);
+  const [, setFreshnessTick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setFreshnessTick((tick) => tick + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const [timeframe, setTimeframe] = useState<'1D' | '1W' | '1M' | '1Y'>('1D');
   const { data: verifiedHistory, loading: historyLoading, error: historyError } = useHistoricalData(asset.symbol, '6M');
   const [quantity, setQuantity] = useState<number>(1);
@@ -62,8 +70,8 @@ export default function AssetDetails({
 
   const handleShareInsights = () => {
     const text = `Asset Insight: ${asset.name} (${asset.symbol})\n` +
-                 `Current Price: ${isDataOffline ? 'Unavailable — quote feed offline' : formatCurrencyProp(asset.price, asset.type, asset.country)}\n` +
-                 `Provider-reported Change: ${isDataOffline || asset.change == null ? 'Unavailable' : `${asset.change > 0 ? '+' : ''}${asset.change}%`}\n` +
+                 `Current Price: ${!hasFreshQuote ? 'Unavailable — no fresh provider quote for this symbol' : formatCurrencyProp(asset.price, asset.type, asset.country)}\n` +
+                 `Provider-reported Change: ${!hasFreshQuote || asset.change == null ? 'Unavailable' : `${asset.change > 0 ? '+' : ''}${asset.change}%`}\n` +
                  `Historical technical metrics use provider-backed candles; unavailable datasets are marked N/A.`;
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -111,8 +119,8 @@ export default function AssetDetails({
             symbol: asset.symbol,
             name: asset.name,
             assetType: asset.type,
-            latestPrice: isDataOffline ? null : asset.price,
-            latestChangePercent: isDataOffline ? null : asset.change,
+            latestPrice: hasFreshQuote ? asset.price : null,
+            latestChangePercent: hasFreshQuote ? asset.change : null,
             fundamentals: fundamentalsData || null
           },
           systemInstruction: 'Be evidence-led. Separate provider observations from interpretation and state when data is unavailable.'
@@ -148,7 +156,7 @@ export default function AssetDetails({
             symbol: asset.symbol,
             name: asset.name,
             assetType: asset.type,
-            latestQuoteChangePercent: isDataOffline ? null : asset.change
+            latestQuoteChangePercent: hasFreshQuote ? asset.change : null
           },
           systemInstruction: 'Provide educational risk-management considerations only. State that no live derivatives or portfolio exposure data is connected.'
         })
@@ -190,7 +198,7 @@ export default function AssetDetails({
   const unitsHeld = portfolioHolding ? portfolioHolding.quantity : 0;
 
   // Calculate estimated totals for transactions
-  const estimatedTotal = quantity * asset.price;
+  const estimatedTotal = hasFreshQuote ? quantity * asset.price : null;
   const isStarred = watchlist.includes(asset.symbol);
   const isUp = asset.change != null && asset.change >= 0;
 
@@ -200,6 +208,11 @@ export default function AssetDetails({
 
     if (quantity <= 0) {
       setTradeMessage({ type: 'error', text: 'Please specify a quantity greater than zero.' });
+      return;
+    }
+
+    if (!hasFreshQuote) {
+      setTradeMessage({ type: 'error', text: 'Trading simulation is blocked because this symbol has no fresh provider-observed quote.' });
       return;
     }
 
@@ -315,9 +328,9 @@ export default function AssetDetails({
       transition={{ duration: 0.3 }}
     >
 
-      {isDataOffline && (
+      {!hasFreshQuote && (
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-[10px] leading-relaxed text-amber-200">
-          The provider quote feed is offline or has not delivered a verified update. The displayed price may be a static sample value; do not treat it as current.
+          No fresh provider-observed quote is available for this symbol. Any bundled reference value is hidden from trading and must not be treated as current.
         </div>
       )}
 
@@ -364,11 +377,11 @@ export default function AssetDetails({
         <div className="flex items-center gap-6">
           <div className="text-right">
             <div className="text-2xl font-black font-mono tracking-tight text-zinc-100">
-              {formatCurrency(asset.price, asset.type)}
+              {hasFreshQuote ? formatCurrency(asset.price, asset.type) : 'N/A'}
             </div>
             <div className={`text-xs font-bold font-mono tracking-tight flex items-center justify-end gap-1 ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {asset.change == null || asset.changeAbs == null ? null : isUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-              <span>{asset.change == null || asset.changeAbs == null ? 'N/A' : `${isUp ? '+' : ''}${asset.changeAbs.toFixed(asset.type === 'forex' || asset.type === 'bond' ? 4 : 2)} (${isUp ? '+' : ''}${asset.change.toFixed(2)}%)`}</span>
+              {!hasFreshQuote || asset.change == null || asset.changeAbs == null ? null : isUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+              <span>{!hasFreshQuote || asset.change == null || asset.changeAbs == null ? 'N/A' : `${isUp ? '+' : ''}${asset.changeAbs.toFixed(asset.type === 'forex' || asset.type === 'bond' ? 4 : 2)} (${isUp ? '+' : ''}${asset.change.toFixed(2)}%)`}</span>
             </div>
           </div>
 
@@ -421,14 +434,14 @@ export default function AssetDetails({
                 </div>
                 <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-widest font-sans">Quote & Trend Snapshot</h3>
               </div>
-              <span className={`text-[9px] font-mono font-bold rounded px-2 py-1 border ${isDataOffline ? 'text-amber-300 border-amber-500/30 bg-amber-500/10' : 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10'}`}>
-                {isDataOffline ? 'QUOTE FEED OFFLINE' : 'PROVIDER QUOTE'}
+              <span className={`text-[9px] font-mono font-bold rounded px-2 py-1 border ${!hasFreshQuote ? 'text-amber-300 border-amber-500/30 bg-amber-500/10' : 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10'}`}>
+                {hasFreshQuote ? 'FRESH PROVIDER QUOTE' : 'QUOTE UNAVAILABLE'}
               </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="rounded-xl border border-zinc-900 bg-zinc-950/50 p-3">
                 <p className="text-[9px] uppercase tracking-widest text-zinc-500">Provider-reported change</p>
-                <p className="mt-1 text-lg font-black font-mono text-zinc-100">{isDataOffline || asset.change == null ? 'N/A' : `${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}%`}</p>
+                <p className="mt-1 text-lg font-black font-mono text-zinc-100">{!hasFreshQuote || asset.change == null ? 'N/A' : `${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}%`}</p>
               </div>
               <div className="rounded-xl border border-zinc-900 bg-zinc-950/50 p-3">
                 <p className="text-[9px] uppercase tracking-widest text-zinc-500">6M moving-average crossover</p>
@@ -787,26 +800,29 @@ export default function AssetDetails({
               <div className="space-y-2 pt-2 border-t border-zinc-900">
                 <div className="flex justify-between text-xs text-zinc-400">
                   <span>Standard Price per unit</span>
-                  <span className="font-mono text-zinc-250">{formatCurrency(asset.price, asset.type)}</span>
+                  <span className="font-mono text-zinc-250">{hasFreshQuote ? formatCurrency(asset.price, asset.type) : 'N/A'}</span>
                 </div>
 
                 <div className="flex justify-between items-baseline">
                   <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Est. total value</span>
-                  <span className="text-xl font-extrabold font-mono text-white">{formatCurrency(estimatedTotal)}</span>
+                  <span className="text-xl font-extrabold font-mono text-white">{estimatedTotal == null ? 'N/A — fresh quote required' : formatCurrency(estimatedTotal)}</span>
                 </div>
               </div>
 
               {/* Exec button */}
               <button
                 type="submit"
+                disabled={!hasFreshQuote}
                 id="btn-execute-trade"
                 className={`w-full py-3 rounded-xl border font-bold text-xs shadow-lg transition-all cursor-pointer ${
-                  tradeType === 'BUY'
-                    ? 'bg-emerald-500 text-zinc-950 border-emerald-400 hover:bg-emerald-400'
-                    : 'bg-rose-500 text-white border-rose-400 hover:bg-rose-400'
+                  !hasFreshQuote
+                    ? 'bg-zinc-800 text-zinc-500 border-zinc-700 cursor-not-allowed'
+                    : tradeType === 'BUY'
+                      ? 'bg-emerald-500 text-zinc-950 border-emerald-400 hover:bg-emerald-400'
+                      : 'bg-rose-500 text-white border-rose-400 hover:bg-rose-400'
                 }`}
               >
-                SUBMIT {tradeType} SIMULATION
+                {hasFreshQuote ? `SUBMIT ${tradeType} SIMULATION` : 'QUOTE REQUIRED TO TRADE'}
               </button>
             </form>
 

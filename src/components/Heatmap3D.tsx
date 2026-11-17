@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -8,6 +8,13 @@ interface Heatmap3DProps {
   assets: Asset[];
   onSelectAsset?: (asset: Asset) => void;
 }
+
+const hasFreshQuote = (asset: Asset) => {
+  if (!asset.quoteAsOf) return false;
+  const observedAt = Date.parse(asset.quoteAsOf);
+  const ageMs = Date.now() - observedAt;
+  return Number.isFinite(observedAt) && ageMs >= -60_000 && ageMs <= 120_000;
+};
 
 const getChangeColor = (change: number) => {
   if (change <= -3) return '#b91c1c'; // rose-700
@@ -68,9 +75,9 @@ function AssetCube({ asset, position, onSelectAsset }: { asset: Asset; position:
           <div className="bg-zinc-950/90 border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 text-white text-[10px] p-2 rounded-lg font-mono shadow-2xl whitespace-nowrap pointer-events-none backdrop-blur-md">
             <div className="font-bold text-xs">{asset.symbol} - {asset.name}</div>
             <div className={`mt-1 font-bold ${asset.change == null ? 'text-zinc-500' : asset.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {asset.change == null ? 'N/A' : `${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}%`}
+              {!hasFreshQuote(asset) || asset.change == null ? 'N/A' : `${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}%`}
             </div>
-            <div className="text-zinc-400">Price: {asset.price.toFixed(2)}</div>
+            <div className="text-zinc-400">Price: {hasFreshQuote(asset) ? asset.price.toFixed(2) : 'N/A'}</div>
           </div>
         </Html>
       )}
@@ -79,10 +86,15 @@ function AssetCube({ asset, position, onSelectAsset }: { asset: Asset; position:
 }
 
 export default function Heatmap3D({ assets, onSelectAsset }: Heatmap3DProps) {
+  const [freshnessTick, setFreshnessTick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setFreshnessTick((tick) => tick + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
   // Sort by absolute provider-reported daily move; no stale market-cap ranking is implied.
   const displayAssets = useMemo(() => {
-    return [...assets].sort((a, b) => Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0)).slice(0, 64);
-  }, [assets]);
+    return assets.filter(hasFreshQuote).sort((a, b) => Math.abs((b.change ?? 0)) - Math.abs((a.change ?? 0))).slice(0, 64);
+  }, [assets, freshnessTick]);
 
   // Create a grid layout constraint
   const gridSize = Math.ceil(Math.sqrt(displayAssets.length));
@@ -139,12 +151,13 @@ export default function Heatmap3D({ assets, onSelectAsset }: Heatmap3DProps) {
       </Canvas>
       <div className="absolute top-4 left-4 pointer-events-none">
         <h3 className="text-xs font-bold text-zinc-300 font-mono flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className={`w-2 h-2 rounded-full ${displayAssets.length ? "bg-emerald-500 animate-pulse" : "bg-amber-400"}`} />
           3D Market Topography
         </h3>
         <p className="text-[10px] text-zinc-500 mt-1 max-w-[200px]">
-          Height represents market weight. Color represents 24h performance. Drag to rotate landscape.
+          Each cube is a verified-quote asset. Color represents its provider-reported 24h move; geometry is decorative.
         </p>
+        {displayAssets.length === 0 && <p className="text-[10px] text-amber-300 mt-2 max-w-[220px]">No fresh provider quotes are available; 3D performance coloring is unavailable.</p>}
       </div>
     </div>
   );

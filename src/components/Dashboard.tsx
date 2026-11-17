@@ -205,26 +205,37 @@ export default function Dashboard({
   };
 
   // --- MARKET BREADTH FROM PER-ASSET VERIFIED PROVIDER QUOTES ONLY ---
-  const verifiedQuoteAssets = useMemo(() => assets.filter((asset): asset is Asset & { change: number } => {
-    if (!asset.quoteAsOf || asset.change == null) return false;
+  const hasFreshProviderQuote = (asset: Asset) => {
+    if (!asset.quoteAsOf) return false;
     const timestamp = Date.parse(asset.quoteAsOf);
-    return Number.isFinite(timestamp) && timestamp <= Date.now() + 60_000 && Date.now() - timestamp <= 120_000;
-  }), [assets, timeTick]);
+    const ageMs = Date.now() - timestamp;
+    return Number.isFinite(timestamp) && ageMs >= -60_000 && ageMs <= 120_000;
+  };
+  const freshProviderQuoteAssets = useMemo(
+    () => assets.filter((asset) => hasFreshProviderQuote(asset)),
+    [assets, timeTick]
+  );
+  const verifiedQuoteAssets = useMemo(() => assets.filter((asset): asset is Asset & { change: number } =>
+    hasFreshProviderQuote(asset) && asset.change != null
+  ), [assets, timeTick]);
+  const minimumCoverageCount = Math.max(20, Math.ceil(assets.length * 0.5));
+  const hasAdequateQuoteCoverage = verifiedQuoteAssets.length >= minimumCoverageCount;
   const advCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change > 0).length, [verifiedQuoteAssets]);
   const decCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change < 0).length, [verifiedQuoteAssets]);
   const flatCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change === 0).length, [verifiedQuoteAssets]);
 
   const sentimentScore = useMemo(() => {
     const activeCount = advCount + decCount;
-    if (activeCount === 0) return 50;
+    if (!hasAdequateQuoteCoverage || activeCount === 0) return 50;
     const ratioScore = (advCount / activeCount) * 100;
     const avgAssetChange = verifiedQuoteAssets.reduce((sum, a) => sum + Math.max(-4, Math.min(4, a.change)), 0);
     const avgChg = verifiedQuoteAssets.length > 0 ? avgAssetChange / verifiedQuoteAssets.length : 0;
     const finalScore = Math.max(5, Math.min(95, ratioScore * 0.7 + (50 + avgChg * 11) * 0.3));
     return Math.round(finalScore);
-  }, [verifiedQuoteAssets, advCount, decCount]);
+  }, [verifiedQuoteAssets, advCount, decCount, hasAdequateQuoteCoverage]);
 
   const sectorStats = useMemo(() => {
+    if (!hasAdequateQuoteCoverage) return { topSector: { name: 'N/A', avgChange: 0 }, bottomSector: { name: 'N/A', avgChange: 0 } };
     const sectorsMap: { [sec: string]: { sumChange: number; count: number } } = {};
     verifiedQuoteAssets.forEach(a => {
       const sectorName = a.sector || 'Other';
@@ -246,7 +257,7 @@ export default function Dashboard({
       bottomSector: list[list.length - 1] || { name: 'N/A', avgChange: 0 },
       list
     };
-  }, [verifiedQuoteAssets]);
+  }, [verifiedQuoteAssets, hasAdequateQuoteCoverage]);
 
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
@@ -467,14 +478,14 @@ export default function Dashboard({
             <div className="hidden lg:flex flex-col gap-1.5 bg-zinc-950/70 p-3 rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 backdrop-blur-md">
                <div className="flex items-center justify-between gap-6">
                   <span className="text-[9px] font-mono text-zinc-500 uppercase">Market quote feed</span>
-                  <span className={`text-[9px] font-mono font-bold ${isDataOffline ? 'text-amber-400' : 'text-emerald-400'}`}>{isDataOffline ? 'OFFLINE / SAMPLE DATA' : 'CONNECTED'}</span>
+                  <span className={`text-[9px] font-mono font-bold ${freshProviderQuoteAssets.length < assets.length ? 'text-amber-400' : 'text-emerald-400'}`}>{freshProviderQuoteAssets.length === 0 ? 'NO VERIFIED QUOTES' : freshProviderQuoteAssets.length < assets.length ? 'PARTIAL QUOTE FEED' : 'FULL QUOTE COVERAGE'}</span>
                </div>
                <div className="flex items-center justify-between gap-6">
                   <span className="text-[9px] font-mono text-zinc-500 uppercase">Quote update status</span>
-                  <span className="text-[9px] font-mono text-indigo-400 font-bold">{isDataOffline ? 'WAITING' : 'PROVIDER DATA'}</span>
+                  <span className="text-[9px] font-mono text-indigo-400 font-bold">{freshProviderQuoteAssets.length === 0 ? 'WAITING' : freshProviderQuoteAssets.length < assets.length ? 'PARTIAL COVERAGE' : 'FULL QUOTE COVERAGE'}</span>
                </div>
                <div className="w-full h-0.5 bg-zinc-800 rounded-full mt-1 overflow-hidden">
-                  <div className={`h-full ${isDataOffline ? 'w-0' : 'w-full'} bg-indigo-500 shadow-[0_0_5px_#6366f1] transition-all`}></div>
+                  <div className="h-full bg-indigo-500 shadow-[0_0_5px_#6366f1] transition-all" style={{ width: (assets.length ? freshProviderQuoteAssets.length / assets.length * 100 : 0) + "%" }}></div>
                </div>
             </div>
           </div>
@@ -680,7 +691,7 @@ export default function Dashboard({
             <div className="flex justify-between items-baseline">
               <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono">Advance / Decline Proxy Scale</span>
               <span className="text-xl font-extrabold text-zinc-100 font-mono flex items-baseline gap-1">
-                {verifiedQuoteAssets.length ? sentimentScore : 'N/A'}
+                {hasAdequateQuoteCoverage ? sentimentScore : 'N/A'}
                 <span className="text-xs font-bold text-zinc-500">{verifiedQuoteAssets.length ? '/ 100' : 'no quotes'}</span>
               </span>
             </div>
@@ -704,6 +715,7 @@ export default function Dashboard({
               </div>
 
               {/* Advanced Tracking Pointer */}
+              {hasAdequateQuoteCoverage && (
               <motion.div
                 className="absolute top-0 bottom-0 w-1.5 bg-white shadow-[0_0_10px_rgba(255,255,255,1)] z-10"
                 initial={{ left: 0 }}
@@ -713,6 +725,7 @@ export default function Dashboard({
                  <div className="absolute -top-2 -ml-[3px] w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-white"></div>
                  <div className="absolute -bottom-2 -ml-[3px] w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-l-transparent border-r-transparent border-b-white"></div>
               </motion.div>
+              )}
             </div>
 
             <div className="flex justify-between items-center text-[9px] font-mono font-bold uppercase tracking-widest px-1">
@@ -736,7 +749,7 @@ export default function Dashboard({
                     ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                     : 'bg-red-500/10 text-red-500 border border-red-500/20'
                 }`}>
-                  {verifiedQuoteAssets.length === 0 ? 'Unavailable — no verified quotes' : sentimentScore >= 75
+                  {!hasAdequateQuoteCoverage ? 'Insufficient coverage' : sentimentScore >= 75
                     ? 'Strongly positive breadth'
                     : sentimentScore >= 55
                     ? 'Positive breadth'
@@ -761,8 +774,8 @@ export default function Dashboard({
                 {/* Advancers */}
                 <div>
                   <div className="flex justify-between text-[10px] pb-1">
-                    <span className="text-emerald-400 font-bold flex items-center gap-1">▲ Advancers ({advCount})</span>
-                    <span className="text-zinc-400 font-semibold">{Math.round((advCount / (verifiedQuoteAssets.length || 1)) * 100)}%</span>
+                    <span className="text-emerald-400 font-bold flex items-center gap-1">▲ Advancers ({hasAdequateQuoteCoverage ? advCount : 'N/A'})</span>
+                    <span className="text-zinc-400 font-semibold">{!hasAdequateQuoteCoverage ? 'N/A' : `${Math.round((advCount / verifiedQuoteAssets.length) * 100)}%`}</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
                     <div
@@ -775,8 +788,8 @@ export default function Dashboard({
                 {/* Decliners */}
                 <div>
                   <div className="flex justify-between text-[10px] pb-1">
-                    <span className="text-rose-400 font-bold flex items-center gap-1">▼ Decliners ({decCount})</span>
-                    <span className="text-zinc-400 font-semibold">{Math.round((decCount / (verifiedQuoteAssets.length || 1)) * 100)}%</span>
+                    <span className="text-rose-400 font-bold flex items-center gap-1">▼ Decliners ({hasAdequateQuoteCoverage ? decCount : 'N/A'})</span>
+                    <span className="text-zinc-400 font-semibold">{!hasAdequateQuoteCoverage ? 'N/A' : `${Math.round((decCount / verifiedQuoteAssets.length) * 100)}%`}</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
                     <div
@@ -790,7 +803,7 @@ export default function Dashboard({
                 <div>
                   <div className="flex justify-between text-[10px] pb-1">
                     <span className="text-zinc-500 font-semibold flex items-center gap-1">■ Neutral / Flat ({flatCount})</span>
-                    <span className="text-zinc-500">{Math.round((flatCount / (verifiedQuoteAssets.length || 1)) * 100)}%</span>
+                    <span className="text-zinc-500">{!hasAdequateQuoteCoverage ? 'N/A' : `${Math.round((flatCount / verifiedQuoteAssets.length) * 100)}%`}</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900/55 rounded-full overflow-hidden">
                     <div
@@ -811,22 +824,22 @@ export default function Dashboard({
                   <div className="flex items-center justify-between text-[10px] font-mono">
                     <span className="text-zinc-500 font-sans">Top Leading Segment:</span>
                     <span className="text-emerald-400 font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/10">
-                      {sectorStats.topSector.name} ({sectorStats.topSector.avgChange >= 0 ? '+' : ''}{sectorStats.topSector.avgChange.toFixed(2)}%)
+                      {!hasAdequateQuoteCoverage ? 'N/A — insufficient quote coverage' : `${sectorStats.topSector.name} (${sectorStats.topSector.avgChange >= 0 ? '+' : ''}${sectorStats.topSector.avgChange.toFixed(2)}%)`}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between text-[10px] font-mono">
                     <span className="text-zinc-500 font-sans">Underperforming:</span>
                     <span className="text-rose-400 font-bold px-1.5 py-0.5 rounded bg-rose-500/10 border border-rose-500/10 font-sans">
-                      {sectorStats.bottomSector.name} ({sectorStats.bottomSector.avgChange >= 0 ? '+' : ''}{sectorStats.bottomSector.avgChange.toFixed(2)}%)
+                      {!hasAdequateQuoteCoverage ? 'N/A — insufficient quote coverage' : `${sectorStats.bottomSector.name} (${sectorStats.bottomSector.avgChange >= 0 ? '+' : ''}${sectorStats.bottomSector.avgChange.toFixed(2)}%)`}
                     </span>
                   </div>
                 </div>
               </div>
 
               <div className="pt-2 border-t border-zinc-900 font-mono text-[9.5px] leading-relaxed text-zinc-500">
-                {verifiedQuoteAssets.length === 0
-                  ? 'No verified provider quotes are available in this universe; market breadth is unavailable.'
+                {!hasAdequateQuoteCoverage
+                  ? `Market breadth unavailable: ${verifiedQuoteAssets.length}/${assets.length} fresh quote changes; at least ${minimumCoverageCount} are required.`
                   : sentimentScore >= 55
                   ? 'Advancers currently outnumber decliners in the selected quote universe. This is a descriptive breadth observation, not a trading signal.'
                   : sentimentScore <= 45
@@ -844,7 +857,7 @@ export default function Dashboard({
       <section id="market-tickers-section">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {majorIndices.map((idx) => {
-            const isUp = idx.change >= 0;
+            const isUp = hasFreshProviderQuote(idx) && idx.change != null && idx.change >= 0;
             return (
               <div
                 key={idx.symbol}
@@ -856,10 +869,10 @@ export default function Dashboard({
                   <ArrowUpRight className="h-4 w-4 text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <div className="mt-2 flex items-baseline justify-between gap-2">
-                  <h3 className="text-xl font-bold font-mono tracking-tight text-white">{idx.price.toLocaleString()}</h3>
-                  <div className={`flex items-center gap-1 text-xs font-semibold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  <h3 className="text-xl font-bold font-mono tracking-tight text-white">{hasFreshProviderQuote(idx) ? idx.price.toLocaleString() : 'N/A'}</h3>
+                  <div className={`flex items-center gap-1 text-xs font-semibold ${!hasFreshProviderQuote(idx) || idx.change == null ? 'text-zinc-500' : isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {isUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-                    <span>{isUp ? '+' : ''}{idx.change.toFixed(2)}%</span>
+                    <span>{!hasFreshProviderQuote(idx) || idx.change == null ? 'N/A' : `${isUp ? '+' : ''}${idx.change.toFixed(2)}%`}</span>
                   </div>
                 </div>
               </div>
@@ -1114,7 +1127,7 @@ export default function Dashboard({
             {watchlistAssets.length > 0 ? (
               <div className="divide-y divide-zinc-900">
                 {watchlistAssets.map((asset) => {
-                  const isUp = asset.change != null && asset.change >= 0;
+                  const isUp = hasFreshProviderQuote(asset) && asset.change != null && asset.change >= 0;
                   const assetAlerts = priceAlerts.filter(a => a.symbol === asset.symbol && a.active);
                   const isAlertInputActive = activeAlertInput === asset.symbol;
 
@@ -1133,9 +1146,9 @@ export default function Dashboard({
 
                         <div className="flex items-center gap-4">
                           <div className="text-right cursor-pointer" onClick={() => onSelectAsset(asset)}>
-                            <div className="text-xs font-bold font-mono text-zinc-100">{formatCurrency(asset.price, asset.symbol, asset.country)}</div>
-                            <div className={`text-[10px] font-semibold ${asset.change == null ? 'text-zinc-500' : isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-                              {asset.change == null ? 'N/A' : `${isUp ? '+' : ''}${asset.change}%`}
+                            <div className="text-xs font-bold font-mono text-zinc-100">{hasFreshProviderQuote(asset) ? formatCurrency(asset.price, asset.symbol, asset.country) : 'N/A'}</div>
+                            <div className={`text-[10px] font-semibold ${!hasFreshProviderQuote(asset) || asset.change == null ? 'text-zinc-500' : isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {!hasFreshProviderQuote(asset) || asset.change == null ? 'N/A' : `${isUp ? '+' : ''}${asset.change}%`}
                             </div>
                           </div>
 
@@ -1228,9 +1241,11 @@ export default function Dashboard({
                 <div>
                   <p className="text-xs font-semibold text-indigo-300">Watchlist Intelligence</p>
                   <p className="text-[10px] text-indigo-200/70 mt-1 leading-relaxed">
-                    {watchlistAssets.filter(a => a.quoteAsOf && a.change != null && a.change > 2).length > 0
-                      ? `${watchlistAssets.filter(a => a.quoteAsOf && a.change != null && a.change > 2).length} assets in your watchlist are showing unusually high bullish momentum today. Consider setting up price alerts.`
-                      : `No verified daily quote moves above 2% are present in the current watchlist. This does not assess earnings, correlation or volatility.`}
+                    {watchlistAssets.filter((asset) => hasFreshProviderQuote(asset) && asset.change != null).length === 0
+                      ? 'Unavailable — no fresh quotes for the current watchlist.'
+                      : watchlistAssets.filter((asset) => hasFreshProviderQuote(asset) && asset.change != null && asset.change > 2).length > 0
+                        ? `${watchlistAssets.filter((asset) => hasFreshProviderQuote(asset) && asset.change != null && asset.change > 2).length} assets in your watchlist have verified daily moves above 2%. This is a descriptive observation, not a trading signal.`
+                        : 'No verified daily quote moves above 2% are present in the current watchlist. This does not assess earnings, correlation or volatility.'}
                   </p>
                 </div>
               </div>
@@ -1268,7 +1283,7 @@ export default function Dashboard({
                 <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Popular Equities</span>
                 <div className="space-y-2">
                   {popularStocks.map((stk) => {
-                    const isUp = stk.change != null && stk.change >= 0;
+                    const isUp = hasFreshProviderQuote(stk) && stk.change != null && stk.change >= 0;
                     return (
                       <div
                         key={stk.symbol}
@@ -1280,9 +1295,9 @@ export default function Dashboard({
                           <span className="text-[11px] text-zinc-500 max-w-[130px] truncate">{stk.name}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-bold font-mono text-zinc-200">{formatCurrency(stk.price, stk.symbol, stk.country)}</span>
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${isUp ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                            {stk.change == null ? 'N/A' : `${isUp ? '+' : ''}${stk.change}%`}
+                          <span className="text-xs font-bold font-mono text-zinc-200">{hasFreshProviderQuote(stk) ? formatCurrency(stk.price, stk.symbol, stk.country) : 'N/A'}</span>
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${!hasFreshProviderQuote(stk) || stk.change == null ? 'bg-zinc-500/5 text-zinc-500' : isUp ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                            {!hasFreshProviderQuote(stk) || stk.change == null ? 'N/A' : `${isUp ? '+' : ''}${stk.change}%`}
                           </span>
                         </div>
                       </div>
@@ -1296,7 +1311,7 @@ export default function Dashboard({
                 <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Crypto Assets</span>
                 <div className="space-y-2">
                   {marketCryptos.map((cry) => {
-                    const isUp = cry.change != null && cry.change >= 0;
+                    const isUp = hasFreshProviderQuote(cry) && cry.change != null && cry.change >= 0;
                     return (
                       <div
                         key={cry.symbol}
@@ -1308,9 +1323,9 @@ export default function Dashboard({
                           <span className="text-[11px] text-zinc-500 max-w-[130px] truncate">{cry.name}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-bold font-mono text-zinc-200">{formatCurrency(cry.price, cry.symbol, cry.country)}</span>
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${isUp ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                            {cry.change == null ? 'N/A' : `${isUp ? '+' : ''}${cry.change}%`}
+                          <span className="text-xs font-bold font-mono text-zinc-200">{hasFreshProviderQuote(cry) ? formatCurrency(cry.price, cry.symbol, cry.country) : 'N/A'}</span>
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${!hasFreshProviderQuote(cry) || cry.change == null ? 'bg-zinc-500/5 text-zinc-500' : isUp ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                            {!hasFreshProviderQuote(cry) || cry.change == null ? 'N/A' : `${isUp ? '+' : ''}${cry.change}%`}
                           </span>
                         </div>
                       </div>
@@ -1326,7 +1341,7 @@ export default function Dashboard({
               <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Benchmark Commodities & Futures</span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {marketCommodities.map((comm) => {
-                  const isUp = comm.change != null && comm.change >= 0;
+                  const isUp = hasFreshProviderQuote(comm) && comm.change != null && comm.change >= 0;
                   return (
                     <div
                       key={comm.symbol}
@@ -1338,9 +1353,9 @@ export default function Dashboard({
                         <p className="text-[10px] text-zinc-500">COMEX Spot Futures</p>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs font-bold font-mono text-zinc-200">{formatCurrency(comm.price, comm.symbol, comm.country)}</span>
-                        <div className={`text-[10px] font-semibold flex items-center justify-end gap-1 ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          <span>{comm.change == null ? 'N/A' : `${isUp ? '+' : ''}${comm.change}%`}</span>
+                        <span className="text-xs font-bold font-mono text-zinc-200">{hasFreshProviderQuote(comm) ? formatCurrency(comm.price, comm.symbol, comm.country) : 'N/A'}</span>
+                        <div className={`text-[10px] font-semibold flex items-center justify-end gap-1 ${!hasFreshProviderQuote(comm) || comm.change == null ? 'text-zinc-500' : isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          <span>{!hasFreshProviderQuote(comm) || comm.change == null ? 'N/A' : `${isUp ? '+' : ''}${comm.change}%`}</span>
                         </div>
                       </div>
                     </div>

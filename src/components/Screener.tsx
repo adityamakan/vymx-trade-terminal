@@ -44,12 +44,20 @@ export default function Screener({
   const [compareA, setCompareA] = useState<string>('AAPL');
   const [compareB, setCompareB] = useState<string>('BTC');
   const [isComparisonOpen, setIsComparisonOpen] = useState<boolean>(true);
+  const [, setFreshnessTick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setFreshnessTick((tick) => tick + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
-  const getYearlyRangePercent = (price: number, low: number, high: number) => {
-    if (high === low || !high || !low) return 50;
-    const pct = ((price - low) / (high - low)) * 100;
-    return Math.max(0, Math.min(100, pct));
+  const hasFreshProviderQuote = (asset: Asset) => {
+    if (!asset.quoteAsOf) return false;
+    const observedAt = Date.parse(asset.quoteAsOf);
+    const ageMs = Date.now() - observedAt;
+    return Number.isFinite(observedAt) && ageMs >= -60_000 && ageMs <= 120_000;
   };
+
+
 
   // Load initial filters from localStorage if available, or use defaults
   const [filters, setFilters] = useState<ScreenerFilters>(() => {
@@ -66,7 +74,7 @@ export default function Screener({
     };
   });
 
-  const [sortBy, setSortBy] = useState<'symbol' | 'price' | 'change' | 'marketCap'>('marketCap');
+  const [sortBy, setSortBy] = useState<'symbol' | 'price' | 'change' | 'marketCap'>('symbol');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
 
@@ -94,39 +102,26 @@ export default function Screener({
       result = result.filter((asset) => asset.country === filters.country);
     }
 
-    // 4. PE Ratio ranges filter
-    if (filters.peRatio !== 'all') {
-      result = result.filter((asset) => {
-        if (asset.peRatio === null) return false;
-        if (filters.peRatio === 'undervalued') return asset.peRatio <= 15;
-        if (filters.peRatio === 'reasonable') return asset.peRatio > 15 && asset.peRatio <= 30;
-        if (filters.peRatio === 'premium') return asset.peRatio > 30;
-        return true;
-      });
-    }
-
-    // 5. Market Cap ranges filter
-    if (filters.marketCap !== 'all') {
-      result = result.filter((asset) => {
-        if (asset.marketCap === 0) return false;
-        if (filters.marketCap === 'micro_mid') return asset.marketCap < 50; // Under 50B
-        if (filters.marketCap === 'large') return asset.marketCap >= 50 && asset.marketCap <= 500; // 50B-500B
-        if (filters.marketCap === 'mega') return asset.marketCap > 500; // Over 500B
-        return true;
-      });
-    }
+    // Fundamental filters are intentionally unavailable until source-backed fields exist.
+    if (filters.peRatio !== 'all' || filters.marketCap !== 'all') result = [];
 
     // Apply Sorting logic
     result.sort((a, b) => {
       let comparison = 0;
       if (sortBy === 'symbol') comparison = a.symbol.localeCompare(b.symbol);
-      else if (sortBy === 'price') comparison = a.price - b.price;
+      else if (sortBy === 'price') {
+        const aFresh = hasFreshProviderQuote(a);
+        const bFresh = hasFreshProviderQuote(b);
+        if (!aFresh) return bFresh ? 1 : a.symbol.localeCompare(b.symbol);
+        if (!bFresh) return -1;
+        comparison = a.price - b.price;
+      }
       else if (sortBy === 'change') {
         // Missing provider observations stay last in both sort directions.
-        if (a.change == null) return b.change == null ? 0 : 1;
-        if (b.change == null) return -1;
+        if (!hasFreshProviderQuote(a) || a.change == null) return (!hasFreshProviderQuote(b) || b.change == null) ? a.symbol.localeCompare(b.symbol) : 1;
+        if (!hasFreshProviderQuote(b) || b.change == null) return -1;
         comparison = a.change - b.change;
-      } else if (sortBy === 'marketCap') comparison = a.marketCap - b.marketCap;
+      } else if (sortBy === 'marketCap') comparison = a.symbol.localeCompare(b.symbol); // Fundamental market-cap metadata is not verified.
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
@@ -163,7 +158,7 @@ export default function Screener({
   return (
     <div className="py-6 space-y-6">
       <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-[11px] leading-relaxed text-amber-200">
-        {isDataOffline ? 'Market quotes are offline; bundled prices and daily changes are sample defaults and must not be treated as current.' : 'Quote prices update from the provider, but market-cap, P/E and other bundled fundamental metadata are reference values until verified instrument fundamentals are loaded. Confirm those fields before using fundamental filters.'}
+        {isDataOffline ? 'Market quotes are offline; bundled prices and daily changes are sample defaults and must not be treated as current. Per-symbol quote freshness is not implied by another symbol updating.' : 'Quote prices update per symbol. Market-cap, P/E and the comparison matrix’s advanced fields are unavailable until verified fundamentals or computed observations are connected; those filters are not research-grade.'}
       </div>
 
       {/* Visual Hub Header */}
@@ -276,11 +271,7 @@ export default function Screener({
             const isAUp = assetA.change != null && assetA.change >= 0;
             const isBUp = assetB.change != null && assetB.change >= 0;
 
-            const pctDelta24h = assetA.change != null && assetB.change != null ? assetA.change - assetB.change : null;
-
-            // Compute year tracker positions
-            const rangePctA = getYearlyRangePercent(assetA.price, assetA.low52w, assetA.high52w);
-            const rangePctB = getYearlyRangePercent(assetB.price, assetB.low52w, assetB.high52w);
+            const pctDelta24h = hasFreshProviderQuote(assetA) && hasFreshProviderQuote(assetB) && assetA.change != null && assetB.change != null ? assetA.change - assetB.change : null;
 
             return (
               <div className="space-y-4 font-sans">
@@ -289,7 +280,9 @@ export default function Screener({
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-3.5 w-3.5 text-amber-400 shrink-0" />
                     <span className="text-zinc-300 font-medium font-mono text-[10px]">
-                      {Math.abs(pctDelta24h) < 0.1 ? (
+                      {pctDelta24h == null ? (
+                        <span>Comparative move unavailable until both quotes are fresh.</span>
+                      ) : Math.abs(pctDelta24h) < 0.1 ? (
                         <span>Both <strong>{assetA.symbol}</strong> and <strong>{assetB.symbol}</strong> are performing almost identically over the last 24h.</span>
                       ) : pctDelta24h > 0 ? (
                         <span><strong>{assetA.symbol}</strong> is leading <strong>{assetB.symbol}</strong> today with a 24h spread advantage of <strong className="text-emerald-400">+{pctDelta24h.toFixed(2)}%</strong>.</span>
@@ -353,17 +346,17 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Price</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono font-bold text-white">
-                          {formatCurrency(assetA.price, assetA.symbol)}
+                          {hasFreshProviderQuote(assetA) ? formatCurrency(assetA.price, assetA.symbol) : 'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono font-bold text-white">
-                          {formatCurrency(assetB.price, assetB.symbol)}
+                          {hasFreshProviderQuote(assetB) ? formatCurrency(assetB.price, assetB.symbol) : 'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-[80x] sm:text-[9px] text-zinc-400">
-                          {assetA.price > assetB.price ? (
-                            <span>{assetA.symbol} &gt; {assetB.symbol}</span>
-                          ) : (
-                            <span>{assetB.symbol} &gt; {assetA.symbol}</span>
-                          )}
+                          {hasFreshProviderQuote(assetA) && hasFreshProviderQuote(assetB)
+                            ? (assetA.price > assetB.price
+                              ? <span>{assetA.symbol} &gt; {assetB.symbol}</span>
+                              : <span>{assetB.symbol} &gt; {assetA.symbol}</span>)
+                            : <span>N/A — fresh quotes required</span>}
                         </td>
                       </tr>
 
@@ -372,12 +365,12 @@ export default function Screener({
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">24h Performance</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono">
                           <span className={`font-bold px-1.5 py-0.5 rounded text-[10px] sm:text-xs ${isAUp ? 'text-emerald-400 bg-emerald-500/5' : 'text-rose-450 bg-rose-500/5'}`}>
-                            {assetA.change == null ? 'N/A' : `${isAUp ? '+' : ''}${assetA.change.toFixed(2)}%`}
+                            {!hasFreshProviderQuote(assetA) || assetA.change == null ? 'N/A' : `${isAUp ? '+' : ''}${assetA.change.toFixed(2)}%`}
                           </span>
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono">
                           <span className={`font-bold px-1.5 py-0.5 rounded text-[10px] sm:text-xs ${isBUp ? 'text-emerald-400 bg-emerald-500/5' : 'text-rose-450 bg-rose-500/5'}`}>
-                            {assetB.change == null ? 'N/A' : `${isBUp ? '+' : ''}${assetB.change.toFixed(2)}%`}
+                            {!hasFreshProviderQuote(assetB) || assetB.change == null ? 'N/A' : `${isBUp ? '+' : ''}${assetB.change.toFixed(2)}%`}
                           </span>
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center">
@@ -395,21 +388,13 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Market Cap</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-semibold font-mono text-zinc-350 text-[10px] sm:text-xs">
-                          {assetA.marketCapDisplay}
+                          {'N/A — provider fundamentals unavailable'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-semibold font-mono text-zinc-350 text-[10px] sm:text-xs">
-                          {assetB.marketCapDisplay}
+                          {'N/A — provider fundamentals unavailable'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center">
-                          {assetA.marketCap > assetB.marketCap ? (
-                            <span className="text-indigo-300 font-mono text-[8px] sm:text-[9px] font-bold">
-                              {assetA.symbol} size advantage
-                            </span>
-                          ) : (
-                            <span className="text-purple-300 font-mono text-[8px] sm:text-[9px] font-bold">
-                              {assetB.symbol} size advantage
-                            </span>
-                          )}
+                          <span className="text-zinc-500">N/A — fundamentals unavailable</span>
                         </td>
                       </tr>
 
@@ -417,30 +402,13 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Valuation Multiple (P/E)</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-350 text-[10px] sm:text-xs">
-                          {assetA.peRatio !== null ? assetA.peRatio.toFixed(1) : '―'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-350 text-[10px] sm:text-xs">
-                          {assetB.peRatio !== null ? assetB.peRatio.toFixed(1) : '―'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center">
-                          {(() => {
-                             if (assetA.peRatio === null || assetB.peRatio === null) {
-                               return <span className="text-zinc-600 font-mono text-[8px] sm:text-[9px]">Alternative Asset metrics</span>;
-                             }
-                             if (assetA.peRatio < assetB.peRatio) {
-                               return (
-                                 <span className="text-teal-400 font-mono text-[8px] sm:text-[9px] font-bold bg-teal-500/5 border border-teal-500/25 rounded px-1.5 py-0.5">
-                                   {assetA.symbol} Undervalued
-                                 </span>
-                               );
-                             } else {
-                               return (
-                                 <span className="text-teal-400 font-mono text-[8px] sm:text-[9px] font-bold bg-teal-500/5 border border-teal-500/25 rounded px-1.5 py-0.5">
-                                   {assetB.symbol} Undervalued
-                                 </span>
-                               );
-                             }
-                          })()}
+                          <span className="text-zinc-600 font-mono text-[8px] sm:text-[9px]">N/A — verified fundamentals unavailable</span>
                         </td>
                       </tr>
 
@@ -448,59 +416,31 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">24h volume</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-semibold font-mono text-zinc-400 text-[10px] sm:text-xs">
-                          {assetA.volumeDisplay}
+                          {hasFreshProviderQuote(assetA) && assetA.volume != null && Number.isFinite(assetA.volume) ? assetA.volumeDisplay : 'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-semibold font-mono text-zinc-400 text-[10px] sm:text-xs">
-                          {assetB.volumeDisplay}
+                          {hasFreshProviderQuote(assetB) && assetB.volume != null && Number.isFinite(assetB.volume) ? assetB.volumeDisplay : 'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono font-bold text-zinc-500">
                           —
                         </td>
                       </tr>
 
-                      {/* Realtime position within 52w range */}
+                      {/* 52-week range comparison requires field-level provider provenance */}
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">52w position marker</td>
-                        <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono space-y-1.5">
-                          <div className="flex justify-between text-[8px] sm:text-[9px] text-zinc-500 font-semibold font-mono">
-                            <span>L: {formatCurrency(assetA.low52w, assetA.symbol)}</span>
-                            <span>H: {formatCurrency(assetA.high52w, assetA.symbol)}</span>
-                          </div>
-                          {/* Mini slider mockup */}
-                          <div className="w-full h-1 rounded-full bg-zinc-900 border border-zinc-850 relative overflow-visible">
-                            <div className="absolute top-0 bottom-0 rounded-full bg-indigo-500" style={{ left: 0, width: `${rangePctA}%` }} />
-                            <div className="absolute -top-1 h-3 w-3 rounded-full border border-zinc-805 bg-zinc-350 shadow-sm" style={{ left: `calc(${rangePctA}% - 6px)` }} />
-                          </div>
-                          <span className="text-[8px] sm:text-[9px] text-zinc-400 block pt-0.5 font-bold">{rangePctA.toFixed(1)}% above 52w low</span>
-                        </td>
-                        <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono space-y-1.5">
-                          <div className="flex justify-between text-[8px] sm:text-[9px] text-zinc-500 font-semibold font-mono">
-                            <span>L: {formatCurrency(assetB.low52w, assetB.symbol)}</span>
-                            <span>H: {formatCurrency(assetB.high52w, assetB.symbol)}</span>
-                          </div>
-                          {/* Mini slider mockup */}
-                          <div className="w-full h-1 rounded-full bg-zinc-900 border border-zinc-850 relative overflow-visible">
-                            <div className="absolute top-0 bottom-0 rounded-full bg-purple-500" style={{ left: 0, width: `${rangePctB}%` }} />
-                            <div className="absolute -top-1 h-3 w-3 rounded-full border border-zinc-805 bg-zinc-350 shadow-sm" style={{ left: `calc(${rangePctB}% - 6px)` }} />
-                          </div>
-                          <span className="text-[8px] sm:text-[9px] text-zinc-400 block pt-0.5 font-bold">{rangePctB.toFixed(1)}% above 52w low</span>
-                        </td>
-                        <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-[8px] sm:text-[9px] text-zinc-400">
-                          {rangePctA > rangePctB ? (
-                            <span>{assetA.symbol} stronger</span>
-                          ) : (
-                            <span>{assetB.symbol} stronger</span>
-                          )}
-                        </td>
+                        <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-zinc-500">N/A — verified range unavailable</td>
+                        <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-zinc-500">N/A — verified range unavailable</td>
+                        <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center text-zinc-500">N/A</td>
                       </tr>
                       {/* Advanced Metrics / Benchmarks */}
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">RSI (14d)</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-300">
-                          {((assetA.symbol.charCodeAt(0) * 1.5) % 40 + 30).toFixed(1)}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-300">
-                          {((assetB.symbol.charCodeAt(0) * 1.5) % 40 + 30).toFixed(1)}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-zinc-500 text-[8px] sm:text-[9px]">
                           Momentum Indicator
@@ -509,10 +449,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">MACD</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-300">
-                          {((assetA.symbol.charCodeAt(0) % 5) - 2.5).toFixed(2)}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-300">
-                          {((assetB.symbol.charCodeAt(0) % 5) - 2.5).toFixed(2)}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-zinc-500 text-[8px] sm:text-[9px]">
                           Trend Strength
@@ -521,10 +461,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Beta (Volatility)</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-300">
-                          {((assetA.symbol.charCodeAt(0) % 2) + 0.5).toFixed(2)}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-300">
-                          {((assetB.symbol.charCodeAt(0) % 2) + 0.5).toFixed(2)}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-zinc-500 text-[8px] sm:text-[9px]">
                           Market Sensitivity
@@ -533,10 +473,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Dividend Yield</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-300">
-                          {assetA.type === 'stock' ? ((assetA.symbol.charCodeAt(0) % 4) + 0.5).toFixed(2) + '%' : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-300">
-                          {assetB.type === 'stock' ? ((assetB.symbol.charCodeAt(0) % 4) + 0.5).toFixed(2) + '%' : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-zinc-500 text-[8px] sm:text-[9px]">
                           Income Generation
@@ -545,10 +485,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Price to Book (P/B)</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-300">
-                          {((assetA.symbol.charCodeAt(0) % 8) + 1.2).toFixed(2)}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-300">
-                          {((assetB.symbol.charCodeAt(0) % 8) + 1.2).toFixed(2)}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-zinc-500 text-[8px] sm:text-[9px]">
                           Asset Valuation
@@ -557,10 +497,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">EPS (TTM)</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-300">
-                          {assetA.type === 'stock' ? formatCurrency(((assetA.symbol.charCodeAt(0) % 15) + 1.2), assetA.symbol) : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-300">
-                          {assetB.type === 'stock' ? formatCurrency(((assetB.symbol.charCodeAt(0) % 15) + 1.2), assetB.symbol) : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-zinc-500 text-[8px] sm:text-[9px]">
                           Profitability
@@ -569,10 +509,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Return on Equity (ROE)</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-300">
-                          {assetA.type === 'stock' ? ((assetA.symbol.charCodeAt(0) % 25) + 5.0).toFixed(1) + '%' : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-300">
-                          {assetB.type === 'stock' ? ((assetB.symbol.charCodeAt(0) % 25) + 5.0).toFixed(1) + '%' : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-zinc-500 text-[8px] sm:text-[9px]">
                           Efficiency
@@ -581,10 +521,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Debt to Equity (D/E)</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-300">
-                          {assetA.type === 'stock' ? ((assetA.symbol.charCodeAt(0) % 3) + 0.1).toFixed(2) : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-300">
-                          {assetB.type === 'stock' ? ((assetB.symbol.charCodeAt(0) % 3) + 0.1).toFixed(2) : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-zinc-500 text-[8px] sm:text-[9px]">
                           Leverage
@@ -593,10 +533,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Current Ratio</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-300">
-                          {assetA.type === 'stock' ? ((assetA.symbol.charCodeAt(0) % 2) + 0.8).toFixed(2) : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-300">
-                          {assetB.type === 'stock' ? ((assetB.symbol.charCodeAt(0) % 2) + 0.8).toFixed(2) : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-zinc-500 text-[8px] sm:text-[9px]">
                           Liquidity
@@ -605,10 +545,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Price to Sales (P/S)</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-300">
-                          {assetA.type === 'stock' ? ((assetA.symbol.charCodeAt(0) % 10) + 0.5).toFixed(2) : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-300">
-                          {assetB.type === 'stock' ? ((assetB.symbol.charCodeAt(0) % 10) + 0.5).toFixed(2) : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-zinc-500 text-[8px] sm:text-[9px]">
                           Sales Valuation
@@ -617,10 +557,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Short Interest (%)</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-300">
-                          {((assetA.symbol.charCodeAt(0) % 15) + 1.0).toFixed(1)}%
+                          {'N/A'}%
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-300">
-                          {((assetB.symbol.charCodeAt(0) % 15) + 1.0).toFixed(1)}%
+                          {'N/A'}%
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-zinc-500 text-[8px] sm:text-[9px]">
                           Market Sentiment
@@ -629,10 +569,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Average True Range</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-300">
-                          {((assetA.symbol.charCodeAt(0) % 8) + 2.0).toFixed(2)}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-300">
-                          {((assetB.symbol.charCodeAt(0) % 8) + 2.0).toFixed(2)}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-zinc-500 text-[8px] sm:text-[9px]">
                           Volatility Indicator
@@ -641,10 +581,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Institutional Holding</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-300">
-                          {assetA.type === 'stock' ? ((assetA.symbol.charCodeAt(0) % 60) + 20.0).toFixed(1) + '%' : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-300">
-                          {assetB.type === 'stock' ? ((assetB.symbol.charCodeAt(0) % 60) + 20.0).toFixed(1) + '%' : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-zinc-500 text-[8px] sm:text-[9px]">
                           Smart Money Edge
@@ -653,10 +593,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">Free Cash Flow</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono text-zinc-300">
-                          {assetA.type === 'stock' ? formatCurrency(((assetA.symbol.charCodeAt(0) % 200) + 10.0) * 1e8, assetA.symbol) : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono text-zinc-300">
-                          {assetB.type === 'stock' ? formatCurrency(((assetB.symbol.charCodeAt(0) % 200) + 10.0) * 1e8, assetB.symbol) : 'N/A'}
+                          {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-zinc-500 text-[8px] sm:text-[9px]">
                           Financial Health
@@ -797,7 +737,7 @@ export default function Screener({
                   <th className="py-3 px-3 sm:px-5 cursor-pointer hover:text-zinc-300 text-right" onClick={() => toggleSort('change')}>24h Change</th>
                   <th className="py-3 px-5 text-right hidden xl:table-cell cursor-pointer hover:text-zinc-300">52W Range</th>
                   <th className="py-3 px-5 hidden 2xl:table-cell text-left">Advanced (100x Density)</th>
-                  <th className="py-3 px-5 cursor-pointer hover:text-zinc-300 text-right hidden sm:table-cell" onClick={() => toggleSort('marketCap')}>Market Cap</th>
+<th className="py-3 px-5 text-right hidden sm:table-cell">Market Cap (N/A)</th>
                   <th className="py-3 px-4 text-center hidden md:table-cell">Vol (M)</th>
                   <th className="py-3 px-4 text-center hidden lg:table-cell">RSI(14)</th>
                   <th className="py-3 px-4 text-center hidden lg:table-cell">Beta</th>
@@ -842,26 +782,17 @@ export default function Screener({
                         </td>
                         {/* Price */}
                         <td className="py-3.5 px-3 sm:px-5 text-right font-mono font-semibold cursor-pointer text-xs sm:text-sm" onClick={() => onSelectAsset(asset)}>
-                          {formatCurrency(asset.price, asset.symbol)}
+                          {hasFreshProviderQuote(asset) ? formatCurrency(asset.price, asset.symbol) : 'N/A — no fresh quote'}
                         </td>
                         {/* Change */}
                         <td className="py-3.5 px-3 sm:px-5 text-right cursor-pointer font-mono text-xs" onClick={() => onSelectAsset(asset)}>
-                          <span className={`inline-flex rounded px-1 sm:px-1.5 py-0.5 font-bold text-[10px] sm:text-xs ${isUp ? 'text-emerald-400 bg-emerald-500/5' : 'text-rose-450 bg-rose-500/5'}`}>
-                            {asset.change == null ? 'N/A' : `${isUp ? '+' : ''}${asset.change.toFixed(2)}%`}
+                          <span className={`inline-flex rounded px-1 sm:px-1.5 py-0.5 font-bold text-[10px] sm:text-xs ${!hasFreshProviderQuote(asset) || asset.change == null ? 'text-zinc-500 bg-zinc-500/5' : isUp ? 'text-emerald-400 bg-emerald-500/5' : 'text-rose-450 bg-rose-500/5'}`}>
+                            {!hasFreshProviderQuote(asset) || asset.change == null ? 'N/A' : `${isUp ? '+' : ''}${asset.change.toFixed(2)}%`}
                           </span>
                         </td>
-                        {/* 52W Range Dense Bar */}
-                        <td className="py-3.5 px-5 text-right hidden xl:table-cell cursor-pointer" onClick={() => onSelectAsset(asset)}>
-                          <div className="flex flex-col items-end w-32 ml-auto">
-                            <div className="flex justify-between w-full text-[8px] font-mono text-zinc-500 mb-1">
-                              <span>{asset.low52w || (asset.price * 0.7).toFixed(2)}</span>
-                              <span>{asset.high52w || (asset.price * 1.3).toFixed(2)}</span>
-                            </div>
-                            <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden relative">
-                              <div className="absolute top-0 bottom-0 bg-blue-500/50 rounded-full" style={{ left: '20%', right: '20%' }}></div>
-                              <div className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] z-10" style={{ left: `${getYearlyRangePercent(asset.price, asset.low52w || asset.price * 0.7, asset.high52w || asset.price * 1.3)}%`, marginLeft: '-2px' }}></div>
-                            </div>
-                          </div>
+                        {/* 52W Range: unavailable until field-level provenance is supplied */}
+                        <td className="py-3.5 px-5 text-right hidden xl:table-cell font-mono text-zinc-500">
+                          N/A — verified 52-week range unavailable
                         </td>
                         {/* 100x Density AI Analysis Panel */}
                         <td className="py-2 px-5 hidden 2xl:table-cell w-[220px]">
@@ -872,7 +803,7 @@ export default function Screener({
                         </td>
                         {/* Market Cap */}
                         <td className="py-3.5 px-5 text-right font-semibold text-zinc-400 cursor-pointer text-xs hidden sm:table-cell" onClick={() => onSelectAsset(asset)}>
-                          {asset.marketCapDisplay}
+                          {'N/A — provider fundamentals unavailable'}
                         </td>
                         {/* New Dense Metrics */}
                         <td className="py-3.5 px-4 text-center font-mono text-zinc-300 text-[10px] hidden md:table-cell">
@@ -896,7 +827,7 @@ export default function Screener({
                         </td>
                         {/* P/E Ratio */}
                         <td className="py-3.5 px-5 text-center font-mono text-zinc-400 cursor-pointer text-xs hidden md:table-cell" onClick={() => onSelectAsset(asset)}>
-                          {asset.peRatio !== null ? asset.peRatio : '—'}
+                          {'N/A'}
                         </td>
                         {/* Sector */}
                         <td className="py-3.5 px-5 text-zinc-400 cursor-pointer text-xs hidden lg:table-cell" onClick={() => onSelectAsset(asset)}>
@@ -962,7 +893,7 @@ export default function Screener({
                 ) : (
                   <tr>
                     <td colSpan={9} className="py-12 text-center text-zinc-500 font-semibold">
-                      No assets match the selected filtration parameters. Try clearing some selections.
+                      {filters.peRatio !== 'all' || filters.marketCap !== 'all' ? 'Fundamental filters are unavailable until verified P/E and market-cap data are connected.' : 'No assets match the selected filtration parameters. Try clearing some selections.'}
                     </td>
                   </tr>
                 )}
