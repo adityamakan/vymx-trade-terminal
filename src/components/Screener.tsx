@@ -52,11 +52,7 @@ export default function Screener({
     return Number.isFinite(observedAt) && ageMs >= -60_000 && ageMs <= 120_000;
   };
 
-  const getYearlyRangePercent = (price: number, low: number, high: number) => {
-    if (high === low || !high || !low) return 50;
-    const pct = ((price - low) / (high - low)) * 100;
-    return Math.max(0, Math.min(100, pct));
-  };
+
 
   // Load initial filters from localStorage if available, or use defaults
   const [filters, setFilters] = useState<ScreenerFilters>(() => {
@@ -291,10 +287,6 @@ export default function Screener({
 
             const pctDelta24h = hasFreshProviderQuote(assetA) && hasFreshProviderQuote(assetB) && assetA.change != null && assetB.change != null ? assetA.change - assetB.change : null;
 
-            // Compute year tracker positions
-            const rangePctA = getYearlyRangePercent(assetA.price, assetA.low52w, assetA.high52w);
-            const rangePctB = getYearlyRangePercent(assetB.price, assetB.low52w, assetB.high52w);
-
             return (
               <div className="space-y-4 font-sans">
                 {/* Micro Qualitative analysis header banner */}
@@ -430,24 +422,7 @@ export default function Screener({
                           {'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center">
-                          {(() => {
-                             if (true) {
-                               return <span className="text-zinc-600 font-mono text-[8px] sm:text-[9px]">N/A — verified fundamentals unavailable</span>;
-                             }
-                             if (assetA.peRatio < assetB.peRatio) {
-                               return (
-                                 <span className="text-teal-400 font-mono text-[8px] sm:text-[9px] font-bold bg-teal-500/5 border border-teal-500/25 rounded px-1.5 py-0.5">
-                                   {assetA.symbol} Undervalued
-                                 </span>
-                               );
-                             } else {
-                               return (
-                                 <span className="text-teal-400 font-mono text-[8px] sm:text-[9px] font-bold bg-teal-500/5 border border-teal-500/25 rounded px-1.5 py-0.5">
-                                   {assetB.symbol} Undervalued
-                                 </span>
-                               );
-                             }
-                          })()}
+                          <span className="text-zinc-600 font-mono text-[8px] sm:text-[9px]">N/A — verified fundamentals unavailable</span>
                         </td>
                       </tr>
 
