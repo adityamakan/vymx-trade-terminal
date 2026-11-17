@@ -44,6 +44,10 @@ assert.match(portfolio, /snapshot\.quoteCoverageComplete === true/, 'Historical 
 assert.equal(data.includes('Math.random'), false, 'Bundled asset data must not generate synthetic historical price paths');
 assert.equal(data.includes('generateHistory'), false, 'Bundled asset data must not create synthetic OHLC history');
 assert.equal(data.includes('history:'), false, 'Bundled assets must not carry synthetic historical observations');
+assert.match(data, /price: 0,\s*change: null,\s*changeAbs: null/, 'Bundled asset runtime prices and changes must be unavailable until a provider quote arrives');
+assert.match(data, /marketCap: 0,\s*marketCapDisplay: 'N\/A',\s*peRatio: null/, 'Bundled fundamental placeholders must not be treated as real fundamentals');
+assert.match(data, /volume: null,\s*volumeDisplay: 'N\/A'/, 'Bundled volume values must not be presented as provider volume');
+assert.match(data, /high52w: null,\s*low52w: null,\s*openPrice: null,\s*prevClose: null/, 'Bundled range and previous-close values must remain unavailable');
 assert.equal(app.includes('updatedHistory'), false, 'Live quote updates must not mutate synthetic history arrays');
 assert.equal(data.includes('export const newsArticles'), false, 'Bundled fabricated news must not be shipped as a fallback');
 assert.equal(navbar.includes('4.50%</span>'), false, 'Navigation must not display a hardcoded Fed policy rate');
