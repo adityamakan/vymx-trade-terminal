@@ -67,6 +67,19 @@ jobs:
 
           curl --silent --show-error --head http://127.0.0.1:4179/health | grep --ignore-case --quiet '^x-content-type-options: nosniff'
 
+          curl --silent --show-error --fail http://127.0.0.1:4179/api/providers/status > provider-status.json
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const payload = JSON.parse(fs.readFileSync('provider-status.json', 'utf8'));
+          const marketData = payload?.providers?.marketData;
+          if (payload.success !== true || marketData?.name !== 'Yahoo Finance') {
+            throw new Error('Unexpected provider status response');
+          }
+          if (marketData.status !== 'not_verified' || marketData.requests !== 0) {
+            throw new Error('Provider telemetry must start unverified before an upstream request');
+          }
+          NODE
+
           invalid_status=$(curl --silent --output /tmp/vymx-invalid.json --write-out '%{http_code}' \
             -H 'Content-Type: application/json' \
             --data '{"symbols":"AAPL"}' http://127.0.0.1:4179/api/prices)
