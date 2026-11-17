@@ -243,17 +243,6 @@ export default function App() {
         }
 
         changed = true;
-        const updatedHistory = { ...asset.history };
-        if (updatedHistory['1D'] && updatedHistory['1D'].length > 0) {
-          const updated1D = [...updatedHistory['1D']];
-          const lastIdx = updated1D.length - 1;
-          updated1D[lastIdx] = {
-            ...updated1D[lastIdx],
-            value: newPriceData.price
-          };
-          updatedHistory['1D'] = updated1D;
-        }
-
         return {
           ...asset,
           currency: typeof newPriceData.currency === 'string' ? newPriceData.currency.toUpperCase() : asset.currency ?? null,
@@ -265,8 +254,7 @@ export default function App() {
           changeAbs: typeof newPriceData.changeAbs === 'number' && Number.isFinite(newPriceData.changeAbs) ? newPriceData.changeAbs : null,
           low52w: (newPriceData.low52w !== undefined && !isNaN(newPriceData.low52w)) ? newPriceData.low52w : asset.low52w,
           high52w: (newPriceData.high52w !== undefined && !isNaN(newPriceData.high52w)) ? newPriceData.high52w : asset.high52w,
-          prevClose: (newPriceData.prevClose !== undefined && !isNaN(newPriceData.prevClose)) ? newPriceData.prevClose : asset.prevClose,
-          history: updatedHistory
+          prevClose: (newPriceData.prevClose !== undefined && !isNaN(newPriceData.prevClose)) ? newPriceData.prevClose : asset.prevClose
         };
       });
 
