@@ -27,7 +27,7 @@ function resolveYahooFinanceConstructor(exported: unknown): typeof YahooFinanceE
 const YahooFinanceConstructor = resolveYahooFinanceConstructor(YahooFinanceExport);
 const yahooFinance = new YahooFinanceConstructor({
   // Keep Yahoo's internal queue bounded across quote, history and fundamentals calls.
-  queue: { concurrency: 4, timeout: 12_000 },
+  queue: { concurrency: 4 },
   suppressNotices: ['yahooSurvey']
 });
 const PORT = Number(process.env.PORT || 5000);
