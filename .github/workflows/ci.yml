@@ -233,6 +233,8 @@ jobs:
   dependency-candidate:
     name: Validate non-breaking dependency update candidate
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     timeout-minutes: 20
     steps:
       - name: Check out PR head
@@ -298,6 +300,21 @@ jobs:
           if (!counts) throw new Error('Candidate production audit report is unavailable.');
           if ((counts.total ?? Infinity) !== 0) throw new Error('Candidate production dependencies still contain known vulnerabilities.');
           NODE
+
+      - name: Commit validated dependency-group lockfile
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "Lockfile already matches package dependency groups."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "chore: align lockfile with dependency groups"
+          git push origin "HEAD:${BRANCH_NAME}"
 
       - name: Upload dependency lockfile candidate and audit
         if: always()
