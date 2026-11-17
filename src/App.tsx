@@ -40,7 +40,7 @@ interface PortfolioSnapshot {
   fxRates: Record<string, number>;
   totalEquityUSD: number | null;
   source: 'provider-quote-snapshot';
-  currencyNormalization: 'provider-fx-to-usd' | 'incomplete';
+  currencyNormalization: 'provider-fx-to-usd' | 'incomplete' | 'incomplete-quotes' | 'incomplete-fx';
 }
 
 export default function App() {
