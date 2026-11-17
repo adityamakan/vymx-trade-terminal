@@ -26,7 +26,7 @@ assert.match(app, /quotesComplete && fxComplete/, 'Portfolio snapshots must requ
 assert.match(app, /quoteCoverageComplete: quotesComplete/, 'Snapshots must persist complete quote-coverage provenance');
 assert.match(portfolio, /hasFreshProviderQuote\(liveAsset\) \? liveAsset!\.price : null/, 'Portfolio holdings must not fall back to bundled prices');
 assert.match(portfolio, /N\/A — incomplete quote coverage/, 'Incomplete portfolio valuations must be disclosed');
-assert.match(portfolio, /filter\(\(snapshot\) => snapshot\.quoteCoverageComplete === true\)/, 'Legacy snapshots without completeness proof must not enter risk analytics');
+assert.match(portfolio, /filter\(\(snapshot\) => snapshot\.quoteCoverageComplete === true && snapshot\.totalEquityUSD != null\)/, 'Legacy snapshots without completeness proof must not enter risk analytics');
 assert.equal(data.includes('export const newsArticles'), false, 'Bundled fabricated news must not be shipped as a fallback');
 assert.equal(navbar.includes('4.50%</span>'), false, 'Navigation must not display a hardcoded Fed policy rate');
 assert.equal(navbar.includes('Normalizing</span>'), false, 'Navigation must not display an unverified yield-curve regime');
