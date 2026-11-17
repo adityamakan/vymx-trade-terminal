@@ -196,7 +196,7 @@ export default function WealthAdvisor({
     } catch (err) {
       console.error('[Wealth Advisor] AI provider unavailable:', err);
       setAdvisorError(err instanceof Error ? err.message : 'The AI provider is unavailable. No recommendation was generated.');
-    }    } finally {
+    } finally {
       setIsLoading(false);
     }
   };
