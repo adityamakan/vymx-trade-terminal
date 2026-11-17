@@ -794,9 +794,9 @@ export default function Heatmap({
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex justify-between text-[10px] text-zinc-300 font-mono bg-black/20 p-1 rounded">
-                              <span className="flex flex-col"><span>O</span><span className="font-bold text-white">{asset.openPrice.toFixed(2)}</span></span>
-                              <span className="flex flex-col text-center"><span>H</span><span className="font-bold text-emerald-400">{asset.high52w.toFixed(2)}</span></span>
-                              <span className="flex flex-col text-right"><span>L</span><span className="font-bold text-rose-400">{asset.low52w.toFixed(2)}</span></span>
+                              <span className="flex flex-col"><span>O</span><span className="font-bold text-white">{'N/A'}</span></span>
+                              <span className="flex flex-col text-center"><span>H</span><span className="font-bold text-emerald-400">{'N/A'}</span></span>
+                              <span className="flex flex-col text-right"><span>L</span><span className="font-bold text-rose-400">{'N/A'}</span></span>
                             </div>
 
                             <div className="h-12 w-full mt-1 bg-black/10 rounded">
@@ -1104,9 +1104,9 @@ export default function Heatmap({
             <div className="h-px bg-zinc-900" />
 
             <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
-              <span className="flex items-center gap-1 text-emerald-500">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
-                Live ticks sync active
+              <span className={`flex items-center gap-1 ${isDataOffline ? "text-amber-400" : "text-emerald-500"}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${isDataOffline ? "bg-amber-400" : "bg-emerald-500"}`} />
+                {isDataOffline ? 'Provider feed offline' : 'Provider transport connected · per-asset freshness enforced'}
               </span>
               <span
                 className="flex items-center gap-1 text-zinc-400 group-hover:text-white pb-0.5 hover:underline cursor-pointer"
