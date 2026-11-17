@@ -109,14 +109,6 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
     // Clamp absolute limits
     finalScore = Math.round(Math.max(1, Math.min(99, finalScore)));
 
-    if (totalAssetsCount === 0) {
-      statusText = 'Unavailable';
-      colorClass = 'text-zinc-500';
-      strokeColor = '#71717a';
-      gradientFrom = 'from-zinc-500';
-      adviceText = 'No fresh provider quote changes are available. Sentiment cannot be calculated.';
-    }
-
     // Categorization
     let statusText = 'Neutral';
     let colorClass = 'text-yellow-400';
@@ -154,6 +146,14 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
       strokeColor = '#10b981';
       gradientFrom = 'from-emerald-400';
       adviceText = 'Unchecked speculative volume. Consider taking structured profits into high strength.';
+    }
+
+    if (totalAssetsCount === 0) {
+      statusText = 'Unavailable';
+      colorClass = 'text-zinc-500';
+      strokeColor = '#71717a';
+      gradientFrom = 'from-zinc-500';
+      adviceText = 'No fresh provider quote changes are available. Sentiment cannot be calculated.';
     }
 
     return {
