@@ -113,7 +113,7 @@ export default function QuickTrade({
 
   // Handle Preset Percentages
   const applyPresetPercentage = (pct: number) => {
-    if (!currentAsset) return;
+    if (!currentAsset || !quoteIsFresh) return;
     if (tradeType === 'BUY') {
       // Buy based on virtual balance portion
       const budget = virtualBalance * pct;
