@@ -8,6 +8,7 @@ const assetDetails = readFileSync(new URL('../src/components/AssetDetails.tsx', 
 const dashboard = readFileSync(new URL('../src/components/Dashboard.tsx', import.meta.url), 'utf8');
 const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 const portfolio = readFileSync(new URL('../src/components/Portfolio.tsx', import.meta.url), 'utf8');
+const data = readFileSync(new URL('../src/data.ts', import.meta.url), 'utf8');
 
 assert.equal(screener.includes('charCodeAt'), false, 'Screener metrics must never be derived from ticker-symbol characters');
 assert.equal(heatmap.includes('charCodeAt'), false, 'Heatmap metrics must never be derived from ticker-symbol characters');
@@ -22,5 +23,6 @@ assert.match(app, /!liveAsset \|\| !isVerifiedProviderQuote\(liveAsset\)/, 'Stal
 assert.match(app, /quotesComplete && fxComplete/, 'Portfolio snapshots must require fresh quotes for every open position');
 assert.match(portfolio, /hasFreshProviderQuote\(liveAsset\) \? liveAsset!\.price : null/, 'Portfolio holdings must not fall back to bundled prices');
 assert.match(portfolio, /N\/A — incomplete quote coverage/, 'Incomplete portfolio valuations must be disclosed');
+assert.equal(data.includes('export const newsArticles'), false, 'Bundled fabricated news must not be shipped as a fallback');
 
 console.log('Synthetic UI metric regression tests passed.');
