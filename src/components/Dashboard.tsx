@@ -240,7 +240,7 @@ export default function Dashboard({
   }, [verifiedQuoteAssets, advCount, decCount, hasAdequateQuoteCoverage]);
 
   const sectorStats = useMemo(() => {
-    if (!hasAdequateQuoteCoverage) return { topSector: { name: 'N/A', avgChange: 0 }, bottomSector: { name: 'N/A', avgChange: 0 } };
+    if (!hasAdequateQuoteCoverage) return { topSector: { name: 'N/A', avgChange: 0, count: 0 }, bottomSector: { name: 'N/A', avgChange: 0, count: 0 } };
     const sectorsMap: { [sec: string]: { sumChange: number; count: number } } = {};
     verifiedQuoteAssets.forEach(a => {
       const sectorName = a.sector || 'Other';
@@ -260,8 +260,8 @@ export default function Dashboard({
       }));
     list.sort((a, b) => b.avgChange - a.avgChange);
     return {
-      topSector: list[0] || { name: 'N/A', avgChange: 0 },
-      bottomSector: list[list.length - 1] || { name: 'N/A', avgChange: 0 },
+      topSector: list[0] || { name: 'N/A', avgChange: 0, count: 0 },
+      bottomSector: list[list.length - 1] || { name: 'N/A', avgChange: 0, count: 0 },
       list
     };
   }, [verifiedQuoteAssets, hasAdequateQuoteCoverage]);
