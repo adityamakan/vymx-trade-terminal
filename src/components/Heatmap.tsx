@@ -206,42 +206,9 @@ export default function Heatmap({
   const getCellMetricDisplay = (asset: Asset) => {
     if (!hasFreshQuote(asset)) return 'N/A';
     if (metricView === "volume") {
-      return asset.volumeDisplay || 'N/A';
+      return asset.volume != null && Number.isFinite(asset.volume) ? asset.volumeDisplay : 'N/A';
     }
-    if (metricView === "range52w") {
-      const spread = asset.high52w - asset.low52w;
-      if (spread === 0) return "50%";
-      const relativePosition = ((asset.price - asset.low52w) / spread) * 100;
-      return `${relativePosition.toFixed(0)}% Range`;
-    }
-    if (metricView === "flowVelocity") {
-      return 'N/A';
-    }
-    if (metricView === "volatility") {
-      return 'N/A';
-    }
-    const timeframeChange = getTimeframeChange(asset);
-    return timeframeChange == null ? 'N/A' : `${timeframeChange >= 0 ? "+" : ""}${timeframeChange.toFixed(2)}%`;
-  };
-
-
-  const getTimeframeChange = (asset: Asset): number | null => {
-    // Bundled asset.history contains synthetic demo samples. Only 1D provider
-    // quote changes are valid here until interval-specific candles are wired in.
-    return hasFreshQuote(asset) && heatmapTimeframe === "1D" ? asset.change : null;
-  };
-
-  const getCellMetricColorIntensityStyle = (asset: Asset) => {
-    if (!hasFreshQuote(asset)) return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
-    if (metricView === "volume") return asset.volume != null && asset.volume > 10000000 ? "bg-indigo-950/90 text-indigo-300 border-indigo-500/30" : "bg-zinc-900 text-zinc-400 border-zinc-800/60";
-    if (metricView === "range52w") {
-      const spread = asset.high52w - asset.low52w;
-      if (spread <= 0) return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
-      const pct = ((asset.price - asset.low52w) / spread) * 100;
-      if (pct > 80) return "bg-emerald-950/80 text-emerald-300 border-emerald-500/20";
-      if (pct < 20) return "bg-rose-950/80 text-rose-300 border-rose-500/20";
-      return "bg-zinc-900 text-zinc-400 border-zinc-800/60";
-    }
+    if (metricView === "range52w") return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
     if (metricView === "flowVelocity" || metricView === "volatility") return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
     const timeframeChange = getTimeframeChange(asset);
     return timeframeChange == null ? "bg-zinc-900 text-zinc-500 border-zinc-800/60" : getChangeBgColor(timeframeChange, colorScheme);
