@@ -479,16 +479,20 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
   ];
   const result = await getPrices(symbols);
   if (!result.returned) return res.status(503).json({ success: false, error: 'Market quote providers are temporarily unavailable', unavailable: result.errors });
-  const quote = (symbol: string) => result.prices[symbol];
+  const quote = (symbol: string) => {
+    const item = result.prices[symbol];
+    return item && isFreshProviderTimestamp(item.asOf) ? item : undefined;
+  };
   const metric = (symbol: string) => {
     const item = quote(symbol);
-    return item && isFreshProviderTimestamp(item.asOf) ? { price: item.price, change: item.change, currency: item.currency, asOf: item.asOf } : null;
+    return item ? { price: item.price, change: item.change, currency: item.currency, asOf: item.asOf } : null;
   };
   const spx = quote('^GSPC');
   const nifty = quote('^NSEI');
   const sensex = quote('^BSESN');
   const btc = quote('BTC-USD');
   const vix = quote('^VIX');
+  const freshQuoteCount = Object.values(result.prices).filter((item) => isFreshProviderTimestamp(item.asOf)).length;
   const providerObservationTimes = Object.values(result.prices).map((item) => item.asOf);
   const allReturnedQuotesFresh = providerObservationTimes.length === result.returned
     && providerObservationTimes.every((value) => isFreshProviderTimestamp(value));
@@ -526,6 +530,7 @@ app.get('/api/ai/vymx-intelligence', async (_req: Request, res: Response) => {
       capitalInflows: null, capitalOutflows: null,
       // Use the oldest provider observation among the returned quotes.
       quoteSource: 'Yahoo Finance',
+      quoteCoverage: { fresh: freshQuoteCount, returned: result.returned, requested: symbols.length },
       quoteAsOf
     },
     note: 'Prices, ETF proxies, commodity futures, FX crosses and the US 10Y proxy are provider-backed. Fear/greed, institutional flows, order-book depth, dark-pool activity, algorithmic risk and unsupported Treasury tenors are not supplied by this feed.'
@@ -571,6 +576,8 @@ app.get('/api/ai/narrative', async (_req: Request, res: Response) => {
   const symbols = ['^GSPC', '^NSEI', 'BTC-USD', '^VIX', 'GC=F'];
   const result = await getPrices(symbols);
   if (!result.returned) return res.status(503).json({ success: false, error: 'Market snapshot unavailable', unavailable: result.errors });
+  const freshQuoteCount = Object.values(result.prices).filter((item) => isFreshProviderTimestamp(item.asOf)).length;
+  if (freshQuoteCount === 0) return res.status(503).json({ success: false, error: 'No fresh provider observations are available', unavailable: result.errors });
   const describe = (label: string, symbol: string) => {
     const quote = result.prices[symbol];
     if (!quote || !isFreshProviderTimestamp(quote.asOf)) return `${label}: unavailable (no fresh provider observation)`;
