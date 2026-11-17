@@ -690,7 +690,7 @@ export default function Heatmap({
               {/* Uniform tiles: verified market-cap weighting is not available in this quote feed. */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
                 {group.items.map((asset) => {
-                  const relativeUp = asset.change != null && asset.change >= 0;
+                  const relativeUp = hasFreshQuote(asset) && asset.change != null && asset.change >= 0;
                   const isFlash = flashUpdateSym[asset.symbol];
 
                   let sizeClass = "col-span-1 row-span-1 h-24";
