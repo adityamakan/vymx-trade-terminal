@@ -99,6 +99,18 @@ jobs:
           }
           console.log(`Market data OK; provider timestamp=${quote.asOf}; ageHours=${Math.round(quoteAgeMs / 3_600_000)}`);
 
+          const providerStatusResponse = await fetchWithRetry(new URL('/api/providers/status', baseUrl));
+          if (!providerStatusResponse.ok) throw new Error(`Provider status endpoint returned HTTP ${providerStatusResponse.status}`);
+          const providerStatusPayload = await providerStatusResponse.json();
+          const marketProvider = providerStatusPayload?.providers?.marketData;
+          if (!marketProvider || !Number.isFinite(marketProvider.requests) || !Number.isFinite(marketProvider.successes)) {
+            throw new Error('Provider status payload is missing request telemetry.');
+          }
+          if (marketProvider.successes < 1 || !marketProvider.lastSuccessAt || !Number.isFinite(Date.parse(marketProvider.lastSuccessAt))) {
+            throw new Error('No successful upstream market-data request is recorded in this process.');
+          }
+          console.log(`Provider telemetry OK; status=${marketProvider.status}; requests=${marketProvider.requests}; successes=${marketProvider.successes}; failures=${marketProvider.failures}; timeouts=${marketProvider.timeouts}; avgLatencyMs=${marketProvider.averageLatencyMs ?? 'n/a'}`);
+
           const wsUrl = new URL('/api/prices', baseUrl);
           wsUrl.protocol = 'wss:';
           await new Promise((resolve, reject) => {
