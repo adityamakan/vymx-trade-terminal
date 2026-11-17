@@ -202,16 +202,39 @@ export default function Heatmap({
 
   const activeMarketCapTotal = 'Not supplied by quote feed';
 
-  // Compute cell display value according to metric setting
+  // Compute cell display value according to metric setting.
+  // Only provider-backed fields with a valid, fresh observation are shown.
   const getCellMetricDisplay = (asset: Asset) => {
     if (!hasFreshQuote(asset)) return 'N/A';
     if (metricView === "volume") {
       return asset.volume != null && Number.isFinite(asset.volume) ? asset.volumeDisplay : 'N/A';
     }
-    if (metricView === "range52w") return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
-    if (metricView === "flowVelocity" || metricView === "volatility") return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
+    if (metricView === "range52w") return 'N/A — verified 52-week range unavailable';
+    if (metricView === "flowVelocity" || metricView === "volatility") return 'N/A';
     const timeframeChange = getTimeframeChange(asset);
-    return timeframeChange == null ? "bg-zinc-900 text-zinc-500 border-zinc-800/60" : getChangeBgColor(timeframeChange, colorScheme);
+    return timeframeChange == null ? 'N/A' : `${timeframeChange >= 0 ? "+" : ""}${timeframeChange.toFixed(2)}%`;
+  };
+
+  const getTimeframeChange = (asset: Asset): number | null => {
+    // Bundled asset.history contains synthetic demo samples. Only 1D provider
+    // quote changes are valid here until interval-specific candles are wired in.
+    return hasFreshQuote(asset) && heatmapTimeframe === "1D" ? asset.change : null;
+  };
+
+  const getCellMetricColorIntensityStyle = (asset: Asset) => {
+    if (!hasFreshQuote(asset)) return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
+    if (metricView === "volume") {
+      return asset.volume != null && asset.volume > 10_000_000
+        ? "bg-indigo-950/90 text-indigo-300 border-indigo-500/30"
+        : "bg-zinc-900 text-zinc-400 border-zinc-800/60";
+    }
+    if (metricView === "range52w" || metricView === "flowVelocity" || metricView === "volatility") {
+      return "bg-zinc-900 text-zinc-500 border-zinc-800/60";
+    }
+    const timeframeChange = getTimeframeChange(asset);
+    return timeframeChange == null
+      ? "bg-zinc-900 text-zinc-500 border-zinc-800/60"
+      : getChangeBgColor(timeframeChange, colorScheme);
   };
 
   return (
