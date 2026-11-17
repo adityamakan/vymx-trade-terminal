@@ -803,11 +803,21 @@ app.all('/api/ai/:feature', aiRequestLimiter, async (req: Request, res: Response
         const allocation = parsed.allocation || {};
         const keys = ['stock', 'crypto', 'forex', 'commodity', 'index', 'bond'];
         const values = keys.map((key) => Number(allocation[key]));
-        if (values.some((value) => !Number.isFinite(value) || value < 0 || value > 100) || values.reduce((sum, value) => sum + value, 0) !== 100) {
+        if (values.some((value) => !Number.isFinite(value) || value < 0 || value > 100) || Math.abs(values.reduce((sum, value) => sum + value, 0) - 100) > 0.01) {
           return res.status(502).json({ success: false, error: 'AI advisor allocation failed validation; percentages must sum to 100' });
         }
-        const reasoning = answer.replace(/```json[\s\S]*?```/gi, '').trim();
-        return res.json({ ...common, result: { ...parsed, allocation, reasoning } });
+        const recommendedAssets = Array.isArray(parsed.recommendedAssets)
+          ? parsed.recommendedAssets
+              .filter((value: unknown): value is string => typeof value === 'string' && /^[A-Za-z0-9.^=_-]{1,20}$/.test(value.trim()))
+              .map((value: string) => value.trim().toUpperCase())
+              .slice(0, 8)
+          : [];
+        if (!recommendedAssets.length || typeof parsed.wealthProtectionTip !== 'string' || !parsed.wealthProtectionTip.trim()) {
+          return res.status(502).json({ success: false, error: 'AI advisor returned incomplete recommendations or risk considerations' });
+        }
+        const reasoning = answer.replace(/\x60\x60\x60json[\s\S]*?\x60\x60\x60/gi, '').trim();
+        if (!reasoning) return res.status(502).json({ success: false, error: 'AI advisor returned no explanatory reasoning' });
+        return res.json({ ...common, result: { ...parsed, allocation, recommendedAssets, reasoning } });
       } catch {
         return res.status(502).json({ success: false, error: 'AI advisor returned invalid structured output' });
       }
