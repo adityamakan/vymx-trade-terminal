@@ -128,3 +128,10 @@ A consumer must define a freshness threshold appropriate to the instrument and m
 - The server exposes `GET /api/providers/status` with process-local request counts, successes, failures, timeout count, recent latency and last-success/last-failure timestamps. These counters reset on process restart and are diagnostic, not durable monitoring.
 - A provider status of healthy means this process observed a recent successful upstream request with no subsequent consecutive failures. It does not mean all instruments are covered or the feed is licensed for redistribution.
 - Yahoo Finance remains a single upstream for quotes, FX, historical OHLCV and fundamentals. There is no automatic secondary quote provider until one is selected, configured, mapped across asset classes, and validated for entitlement and licensing.
+
+
+## Dependency security boundary
+
+Build and test tooling is classified as development-only in `package.json` (Vite, its plugins, TypeScript, esbuild, Tailwind tooling, and tsx). These packages are required to build/test the frontend and server bundle, but are not required by the deployed Node runtime. Production dependency installation and the blocking CI audit use `npm ci --omit=dev` / `npm audit --omit=dev`.
+
+The full development dependency tree is still audited and uploaded as an artifact. As of 18 November 2026, npm reports GHSA-fc5q-39xc-vjpf against Picomatch 4.x through 4.0.7, reached through Vite/fdir/tinyglobby. The currently published 4.x line has no fixed release visible in the registry at review time; Picomatch 3.0.2 has a backported fix but is outside the declared `^4` ranges of Vite/tinyglobby. Do not force an incompatible override. Keep this as a tracked development-toolchain advisory and upgrade once upstream publishes a compatible fix. It must not be included in the production runtime dependency tree.
