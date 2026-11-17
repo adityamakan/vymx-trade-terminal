@@ -110,6 +110,8 @@ assert.equal(isVerifiedProviderQuote({ price: 100 }, quoteNow), false);
 assert.equal(isVerifiedProviderQuote({ price: 100, asOf: new Date(quoteNow - 121_000).toISOString() }, quoteNow), false);
 assert.equal(isVerifiedProviderQuote({ price: 100, asOf: new Date(quoteNow - 119_000).toISOString() }, quoteNow), true);
 assert.equal(isVerifiedProviderQuote({ price: 0, asOf: new Date(quoteNow).toISOString() }, quoteNow), false);
+assert.equal(isVerifiedProviderQuote({ price: 100, asOf: new Date(quoteNow + 60_000).toISOString() }, quoteNow), true, 'A one-minute provider clock skew is allowed');
+assert.equal(isVerifiedProviderQuote({ price: 100, asOf: new Date(quoteNow + 61_000).toISOString() }, quoteNow), false, 'Future observations beyond the documented clock-skew allowance are rejected');
 assert.equal(isVerifiedProviderQuote({ price: 100, asOf: new Date(quoteNow + 6 * 60_000).toISOString() }, quoteNow), false);
 assert.equal(isSubmittedPriceCurrent(100, { price: 100, asOf: new Date(quoteNow).toISOString() }, quoteNow), true);
 assert.equal(isSubmittedPriceCurrent(100, { price: 100, quoteAsOf: new Date(quoteNow).toISOString() }, quoteNow), true, 'Simulated orders must accept the Asset quoteAsOf field');
