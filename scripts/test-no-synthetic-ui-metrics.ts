@@ -22,6 +22,7 @@ const server = readFileSync(new URL('../server/server.ts', import.meta.url), 'ut
 const wealthAdvisor = readFileSync(new URL('../src/components/WealthAdvisor.tsx', import.meta.url), 'utf8');
 const providerQuote = readFileSync(new URL('../src/utils/providerQuote.ts', import.meta.url), 'utf8');
 const marketGlobe = readFileSync(new URL('../src/components/MarketGlobe3D.tsx', import.meta.url), 'utf8');
+const financialChatbot = readFileSync(new URL('../src/components/FinancialChatbot.tsx', import.meta.url), 'utf8');
 
 assert.equal(screener.includes('charCodeAt'), false, 'Screener metrics must never be derived from ticker-symbol characters');
 assert.equal(heatmap.includes('charCodeAt'), false, 'Heatmap metrics must never be derived from ticker-symbol characters');
@@ -79,5 +80,7 @@ assert.match(wealthAdvisor, /Illustrative Annual Return Assumption/, 'SIP return
 assert.match(wealthAdvisor, /not a return forecast/, 'SIP calculator must disclose that its output is not a forecast');
 assert.match(providerQuote, /observedAt <= now \+ 60 \* 1_000/, 'Quote future timestamp tolerance must match the documented one-minute clock-skew allowance');
 assert.equal(marketGlobe.includes("label: 'Earn'"), false, 'Unavailable earnings mode must not generate random pseudo-event markers');
+assert.match(financialChatbot, /activeQuoteVerified \? \{/, 'Financial chatbot must send active-asset quote fields only when the quote is fresh');
+assert.match(financialChatbot, /activeAsset: activeAssetContext/, 'Financial chatbot must not receive the raw asset object with bundled seed values');
 
 console.log('Synthetic UI metric regression tests passed.');
