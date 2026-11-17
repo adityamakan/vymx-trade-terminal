@@ -17,25 +17,36 @@ The table is an initial shortlist, not a vendor approval. Prices and entitlement
 
 | Candidate | Relevant strengths | Important limitations for VYMX | Initial fit |
 |---|---|---|---|
-| Twelve Data | One REST/WebSocket product spans equities, FX, crypto, ETFs, funds, commodities and fixed income; broad international exchange catalog. Its individual Basic tier advertises 8 API credits/minute and 800/day, with real-time US equities, FX and crypto. | Exchange-level entitlement varies. Its exchange directory lists NSE and BSE as EOD, with Grow as the minimum individual tier; this is not live NSE/BSE backup. Individual plans are for personal/internal use and do not permit commercial third-party display or redistribution. | Strongest candidate for broad internal prototype coverage, subject to licensing and India EOD constraints. |
-| Massive | Separate APIs for US stocks, indices, forex and crypto; official docs cover REST and WebSocket. Public individual pricing lists US stock delayed and real-time tiers, and distinct currency/index tiers. | Coverage and pricing are split by asset class. The published individual plans are non-professional/personal-use plans; public commercial display needs a separate business agreement. It is not an obvious NSE cash-equity failover. | Strong candidate for US-centric market infrastructure, weaker as a single global provider for VYMX. |
+| Twelve Data | One REST/WebSocket platform spans equities, FX, crypto, ETFs, funds, commodities and fixed income. Basic is free for testing/side projects; Grow is $79/month and Pro $229/month for individual use. The current exchange directory lists NSE and BSE as EOD from Grow; US equities, FX and crypto are real-time on the individual plans, subject to usage credits. | Individual plans are personal/internal only and do not permit public redistribution. Business plans are separate: Venture is listed at $499/month (annual billing $414/month) and permits client-facing apps subject to exchange licenses; external redistribution and some non-US data require additional approval/agreements. NSE/BSE remain EOD at the listed Grow/Venture tiers, not live India feeds. | Strongest broad-market candidate for an internal prototype; potentially a practical client-facing candidate only after Venture/business terms and exchange rights are confirmed. Not a live NSE/BSE solution. |
+| Massive | Separate APIs for US stocks, indices, forex, crypto and futures; REST and WebSocket coverage is strong. US stocks, indices, currencies and futures have separate plan/entitlement schedules. | Individual plans are personal/non-professional. Any data visible to other users, including testers, requires a Business subscription; redistribution is subject to the commercial license. Asset-class subscriptions and exchange agreements are separate. It is not an obvious NSE cash-equity failover. | Strong candidate for US-centric market infrastructure if Business licensing is obtained; weaker as a single global provider for VYMX. |
 | Finnhub | Existing integration and credentials may reduce integration friction; useful for news and selected equity/forex/crypto data. | Current VYMX integration is news-only. Product entitlements, exchange coverage, data delay, and redistribution terms must be verified before quote use. | Do not promote the news key into a quote failover without a separate entitlement review. |
 | NSE Data & Analytics | Official source for NSE real-time, EOD/historical, corporate, derivatives, currency and commodity market data. | Direct exchange data subscriptions and distribution terms are a different commercial/operational category from a hobby API. Costs and redistribution obligations need direct confirmation. | Correct authoritative path if licensed NSE data becomes a core public product requirement. |
 
 ## 3. Evidence links
 
-- Twelve Data pricing: https://twelvedata.com/pricing
+- Twelve Data individual pricing: https://twelvedata.com/pricing
+- Twelve Data business pricing: https://twelvedata.com/pricing-business
 - Twelve Data API and asset-class documentation: https://twelvedata.com/docs
 - Twelve Data exchange directory (includes NSE/BSE entitlement tiers): https://twelvedata.com/exchanges
-- Twelve Data commercial vs personal use: https://support.twelvedata.com/en/articles/5332349-commercial-and-personal-usage
+- Twelve Data commercial vs personal use and redistribution: https://support.twelvedata.com/en/articles/5332349-commercial-and-personal-usage
+- Twelve Data public attribution requirements: https://support.twelvedata.com/en/articles/12647398-attribution-guidelines-for-using-twelve-data
 - Massive API documentation: https://massive.com/docs
-- Massive stocks pricing: https://massive.com/pricing?product=stocks
+- Massive stocks pricing and business-use notes: https://massive.com/stocks
+- Massive Business licensing for public display/redistribution: https://massive.com/knowledge-base/article/how-can-i-redistribute-massives-market-data
 - Massive indices pricing: https://massive.com/pricing?product=indices
 - Massive currencies pricing: https://massive.com/pricing?product=currencies
 - NSE Data & Analytics data vending: https://www.nse.in/static/nse-data-and-analytics/data-information-vending
 - Yahoo Finance integration library disclaimer and usage notes: https://github.com/gadicc/yahoo-finance2
 
-## 4. Required decision inputs
+## 4. Current licensing and cost conclusion
+
+As of 18 November 2026, Twelve Data's published individual Grow ($79/month) and Pro ($229/month) plans are not suitable for public market-data display. Its Venture business tier is listed at $499/month billed monthly (or $414/month when billed annually); the vendor states client-facing display is possible subject to exchange licensing, with redistribution and some non-US market data requiring additional approval. Its exchange directory lists NSE and BSE as EOD on Grow/Venture, so it does not solve a live Indian-equities requirement by itself. Sources: https://twelvedata.com/pricing, https://twelvedata.com/pricing-business, https://support.twelvedata.com/en/articles/5332349-commercial-and-personal-usage, https://twelvedata.com/exchanges.
+
+Massive states that public display to anyone other than the subscriber requires a Business subscription; an individual subscription is not sufficient. Business data licensing is asset-class and exchange dependent. Sources: https://massive.com/knowledge-base/article/how-can-i-redistribute-massives-market-data and https://massive.com/knowledge-base/article/which-plan-do-i-need-to-show-massive-data-in-my-app.
+
+These published prices are indicative only; exchange agreements, professional classification, user counts, redistribution, and data add-ons can materially change the quote. No subscription or API key has been purchased or enabled.
+
+## 5. Required decision inputs
 
 Before enabling a provider, confirm:
 
@@ -46,7 +57,7 @@ Before enabling a provider, confirm:
 5. **Historical requirements:** intraday retention, daily history, adjusted/unadjusted prices, splits, dividends, symbol changes and delisted instruments.
 6. **Operational terms:** rate limits, SLA, support, WebSocket reconnect policy, maintenance notices and outage status.
 
-## 5. Implementation gate
+## 6. Implementation gate
 
 A second provider should be added only after the above is decided. The implementation must:
 
@@ -60,6 +71,6 @@ A second provider should be added only after the above is decided. The implement
 - Test primary success, primary timeout, secondary success, both unavailable, stale secondary, unsupported symbol, currency mismatch and conflicting prices.
 - Confirm the vendor license allows the intended display, storage, derived analytics and user audience.
 
-## 6. Current engineering stance
+## 7. Current engineering stance
 
 Until a provider is approved, VYMX should prefer an explicit unavailable state over an unlicensed or semantically incompatible fallback. A second provider is not automatically better: two feeds with different exchange coverage, timestamp semantics, corporate-action treatment or display rights can make the terminal less trustworthy if blended without controls.
