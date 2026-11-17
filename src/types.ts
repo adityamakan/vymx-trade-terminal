@@ -2,22 +2,22 @@ export interface Asset {
   symbol: string;
   name: string;
   type: 'stock' | 'crypto' | 'forex' | 'commodity' | 'index' | 'bond';
-  price: number;
+  price: number; // Zero until a fresh provider quote is received; never use without quoteAsOf validation.
   currency?: string | null; // Provider-reported quote currency; null until verified.
-  quoteAsOf?: string | null; // Timestamp of the latest verified provider quote; null for bundled demo defaults.
+  quoteAsOf?: string | null; // Provider observation timestamp; null until a verified quote is received.
   change: number | null; // provider-reported percentage change; null when unavailable
   changeAbs: number | null; // provider-reported absolute change; null when unavailable
-  marketCap: number; // in Millions for smaller or Billions for larger, let's double specify standard
-  marketCapDisplay: string; // e.g. "3.25T" or "45.2B" or "890M"
+  marketCap: number; // Zero sentinel until provider fundamentals are connected; not a ranking input.
+  marketCapDisplay: string; // 'N/A' until provider fundamentals are connected.
   peRatio: number | null; // null for cryptos, forex, some index
   sector: string; // e.g. "Technology", "Financials", "DeFi", "Energy", "Metal", "Currencies", "Indices"
   country: string; // e.g. "United States", "Global", "Germany", "Japan", "Switzerland"
-  volume: number | null; // null when the provider did not supply volume
-  volumeDisplay: string; // e.g. "52.4M"
-  high52w: number;
-  low52w: number;
-  openPrice: number;
-  prevClose: number;
+  volume: number | null; // null until supplied by the provider.
+  volumeDisplay: string; // 'N/A' until supplied by the provider.
+  high52w: number; // Zero sentinel until provider quote metadata is available.
+  low52w: number; // Zero sentinel until provider quote metadata is available.
+  openPrice: number; // Zero sentinel until provider quote metadata is available.
+  prevClose: number; // Zero sentinel until provider quote metadata is available.
 }
 
 export interface PortfolioItem {
