@@ -174,3 +174,8 @@ The GitHub branch API reported `protected: false` for `main` on 12 November 2026
 ## Dependency audit boundary
 
 Vite, Tailwind, TypeScript, esbuild, and tsx are build/test tooling and belong in `devDependencies`. Render's build phase installs development dependencies to create `dist/` and `dist-server/`; the running server uses runtime dependencies. CI blocks on `npm audit --omit=dev` and also publishes the full audit report. Any remaining development-only advisory must be documented with the affected dependency path and upgraded as soon as a compatible upstream fix is available; do not force a semver-incompatible override.
+
+
+## Netlify preview build
+
+The Netlify site publishes only `dist/`; it does not run the Node API. Its build command explicitly uses `npm ci --include=dev && npm run build` so Vite/Tailwind/TypeScript build tools remain available even when the Netlify build environment sets `NODE_ENV=production`. Render separately builds the Node API bundle and prunes development dependencies before runtime.
