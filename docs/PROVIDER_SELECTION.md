@@ -38,6 +38,10 @@ The table is an initial shortlist, not a vendor approval. Prices and entitlement
 - NSE Data & Analytics data vending: https://www.nse.in/static/nse-data-and-analytics/data-information-vending
 - Yahoo Finance integration library disclaimer and usage notes: https://github.com/gadicc/yahoo-finance2
 
+## 4. India-specific NSE option
+
+NSE now exposes an official MCP surface with historical Bhavcopy data and a CM market feed described as approximately 1–3 minutes delayed. Its own disclaimer restricts this MCP access to educational/informational purposes and explicitly excludes commercial deployment. Treat it as a research/prototype integration only; it is not a production redistribution license. For production real-time or delayed display, use NSE Data & Analytics' paid subscription/data-vending route or an authorized vendor and execute the relevant agreement. Sources: https://www.nseindia.com/nse-mcp and https://www.nseindia.com/static/market-data/real-time-data-subscription.
+
 ## 4. Current licensing and cost conclusion
 
 As of 18 November 2026, Twelve Data's published individual Grow ($79/month) and Pro ($229/month) plans are not suitable for public market-data display. Its Venture business tier is listed at $499/month billed monthly (or $414/month when billed annually); the vendor states client-facing display is possible subject to exchange licensing, with redistribution and some non-US market data requiring additional approval. Its exchange directory lists NSE and BSE as EOD on Grow/Venture, so it does not solve a live Indian-equities requirement by itself. Sources: https://twelvedata.com/pricing, https://twelvedata.com/pricing-business, https://support.twelvedata.com/en/articles/5332349-commercial-and-personal-usage, https://twelvedata.com/exchanges.
