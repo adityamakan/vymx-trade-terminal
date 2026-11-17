@@ -844,6 +844,7 @@ export default function App() {
                   virtualBalance={virtualBalance}
                   assets={liveAssets}
                   setView={setView}
+                  onSelectAsset={handleSelectAsset}
                   formatCurrency={formatCurrency}
                 />
               </motion.div>
