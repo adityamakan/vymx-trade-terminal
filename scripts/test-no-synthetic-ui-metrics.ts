@@ -55,6 +55,10 @@ assert.match(riskDashboard, /every\(\(item\) => hasFreshQuote/, 'Risk dashboard 
 assert.match(server, /function isFreshProviderTimestamp/, 'Server must validate provider observation timestamps');
 assert.match(server, /!isFreshProviderTimestamp\(quote\.asOf\)/, 'Server intelligence must reject stale quotes');
 assert.match(server, /No fresh provider observations are available/, 'Server must fail closed when every provider observation is stale');
+assert.match(server, /if \(!isFreshProviderTimestamp\(quote\.asOf\)\)/, 'FX conversion must reject stale provider observations');
+assert.match(server, /observations,\s*unavailable,\s*partial/, 'FX endpoint must expose per-currency observation provenance and partial coverage');
+assert.match(app, /fxObservationTimes: Record<string, string \| null>/, 'Portfolio snapshots must persist FX observation timestamps');
+assert.match(app, /isVerifiedProviderQuote\(\{ price: observation\.rate, asOf: observation\.asOf \}\)/, 'Portfolio snapshots must independently validate FX quote freshness');
 assert.equal(wealthAdvisor.includes("getLocalAssetsRecommendations"), false, 'Advisor must not silently substitute a local pseudo-model when Gemini is unavailable');
 assert.equal(wealthAdvisor.includes("Expected Max Drawdown"), false, 'Advisor must not invent drawdown estimates from risk labels');
 assert.equal(wealthAdvisor.includes("AI Confidence"), false, 'Advisor must not display fabricated model confidence');
