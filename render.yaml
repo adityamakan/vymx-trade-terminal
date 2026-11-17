@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: vymx-trade-terminal
+    runtime: node
+    branch: main
+    region: virginia
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
