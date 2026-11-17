@@ -9,7 +9,7 @@ interface NavbarProps {
   selectedAsset: Asset | null;
   setSelectedAsset: (asset: Asset | null) => void;
   virtualBalance: number;
-  totalEquity: number;
+  totalEquity: number | null;
   theme: 'dark' | 'light';
   toggleTheme: () => void;
   currencyMode: 'AUTO' | 'USD' | 'INR';
@@ -386,7 +386,7 @@ export default function Navbar({
             <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Trading Account balance</p>
             <div className="flex items-center justify-between text-xs">
               <span className="text-zinc-400">Net Portfolio Equity</span>
-              <span className="font-semibold text-emerald-400">{formatCurrency(totalEquity)}</span>
+              <span className="font-semibold text-emerald-400">{totalEquity == null ? 'N/A — quote coverage incomplete' : formatCurrency(totalEquity)}</span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-zinc-400">Available virtual Cash</span>
