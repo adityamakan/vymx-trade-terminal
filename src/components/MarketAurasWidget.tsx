@@ -4,7 +4,6 @@ import { Activity, RefreshCw } from 'lucide-react';
 export default function MarketAurasWidget() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
 
   const fetchData = async () => {
     setLoading(true);
@@ -16,7 +15,6 @@ export default function MarketAurasWidget() {
         return;
       }
       setData(json);
-      setLastUpdated(new Date());
     } catch (e) {
       // Never replace missing provider data with invented sector scores.
       setData([]);
@@ -28,6 +26,9 @@ export default function MarketAurasWidget() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const observationTimes = data.map((item) => Date.parse(item.asOf)).filter((value) => Number.isFinite(value));
+  const oldestObservation = observationTimes.length ? new Date(Math.min(...observationTimes)) : null;
 
   const getAuraColor = (score: number) => {
     if (score >= 70) return 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/30 text-emerald-400';
@@ -44,7 +45,7 @@ export default function MarketAurasWidget() {
         </div>
         <div className="flex items-center gap-2">
            <span className="text-[10px] text-zinc-500 font-mono">
-              {lastUpdated.toLocaleTimeString()}
+              {oldestObservation ? `Quotes as of ${oldestObservation.toLocaleTimeString()}` : 'No verified quotes'}
            </span>
            <button onClick={fetchData} className="text-zinc-500 hover:text-white transition-colors" disabled={loading}>
              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
