@@ -11,6 +11,13 @@ const portfolio = readFileSync(new URL('../src/components/Portfolio.tsx', import
 const data = readFileSync(new URL('../src/data.ts', import.meta.url), 'utf8');
 const navbar = readFileSync(new URL('../src/components/Navbar.tsx', import.meta.url), 'utf8');
 const macroBacktester = readFileSync(new URL('../server/macro_backtester.py', import.meta.url), 'utf8');
+const sentimentGauge = readFileSync(new URL('../src/components/SentimentGauge.tsx', import.meta.url), 'utf8');
+const heatmap3D = readFileSync(new URL('../src/components/Heatmap3D.tsx', import.meta.url), 'utf8');
+const commandCenter = readFileSync(new URL('../src/components/CommandCenter.tsx', import.meta.url), 'utf8');
+const competitorDashboard = readFileSync(new URL('../src/components/CompetitorDashboard.tsx', import.meta.url), 'utf8');
+const hedgeEngine = readFileSync(new URL('../src/utils/hedgeEngine.ts', import.meta.url), 'utf8');
+const sectorBreakdown = readFileSync(new URL('../src/components/SectorBreakdown.tsx', import.meta.url), 'utf8');
+const riskDashboard = readFileSync(new URL('../src/components/RiskDashboard.tsx', import.meta.url), 'utf8');
 
 assert.equal(screener.includes('charCodeAt'), false, 'Screener metrics must never be derived from ticker-symbol characters');
 assert.equal(heatmap.includes('charCodeAt'), false, 'Heatmap metrics must never be derived from ticker-symbol characters');
@@ -32,5 +39,13 @@ assert.equal(navbar.includes('4.50%</span>'), false, 'Navigation must not displa
 assert.equal(navbar.includes('Normalizing</span>'), false, 'Navigation must not display an unverified yield-curve regime');
 assert.equal(macroBacktester.includes('REGIME_PROFILES'), false, 'Synthetic historical macro return profiles must not remain executable');
 assert.match(macroBacktester, /MacroBacktestUnavailable/, 'Macro backtesting must fail closed until verified data is implemented');
+assert.match(sentimentGauge, /assets\.filter\(\(asset\) => hasFreshProviderQuote\(asset\) && asset\.change != null\)/, 'Sentiment must use only fresh provider observations');
+assert.match(sentimentGauge, /observations === 0 \? 'N\/A'/, 'Sentiment must be unavailable when no fresh observations exist');
+assert.match(heatmap3D, /assets\.filter\(hasFreshQuote\)/, '3D heatmap must exclude stale assets');
+assert.match(commandCenter, /hasFreshQuote\(asset\) \? `\$\{asset\.price\.toLocaleString\(\)\}` : 'N\/A'/, 'Command search must not show stale asset prices');
+assert.match(competitorDashboard, /hasFreshQuote\(comp\) \? formatCurrency/, 'Competitor prices must be quote-gated');
+assert.match(hedgeEngine, /quoteAgeMs > 120_000\) return \[\]/, 'Hedge suggestions must not use stale price moves');
+assert.match(sectorBreakdown, /every\(\(item\) => hasFreshQuote/, 'Sector breakdown must require fresh quotes for all holdings');
+assert.match(riskDashboard, /every\(\(item\) => hasFreshQuote/, 'Risk dashboard valuations must require fresh quotes for all holdings');
 
 console.log('Synthetic UI metric regression tests passed.');
