@@ -24,6 +24,7 @@ import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { ChartContainer } from './ChartContainer';
 import { Asset } from '../types';
 import { streamWealthAdvisorAllocation, streamFinancialChat } from '../lib/gemini';
+import { isVerifiedProviderQuote } from '../utils/providerQuote';
 
 interface WealthAdvisorProps {
   virtualBalance: number;
@@ -73,6 +74,7 @@ export default function WealthAdvisor({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [streamingReasoning, setStreamingReasoning] = useState<string>('');
   const [result, setResult] = useState<AdvisorResult | null>(null);
+  const [advisorError, setAdvisorError] = useState<string | null>(null);
 
   // --- SIP Compounding Calculator States ---
   const [sipMonthly, setSipMonthly] = useState<number>(10000); // Default ₹10k/month
@@ -166,11 +168,14 @@ export default function WealthAdvisor({
     setInvestmentHorizon('');
     setStreamingReasoning('');
     setResult(null);
+    setAdvisorError(null);
     setStep(1);
   };
 
   const executeAdvisorAI = async () => {
     setIsLoading(true);
+    setAdvisorError(null);
+    setResult(null);
     setStreamingReasoning('');
     setStep(6); // transition to loading/results view
 
@@ -189,71 +194,11 @@ export default function WealthAdvisor({
       });
       setResult(generatedResult);
     } catch (err) {
-      console.warn('[Wealth Advisor] Stream error, using localized models:', err);
-      // Construct a highly robust local recommendation based on inputs so this is 100% bulletproof
-      let stockPct = 40;
-      let bondPct = 30;
-      let cryptoPct = 5;
-      let indexPct = 15;
-      let commPct = 5;
-      let forexPct = 5;
-
-      // Adjust based on risk tolerance
-      if (riskTolerance === 'aggressive') {
-        stockPct = 55;
-        bondPct = 10;
-        cryptoPct = 20;
-        indexPct = 5;
-        commPct = 5;
-        forexPct = 5;
-      } else if (riskTolerance === 'conservative') {
-        stockPct = 15;
-        bondPct = 60;
-        cryptoPct = 0;
-        indexPct = 15;
-        commPct = 5;
-        forexPct = 5;
-      }
-
-      // Adjust based on age
-      if (ageGroup === 'retired') {
-        stockPct = Math.max(10, stockPct - 20);
-        bondPct = Math.min(80, bondPct + 25);
-        cryptoPct = 0;
-      } else if (ageGroup === 'student') {
-        stockPct = Math.min(80, stockPct + 15);
-        cryptoPct = Math.min(30, cryptoPct + 10);
-        bondPct = Math.max(5, bondPct - 15);
-      }
-
-      const matchedAssets = getLocalAssetsRecommendations(riskTolerance, ageGroup);
-
-      setResult({
-        allocation: {
-          stock: stockPct,
-          crypto: cryptoPct,
-          forex: forexPct,
-          commodity: commPct,
-          index: indexPct,
-          bond: bondPct,
-        },
-        reasoning: `Based on your profile as a **${ageGroup.toUpperCase()}** saver with an income pool of **${incomeLevel}**, a **${riskTolerance}** risk matrix, and a **${investmentHorizon}** horizon, we have constructed a customized portfolio optimization strategy.\n\nWe allocated **${bondPct}%** into secure sovereign government bonds to act as a principal wealth anchor, paired with **${stockPct}%** high-growth global stocks to maintain compounding capabilities.`,
-        recommendedAssets: matchedAssets,
-        wealthProtectionTip: `Always use strict Stop Loss placement on your ${riskTolerance === 'conservative' ? 'limited stock allocations' : 'high-beta cryptocurrency allocations'} to secure capital against unforeseen black-swan drawdowns.`,
-      });
-    } finally {
+      console.error('[Wealth Advisor] AI provider unavailable:', err);
+      setAdvisorError(err instanceof Error ? err.message : 'The AI provider is unavailable. No recommendation was generated.');
+    }    } finally {
       setIsLoading(false);
     }
-  };
-
-  const getLocalAssetsRecommendations = (risk: string, age: string): string[] => {
-    if (risk === 'conservative' || age === 'retired') {
-      return ['US10Y', 'NIFTY50', 'GC=F', 'DE10Y'];
-    }
-    if (risk === 'aggressive' || age === 'student') {
-      return ['BTC', 'NVDA', 'SOL', 'RELIANCE', 'TSLA'];
-    }
-    return ['AAPL', 'NIFTY50', 'BTC', 'US10Y', 'TCS'];
   };
 
   const renderProgressDots = () => {
@@ -283,7 +228,7 @@ export default function WealthAdvisor({
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight text-white font-sans">Advisor AI: Wealth Matchmaker</h1>
-            <p className="text-xs text-zinc-400">Discover custom asset allocations optimized specifically for your income, age segment, goals, and risk threshold.</p>
+            <p className="text-xs text-zinc-400">Generate an AI-assisted allocation draft from your stated profile. It is educational, not a regulated recommendation or a backtested strategy.</p>
           </div>
         </div>
       </div>
@@ -487,7 +432,7 @@ export default function WealthAdvisor({
                 <div className="text-center space-y-2">
                   <div className="flex items-center justify-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-ping" />
-                    <span className="text-xs font-mono font-bold uppercase tracking-widest text-indigo-400">Gemini 3.8 Flash Neural Streaming</span>
+                    <span className="text-xs font-mono font-bold uppercase tracking-widest text-indigo-400">Gemini 2.5 Flash · server-side AI</span>
                   </div>
                   <h2 className="text-base font-bold text-zinc-100">Synthesizing Tailored Institutional Asset Allocation...</h2>
                 </div>
@@ -515,8 +460,8 @@ export default function WealthAdvisor({
                 {/* Result header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-900 pb-4">
                   <div>
-                    <span className="text-[9px] font-black tracking-widest text-indigo-400 font-mono uppercase">AI Asset Mix Optimization Complete</span>
-                    <h2 className="text-lg font-bold text-white font-sans font-sans">Your Optimized Portfolio Structure</h2>
+                    <span className="text-[9px] font-black tracking-widest text-indigo-400 font-mono uppercase">AI-generated allocation draft</span>
+                    <h2 className="text-lg font-bold text-white font-sans font-sans">Allocation draft based on your supplied profile</h2>
                   </div>
 
                   <button
@@ -570,7 +515,7 @@ export default function WealthAdvisor({
                     {/* Centered label */}
                     <div className="absolute inset-0 flex flex-col items-center justify-content justify-center pointer-events-none mt-[-10px]">
                       <span className="text-[10px] font-black tracking-widest text-zinc-500 uppercase font-mono">Portfolio</span>
-                      <span className="text-xl font-extrabold text-white font-mono">OPTIMIZED</span>
+                      <span className="text-xl font-extrabold text-white font-mono">DRAFT</span>
                     </div>
 
                     {/* Custom Compact Legends */}
@@ -591,50 +536,14 @@ export default function WealthAdvisor({
 
                   {/* AI Analysis Brief text */}
                   <div className="space-y-4">
-                    {/* 100x Density Metrics Panel */}
-                    <div className="grid grid-cols-3 gap-3 bg-black/40 border border-indigo-500/20 rounded-xl p-3">
-                      <div>
-                        <div className="text-[9px] uppercase tracking-wider text-zinc-500 font-mono mb-1">Expected Max Drawdown</div>
-                        <div className="text-sm font-bold text-rose-400 font-mono">
-                          -{riskTolerance === 'aggressive' ? '18.4' : riskTolerance === 'moderate' ? '12.5' : '6.8'}%
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[9px] uppercase tracking-wider text-zinc-500 font-mono mb-1">Portfolio Sharpe</div>
-                        <div className="text-sm font-bold text-emerald-400 font-mono">
-                          {riskTolerance === 'aggressive' ? '1.92' : riskTolerance === 'moderate' ? '1.74' : '1.48'}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[9px] uppercase tracking-wider text-zinc-500 font-mono mb-1">Portfolio Beta</div>
-                        <div className="text-sm font-bold text-blue-400 font-mono">
-                          {riskTolerance === 'aggressive' ? '1.35' : riskTolerance === 'moderate' ? '0.98' : '0.64'}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[9px] uppercase tracking-wider text-zinc-500 font-mono mb-1">Stress Test (VaR)</div>
-                        <div className="text-sm font-bold text-rose-500 font-mono">
-                          -{riskTolerance === 'aggressive' ? '6.2' : riskTolerance === 'moderate' ? '4.1' : '2.3'}%
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[9px] uppercase tracking-wider text-zinc-500 font-mono mb-1">Yield (Est)</div>
-                        <div className="text-sm font-bold text-indigo-400 font-mono">
-                          {riskTolerance === 'aggressive' ? '1.8' : riskTolerance === 'moderate' ? '3.4' : '4.9'}%
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[9px] uppercase tracking-wider text-zinc-500 font-mono mb-1">AI Confidence</div>
-                        <div className="text-sm font-bold text-emerald-500 font-mono">
-                          {riskTolerance === 'conservative' ? '97.8' : riskTolerance === 'moderate' ? '95.4' : '92.6'}%
-                        </div>
-                      </div>
+                    <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 text-xs text-zinc-400">
+                      Portfolio Sharpe, beta, drawdown, VaR, yield and model-confidence statistics are unavailable. They require verified portfolio holdings, dated return observations, benchmark data and a documented calculation methodology; profile selections alone cannot produce these metrics.
                     </div>
 
                     <div className="bg-zinc-900/40 p-4 rounded-xl border border-zinc-850 space-y-2 relative">
                       <div className="flex items-center gap-2 text-blue-400">
                         <FileText className="h-4 w-4" />
-                        <span className="text-[9px] font-black tracking-widest uppercase font-mono">Vymx Trade AI Strategic Brief</span>
+                        <span className="text-[9px] font-black tracking-widest uppercase font-mono">AI-generated profile analysis · not live market research</span>
                       </div>
                       <p className="text-xs text-zinc-300 leading-relaxed font-sans whitespace-pre-wrap">{result.reasoning}</p>
                     </div>
@@ -643,7 +552,7 @@ export default function WealthAdvisor({
                     <div className="bg-amber-950/20 p-4 rounded-xl border border-amber-900/30 space-y-2 relative">
                       <div className="flex items-center gap-2 text-amber-500">
                         <ShieldCheck className="h-4 w-4" />
-                        <span className="text-[9px] font-black tracking-widest uppercase font-mono">End-to-End Capital Protection Brief</span>
+                        <span className="text-[9px] font-black tracking-widest uppercase font-mono">General risk considerations · verify independently</span>
                       </div>
                       <p className="text-xs text-zinc-400 leading-relaxed font-sans">{result.wealthProtectionTip}</p>
                     </div>
@@ -651,9 +560,9 @@ export default function WealthAdvisor({
 
                 </div>
 
-                {/* Specific recommended asset cards list */}
+                {/* AI-suggested asset cards list */}
                 <div className="space-y-3 pt-2" id="advisor-recommended-section">
-                  <h3 className="text-xs font-black tracking-widest text-zinc-400 font-mono uppercase">Specific Back-Tested Assets To Review:</h3>
+                  <h3 className="text-xs font-black tracking-widest text-zinc-400 font-mono uppercase">AI-suggested instruments · not backtested or performance-ranked:</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {result.recommendedAssets.map((sym) => {
                       const matchedRaw = assets.find(a => a.symbol === sym);
@@ -661,7 +570,7 @@ export default function WealthAdvisor({
                         return (
                           <div key={sym} className="rounded-xl border border-zinc-850 bg-zinc-900/30 p-3 flex justify-between items-center">
                             <div className="font-bold text-zinc-200 text-xs font-mono">{sym}</div>
-                            <span className="text-[9px] bg-zinc-800 text-zinc-500 px-1 py-0.5 rounded uppercase">TREASURY</span>
+                            <span className="text-[9px] bg-zinc-800 text-zinc-500 px-1 py-0.5 rounded uppercase">NOT IN UNIVERSE</span>
                           </div>
                         );
                       }
@@ -679,10 +588,14 @@ export default function WealthAdvisor({
                             <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[8px] text-zinc-400 font-mono uppercase">{matchedRaw.type}</span>
                           </div>
 
-                          <div className="flex justify-between items-end mt-4">
-                            <div className="text-xs font-bold text-zinc-200">{formatCurrency(matchedRaw.price, matchedRaw.symbol, matchedRaw.country)}</div>
-                            <span className={`text-[10px] font-bold ${matchedRaw.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                              {matchedRaw.change >= 0 ? '+' : ''}{matchedRaw.change.toFixed(1)}%
+                          <div className="flex justify-between items-end mt-4 gap-2">
+                            <div className="text-[10px] font-bold text-zinc-200">
+                              {isVerifiedProviderQuote(matchedRaw) ? formatCurrency(matchedRaw.price, matchedRaw.symbol, matchedRaw.country) : 'Quote unavailable'}
+                            </div>
+                            <span className="text-[10px] font-bold text-zinc-500">
+                              {isVerifiedProviderQuote(matchedRaw) && matchedRaw.change != null
+                                ? `${matchedRaw.change >= 0 ? '+' : ''}${matchedRaw.change.toFixed(1)}%`
+                                : 'Change unavailable'}
                             </span>
                           </div>
                         </div>
@@ -695,10 +608,12 @@ export default function WealthAdvisor({
                 <div className="rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-5 space-y-4" id="sip-calculator-module">
                   <div className="flex items-center gap-2 text-emerald-400 border-b border-zinc-900 pb-2.5">
                     <LineChart className="h-4 w-4" />
-                    <span className="text-[10px] font-black tracking-widest uppercase font-mono">Systematic Investment Plan (SIP) Compounding Forecaster</span>
+                    <span className="text-[10px] font-black tracking-widest uppercase font-mono">SIP contribution scenario calculator</span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+                  <p className="text-[10px] text-zinc-500">Illustrative compound-interest arithmetic only, not a return forecast. The selected annual rate is a user assumption, not a NIFTY historical average or expected result. Assumes monthly contributions at the beginning of each month; excludes taxes, fees, inflation and missed contributions.</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
                     {/* Controls on left */}
                     <div className="md:col-span-6 space-y-4 text-xs">
                       <div className="space-y-1">
@@ -747,7 +662,7 @@ export default function WealthAdvisor({
 
                       <div className="space-y-1">
                         <div className="flex justify-between font-medium">
-                          <label className="text-zinc-400">Expected Annual Rate of Return:</label>
+                          <label className="text-zinc-400">Illustrative Annual Return Assumption (scenario input):</label>
                           <span className="font-bold text-blue-400">{sipExpectedReturn}% p.a.</span>
                         </div>
                         <input
@@ -761,8 +676,8 @@ export default function WealthAdvisor({
                         />
                         <div className="flex justify-between text-[9px] text-zinc-500 font-mono">
                           <span>5% p.a.</span>
-                          <span>12% (Nifty Avg)</span>
-                          <span>18% (Aggressive)</span>
+                          <span>12% scenario</span>
+                          <span>18% scenario</span>
                           <span>25%</span>
                         </div>
                       </div>
@@ -814,45 +729,15 @@ export default function WealthAdvisor({
                   </div>
                 </div>
 
-                {/* 100x Density AI Diagnostic Module */}
-                <div className="rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-black/60 p-5 mt-6 shadow-lg">
-                  <div className="flex items-center gap-2 text-indigo-400 border-b border-zinc-900 pb-2.5 mb-4">
-                    <Sparkles className="h-4 w-4" />
-                    <span className="text-[10px] font-black tracking-widest uppercase font-mono">Advanced Diagnostics (100x Density Portfolio Scan)</span>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-x-6 gap-y-4">
-                    <div className="space-y-1">
-                      <p className="text-[9px] uppercase font-mono tracking-widest text-zinc-500">Sharpe Ratio</p>
-                      <p className="text-xs font-bold font-mono text-emerald-400">{riskTolerance === 'aggressive' ? '1.92' : riskTolerance === 'moderate' ? '1.74' : '1.48'}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[9px] uppercase font-mono tracking-widest text-zinc-500">Max Drawdown</p>
-                      <p className="text-xs font-bold font-mono text-rose-400">-{riskTolerance === 'aggressive' ? '18.4' : riskTolerance === 'moderate' ? '12.5' : '6.8'}%</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[9px] uppercase font-mono tracking-widest text-zinc-500">Alpha (vs NIFTY)</p>
-                      <p className="text-xs font-bold font-mono text-emerald-400">+{riskTolerance === 'aggressive' ? '4.85' : riskTolerance === 'moderate' ? '2.95' : '1.40'}%</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[9px] uppercase font-mono tracking-widest text-zinc-500">Beta Coeff</p>
-                      <p className="text-xs font-bold font-mono text-zinc-300">{riskTolerance === 'aggressive' ? '1.35' : riskTolerance === 'moderate' ? '0.98' : '0.64'}x</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[9px] uppercase font-mono tracking-widest text-zinc-500">Tail Risk</p>
-                      <p className="text-xs font-bold font-mono text-amber-400">{riskTolerance === 'aggressive' ? '4.2' : riskTolerance === 'moderate' ? '2.5' : '1.1'}%</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[9px] uppercase font-mono tracking-widest text-zinc-500">Tracking Error</p>
-                      <p className="text-xs font-bold font-mono text-indigo-400">{riskTolerance === 'aggressive' ? '2.85' : riskTolerance === 'moderate' ? '1.90' : '1.15'}%</p>
-                    </div>
-                  </div>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4 text-xs text-zinc-400">
+                  Advanced portfolio diagnostics are not calculated from the selected risk label. Verified holdings, dated portfolio and benchmark returns, and an explicit risk model are required before Sharpe, drawdown, alpha, beta, tail risk or tracking error can be reported.
                 </div>
 
                 {/* Followup Chat Interface with Wealth AI Advisor */}
                 <div className="rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-5 space-y-4" id="advisor-chat-thread">
                   <div className="flex items-center gap-2 text-indigo-400 border-b border-zinc-900 pb-2.5">
                     <Sparkles className="h-4 w-4 text-indigo-400 animate-pulse" />
-                    <span className="text-[10px] font-black tracking-widest uppercase font-mono text-zinc-300">Live Follow-Up: Consultation with Wealth AI</span>
+                    <span className="text-[10px] font-black tracking-widest uppercase font-mono text-zinc-300">Follow-up AI conversation</span>
                   </div>
 
                   {/* Message Thread Box */}
@@ -944,6 +829,13 @@ export default function WealthAdvisor({
                   </button>
                 </div>
 
+              </div>
+            ) : advisorError ? (
+              <div role="alert" className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 space-y-3">
+                <h3 className="text-sm font-bold text-amber-200">AI recommendation unavailable</h3>
+                <p className="text-xs text-zinc-300">{advisorError}</p>
+                <p className="text-xs text-zinc-500">No local substitute allocation, backtested asset list, or fabricated performance metrics have been generated.</p>
+                <button onClick={() => { setAdvisorError(null); setStep(5); }} className="text-xs font-semibold text-indigo-300 hover:text-indigo-200">Return to profile and retry</button>
               </div>
             ) : null}
           </motion.div>
