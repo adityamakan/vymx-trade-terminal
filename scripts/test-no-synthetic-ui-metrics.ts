@@ -41,7 +41,9 @@ assert.equal(navbar.includes('Normalizing</span>'), false, 'Navigation must not 
 assert.equal(macroBacktester.includes('REGIME_PROFILES'), false, 'Synthetic historical macro return profiles must not remain executable');
 assert.match(macroBacktester, /MacroBacktestUnavailable/, 'Macro backtesting must fail closed until verified data is implemented');
 assert.match(sentimentGauge, /assets\.filter\(\(asset\) => hasFreshProviderQuote\(asset\) && asset\.change != null\)/, 'Sentiment must use only fresh provider observations');
-assert.match(sentimentGauge, /!computedSentiment\.isAvailable \? 'N\/A'/, 'Sentiment must be unavailable when no fresh observations exist');
+assert.match(sentimentGauge, /!computedSentiment\.isAvailable \? 'N\/A'/, 'Sentiment must be unavailable below its quote-coverage threshold');
+assert.match(sentimentGauge, /equitiesSubset\.length >= 5 && cryptoSubset\.length >= 3 && safeHavenGap != null/, 'Sentiment requires representative equity, crypto and safe-haven coverage');
+assert.match(dashboard, /Math\.max\(20, Math\.ceil\(assets\.length \* 0\.5\)\)/, 'Dashboard market breadth must require minimum universe coverage');
 assert.match(heatmap3D, /assets\.filter\(hasFreshQuote\)/, '3D heatmap must exclude stale assets');
 assert.match(commandCenter, /hasFreshQuote\(asset\) \? `\$\{asset\.price\.toLocaleString\(\)\}` : 'N\/A'/, 'Command search must not show stale asset prices');
 assert.match(competitorDashboard, /hasFreshQuote\(comp\) \? formatCurrency/, 'Competitor prices must be quote-gated');
