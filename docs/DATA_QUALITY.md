@@ -94,3 +94,9 @@ A consumer must define a freshness threshold appropriate to the instrument and m
 ## News provenance
 
 - No bundled news headlines or invented source names are shipped as a fallback. News panels must display a provider-unavailable state until Finnhub returns actual articles.
+
+## Market-wide proxy coverage thresholds
+
+- Per-instrument values require a provider observation no older than 120 seconds (with a 60-second allowance for clock skew).
+- Market-wide breadth and sentiment proxies require at least 20 fresh quote changes and at least 50% of the configured universe. The sentiment proxy additionally requires at least five equity/index observations, three crypto observations, and fresh gold plus S&P 500 quotes.
+- Server intelligence endpoints apply the same provider-timestamp freshness rule. Cached fetch time is never substituted for the provider observation timestamp.
