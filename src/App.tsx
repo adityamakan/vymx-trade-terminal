@@ -39,6 +39,7 @@ interface PortfolioSnapshot {
   baseCurrency: 'USD';
   fxRates: Record<string, number>;
   totalEquityUSD: number | null;
+  quoteCoverageComplete?: boolean;
   source: 'provider-quote-snapshot';
   currencyNormalization: 'provider-fx-to-usd' | 'incomplete' | 'incomplete-quotes' | 'incomplete-fx';
 }
@@ -472,6 +473,7 @@ export default function App() {
         baseCurrency: 'USD',
         fxRates,
         totalEquityUSD: quotesComplete && fxComplete ? current.virtualBalance + normalizedPositions.reduce((sum, position) => sum + (position.marketValueUSD || 0), 0) : null,
+        quoteCoverageComplete: quotesComplete && fxComplete,
         source: 'provider-quote-snapshot',
         currencyNormalization: !quotesComplete ? 'incomplete-quotes' : fxComplete ? 'provider-fx-to-usd' : 'incomplete-fx'
       };
