@@ -21,6 +21,7 @@ const riskDashboard = readFileSync(new URL('../src/components/RiskDashboard.tsx'
 const server = readFileSync(new URL('../server/server.ts', import.meta.url), 'utf8');
 const wealthAdvisor = readFileSync(new URL('../src/components/WealthAdvisor.tsx', import.meta.url), 'utf8');
 const providerQuote = readFileSync(new URL('../src/utils/providerQuote.ts', import.meta.url), 'utf8');
+const marketGlobe = readFileSync(new URL('../src/components/MarketGlobe3D.tsx', import.meta.url), 'utf8');
 
 assert.equal(screener.includes('charCodeAt'), false, 'Screener metrics must never be derived from ticker-symbol characters');
 assert.equal(heatmap.includes('charCodeAt'), false, 'Heatmap metrics must never be derived from ticker-symbol characters');
@@ -77,5 +78,6 @@ assert.match(wealthAdvisor, /isVerifiedProviderQuote\(matchedRaw\)/, 'Advisor as
 assert.match(wealthAdvisor, /Illustrative Annual Return Assumption/, 'SIP return must be labeled as a scenario input, not an expected return');
 assert.match(wealthAdvisor, /not a return forecast/, 'SIP calculator must disclose that its output is not a forecast');
 assert.match(providerQuote, /observedAt <= now \+ 60 \* 1_000/, 'Quote future timestamp tolerance must match the documented one-minute clock-skew allowance');
+assert.equal(marketGlobe.includes("label: 'Earn'"), false, 'Unavailable earnings mode must not generate random pseudo-event markers');
 
 console.log('Synthetic UI metric regression tests passed.');
