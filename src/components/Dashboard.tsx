@@ -218,21 +218,24 @@ export default function Dashboard({
   const verifiedQuoteAssets = useMemo(() => assets.filter((asset): asset is Asset & { change: number } =>
     hasFreshProviderQuote(asset) && asset.change != null
   ), [assets, timeTick]);
+  const minimumCoverageCount = Math.max(20, Math.ceil(assets.length * 0.5));
+  const hasAdequateQuoteCoverage = verifiedQuoteAssets.length >= minimumCoverageCount;
   const advCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change > 0).length, [verifiedQuoteAssets]);
   const decCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change < 0).length, [verifiedQuoteAssets]);
   const flatCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change === 0).length, [verifiedQuoteAssets]);
 
   const sentimentScore = useMemo(() => {
     const activeCount = advCount + decCount;
-    if (activeCount === 0) return 50;
+    if (!hasAdequateQuoteCoverage || activeCount === 0) return 50;
     const ratioScore = (advCount / activeCount) * 100;
     const avgAssetChange = verifiedQuoteAssets.reduce((sum, a) => sum + Math.max(-4, Math.min(4, a.change)), 0);
     const avgChg = verifiedQuoteAssets.length > 0 ? avgAssetChange / verifiedQuoteAssets.length : 0;
     const finalScore = Math.max(5, Math.min(95, ratioScore * 0.7 + (50 + avgChg * 11) * 0.3));
     return Math.round(finalScore);
-  }, [verifiedQuoteAssets, advCount, decCount]);
+  }, [verifiedQuoteAssets, advCount, decCount, hasAdequateQuoteCoverage]);
 
   const sectorStats = useMemo(() => {
+    if (!hasAdequateQuoteCoverage) return { topSector: { name: 'N/A', avgChange: 0 }, bottomSector: { name: 'N/A', avgChange: 0 } };
     const sectorsMap: { [sec: string]: { sumChange: number; count: number } } = {};
     verifiedQuoteAssets.forEach(a => {
       const sectorName = a.sector || 'Other';
@@ -254,7 +257,7 @@ export default function Dashboard({
       bottomSector: list[list.length - 1] || { name: 'N/A', avgChange: 0 },
       list
     };
-  }, [verifiedQuoteAssets]);
+  }, [verifiedQuoteAssets, hasAdequateQuoteCoverage]);
 
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
@@ -712,7 +715,7 @@ export default function Dashboard({
               </div>
 
               {/* Advanced Tracking Pointer */}
-              {verifiedQuoteAssets.length > 0 && (
+              {hasAdequateQuoteCoverage && (
               <motion.div
                 className="absolute top-0 bottom-0 w-1.5 bg-white shadow-[0_0_10px_rgba(255,255,255,1)] z-10"
                 initial={{ left: 0 }}
@@ -772,7 +775,7 @@ export default function Dashboard({
                 <div>
                   <div className="flex justify-between text-[10px] pb-1">
                     <span className="text-emerald-400 font-bold flex items-center gap-1">▲ Advancers ({advCount})</span>
-                    <span className="text-zinc-400 font-semibold">{verifiedQuoteAssets.length === 0 ? 'N/A' : `${Math.round((advCount / verifiedQuoteAssets.length) * 100)}%`}</span>
+                    <span className="text-zinc-400 font-semibold">{!hasAdequateQuoteCoverage ? 'N/A' : `${Math.round((advCount / verifiedQuoteAssets.length) * 100)}%`}</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
                     <div
@@ -786,7 +789,7 @@ export default function Dashboard({
                 <div>
                   <div className="flex justify-between text-[10px] pb-1">
                     <span className="text-rose-400 font-bold flex items-center gap-1">▼ Decliners ({decCount})</span>
-                    <span className="text-zinc-400 font-semibold">{verifiedQuoteAssets.length === 0 ? 'N/A' : `${Math.round((decCount / verifiedQuoteAssets.length) * 100)}%`}</span>
+                    <span className="text-zinc-400 font-semibold">{!hasAdequateQuoteCoverage ? 'N/A' : `${Math.round((decCount / verifiedQuoteAssets.length) * 100)}%`}</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
                     <div
@@ -800,7 +803,7 @@ export default function Dashboard({
                 <div>
                   <div className="flex justify-between text-[10px] pb-1">
                     <span className="text-zinc-500 font-semibold flex items-center gap-1">■ Neutral / Flat ({flatCount})</span>
-                    <span className="text-zinc-500">{verifiedQuoteAssets.length === 0 ? 'N/A' : `${Math.round((flatCount / verifiedQuoteAssets.length) * 100)}%`}</span>
+                    <span className="text-zinc-500">{!hasAdequateQuoteCoverage ? 'N/A' : `${Math.round((flatCount / verifiedQuoteAssets.length) * 100)}%`}</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-900/55 rounded-full overflow-hidden">
                     <div
@@ -821,7 +824,7 @@ export default function Dashboard({
                   <div className="flex items-center justify-between text-[10px] font-mono">
                     <span className="text-zinc-500 font-sans">Top Leading Segment:</span>
                     <span className="text-emerald-400 font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/10">
-                      {verifiedQuoteAssets.length === 0 ? 'N/A — no verified quotes' : `${sectorStats.topSector.name} (${sectorStats.topSector.avgChange >= 0 ? '+' : ''}${sectorStats.topSector.avgChange.toFixed(2)}%)`}
+                      {!hasAdequateQuoteCoverage ? 'N/A — insufficient quote coverage' : `${sectorStats.topSector.name} (${sectorStats.topSector.avgChange >= 0 ? '+' : ''}${sectorStats.topSector.avgChange.toFixed(2)}%)`}
                     </span>
                   </div>
 
@@ -835,8 +838,8 @@ export default function Dashboard({
               </div>
 
               <div className="pt-2 border-t border-zinc-900 font-mono text-[9.5px] leading-relaxed text-zinc-500">
-                {verifiedQuoteAssets.length === 0
-                  ? 'No verified provider quotes are available in this universe; market breadth is unavailable.'
+                {!hasAdequateQuoteCoverage
+                  ? `Market breadth unavailable: ${verifiedQuoteAssets.length}/${assets.length} fresh quote changes; at least ${minimumCoverageCount} are required.`
                   : sentimentScore >= 55
                   ? 'Advancers currently outnumber decliners in the selected quote universe. This is a descriptive breadth observation, not a trading signal.'
                   : sentimentScore <= 45
