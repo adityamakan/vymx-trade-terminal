@@ -78,7 +78,7 @@ assert.match(wealthAdvisor, /AI recommendation unavailable/, 'Advisor must expli
 assert.match(wealthAdvisor, /isVerifiedProviderQuote\(matchedRaw\)/, 'Advisor asset cards must not display bundled sample prices as current');
 assert.match(wealthAdvisor, /Illustrative Annual Return Assumption/, 'SIP return must be labeled as a scenario input, not an expected return');
 assert.match(wealthAdvisor, /not a return forecast/, 'SIP calculator must disclose that its output is not a forecast');
-assert.match(providerQuote, /observedAt <= now \+ 60 \* 1_000/, 'Quote future timestamp tolerance must match the documented one-minute clock-skew allowance');
+assert.match(providerQuote, /observedAt <= now \+ 60_000/, 'Quote future timestamp tolerance must match the documented one-minute clock-skew allowance');
 assert.equal(marketGlobe.includes("label: 'Earn'"), false, 'Unavailable earnings mode must not generate random pseudo-event markers');
 assert.match(financialChatbot, /activeQuoteVerified \? \{/, 'Financial chatbot must send active-asset quote fields only when the quote is fresh');
 assert.match(financialChatbot, /activeAsset: activeAssetContext/, 'Financial chatbot must not receive the raw asset object with bundled seed values');
