@@ -44,6 +44,11 @@ export default function Screener({
   const [compareA, setCompareA] = useState<string>('AAPL');
   const [compareB, setCompareB] = useState<string>('BTC');
   const [isComparisonOpen, setIsComparisonOpen] = useState<boolean>(true);
+  const [, setFreshnessTick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setFreshnessTick((tick) => tick + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const hasFreshProviderQuote = (asset: Asset) => {
     if (!asset.quoteAsOf) return false;
