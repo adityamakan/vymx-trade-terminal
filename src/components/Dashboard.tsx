@@ -205,11 +205,15 @@ export default function Dashboard({
   };
 
   // --- MARKET BREADTH FROM PER-ASSET VERIFIED PROVIDER QUOTES ONLY ---
-  const verifiedQuoteAssets = useMemo(() => assets.filter((asset): asset is Asset & { change: number } => {
-    if (!asset.quoteAsOf || asset.change == null) return false;
+  const hasFreshProviderQuote = (asset: Asset) => {
+    if (!asset.quoteAsOf) return false;
     const timestamp = Date.parse(asset.quoteAsOf);
-    return Number.isFinite(timestamp) && timestamp <= Date.now() + 60_000 && Date.now() - timestamp <= 120_000;
-  }), [assets, timeTick]);
+    const ageMs = Date.now() - timestamp;
+    return Number.isFinite(timestamp) && ageMs >= -60_000 && ageMs <= 120_000;
+  };
+  const verifiedQuoteAssets = useMemo(() => assets.filter((asset): asset is Asset & { change: number } =>
+    hasFreshProviderQuote(asset) && asset.change != null
+  ), [assets, timeTick]);
   const advCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change > 0).length, [verifiedQuoteAssets]);
   const decCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change < 0).length, [verifiedQuoteAssets]);
   const flatCount = useMemo(() => verifiedQuoteAssets.filter(a => a.change === 0).length, [verifiedQuoteAssets]);
@@ -1133,7 +1137,7 @@ export default function Dashboard({
 
                         <div className="flex items-center gap-4">
                           <div className="text-right cursor-pointer" onClick={() => onSelectAsset(asset)}>
-                            <div className="text-xs font-bold font-mono text-zinc-100">{formatCurrency(asset.price, asset.symbol, asset.country)}</div>
+                            <div className="text-xs font-bold font-mono text-zinc-100">{hasFreshProviderQuote(asset) ? formatCurrency(asset.price, asset.symbol, asset.country) : 'N/A'}</div>
                             <div className={`text-[10px] font-semibold ${asset.change == null ? 'text-zinc-500' : isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
                               {asset.change == null ? 'N/A' : `${isUp ? '+' : ''}${asset.change}%`}
                             </div>
@@ -1280,7 +1284,7 @@ export default function Dashboard({
                           <span className="text-[11px] text-zinc-500 max-w-[130px] truncate">{stk.name}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-bold font-mono text-zinc-200">{formatCurrency(stk.price, stk.symbol, stk.country)}</span>
+                          <span className="text-xs font-bold font-mono text-zinc-200">{hasFreshProviderQuote(stk) ? formatCurrency(stk.price, stk.symbol, stk.country) : 'N/A'}</span>
                           <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${isUp ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                             {stk.change == null ? 'N/A' : `${isUp ? '+' : ''}${stk.change}%`}
                           </span>
@@ -1308,7 +1312,7 @@ export default function Dashboard({
                           <span className="text-[11px] text-zinc-500 max-w-[130px] truncate">{cry.name}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-bold font-mono text-zinc-200">{formatCurrency(cry.price, cry.symbol, cry.country)}</span>
+                          <span className="text-xs font-bold font-mono text-zinc-200">{hasFreshProviderQuote(cry) ? formatCurrency(cry.price, cry.symbol, cry.country) : 'N/A'}</span>
                           <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${isUp ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                             {cry.change == null ? 'N/A' : `${isUp ? '+' : ''}${cry.change}%`}
                           </span>
@@ -1338,7 +1342,7 @@ export default function Dashboard({
                         <p className="text-[10px] text-zinc-500">COMEX Spot Futures</p>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs font-bold font-mono text-zinc-200">{formatCurrency(comm.price, comm.symbol, comm.country)}</span>
+                        <span className="text-xs font-bold font-mono text-zinc-200">{hasFreshProviderQuote(comm) ? formatCurrency(comm.price, comm.symbol, comm.country) : 'N/A'}</span>
                         <div className={`text-[10px] font-semibold flex items-center justify-end gap-1 ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
                           <span>{comm.change == null ? 'N/A' : `${isUp ? '+' : ''}${comm.change}%`}</span>
                         </div>
