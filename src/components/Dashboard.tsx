@@ -1118,7 +1118,7 @@ export default function Dashboard({
             {watchlistAssets.length > 0 ? (
               <div className="divide-y divide-zinc-900">
                 {watchlistAssets.map((asset) => {
-                  const isUp = asset.change != null && asset.change >= 0;
+                  const isUp = hasFreshProviderQuote(asset) && asset.change != null && asset.change >= 0;
                   const assetAlerts = priceAlerts.filter(a => a.symbol === asset.symbol && a.active);
                   const isAlertInputActive = activeAlertInput === asset.symbol;
 
@@ -1138,8 +1138,8 @@ export default function Dashboard({
                         <div className="flex items-center gap-4">
                           <div className="text-right cursor-pointer" onClick={() => onSelectAsset(asset)}>
                             <div className="text-xs font-bold font-mono text-zinc-100">{hasFreshProviderQuote(asset) ? formatCurrency(asset.price, asset.symbol, asset.country) : 'N/A'}</div>
-                            <div className={`text-[10px] font-semibold ${asset.change == null ? 'text-zinc-500' : isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-                              {asset.change == null ? 'N/A' : `${isUp ? '+' : ''}${asset.change}%`}
+                            <div className={`text-[10px] font-semibold ${!hasFreshProviderQuote(asset) || asset.change == null ? 'text-zinc-500' : isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {!hasFreshProviderQuote(asset) || asset.change == null ? 'N/A' : `${isUp ? '+' : ''}${asset.change}%`}
                             </div>
                           </div>
 
@@ -1232,7 +1232,7 @@ export default function Dashboard({
                 <div>
                   <p className="text-xs font-semibold text-indigo-300">Watchlist Intelligence</p>
                   <p className="text-[10px] text-indigo-200/70 mt-1 leading-relaxed">
-                    {watchlistAssets.filter(a => a.quoteAsOf && a.change != null && a.change > 2).length > 0
+                    {watchlistAssets.filter(a => hasFreshProviderQuote(a) && a.change != null && a.change > 2).length > 0
                       ? `${watchlistAssets.filter(a => a.quoteAsOf && a.change != null && a.change > 2).length} assets in your watchlist are showing unusually high bullish momentum today. Consider setting up price alerts.`
                       : `No verified daily quote moves above 2% are present in the current watchlist. This does not assess earnings, correlation or volatility.`}
                   </p>
