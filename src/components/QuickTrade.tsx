@@ -63,6 +63,13 @@ export default function QuickTrade({
     return assets.find(a => a.symbol === selectedSymbol) || assets[0];
   }, [selectedSymbol]);
 
+  const hasFreshQuote = (asset: Asset | undefined) => {
+    if (!asset?.quoteAsOf) return false;
+    const observedAt = Date.parse(asset.quoteAsOf);
+    const ageMs = Date.now() - observedAt;
+    return Number.isFinite(observedAt) && ageMs >= -60_000 && ageMs <= 120_000;
+  };
+
   // Format currencies locally
   const formatCurrency = (val: number, symbolOrType: string = 'stock', assetCountry?: string) => {
     const matchedAsset = assets.find(a => a.symbol === symbolOrType);
@@ -85,7 +92,7 @@ export default function QuickTrade({
         a.name.toLowerCase().includes(query) ||
         a.sector.toLowerCase().includes(query)
       );
-  }, [searchQuery]);
+  }, [searchQuery, assets]);
 
   // Get current portfolio holding item for calculating user limits
   const currentHolding = useMemo(() => {
@@ -93,7 +100,8 @@ export default function QuickTrade({
   }, [portfolio, selectedSymbol]);
 
   const heldQuantity = currentHolding ? currentHolding.quantity : 0;
-  const assetPrice = currentAsset ? currentAsset.price : 0;
+  const quoteIsFresh = hasFreshQuote(currentAsset);
+  const assetPrice = quoteIsFresh && currentAsset ? currentAsset.price : 0;
   const estimatedCost = quantity * assetPrice;
 
   // Check validations
@@ -101,7 +109,7 @@ export default function QuickTrade({
   const hasEnoughHoldings = tradeType === 'SELL' ? heldQuantity >= quantity : true;
   const isValidQuantity = quantity > 0;
 
-  const canExecute = isValidQuantity && isAffordable && hasEnoughHoldings;
+  const canExecute = quoteIsFresh && isValidQuantity && isAffordable && hasEnoughHoldings;
 
   // Handle Preset Percentages
   const applyPresetPercentage = (pct: number) => {
@@ -129,7 +137,7 @@ export default function QuickTrade({
 
   const handleExecuteTrade = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentAsset || !canExecute) return;
+    if (!currentAsset || !quoteIsFresh || !canExecute) return;
 
     const res = onTradeSubmit(tradeType, currentAsset.symbol, quantity, currentAsset.price);
 
@@ -266,7 +274,7 @@ export default function QuickTrade({
                       >
                         <span>{asset.symbol}</span>
                         <span className="text-[8px] text-zinc-600 font-normal">|</span>
-                        <span className="text-zinc-500 font-sans">{formatCurrency(asset.price, asset.symbol, asset.country)}</span>
+                        <span className="text-zinc-500 font-sans">{hasFreshQuote(asset) ? formatCurrency(asset.price, asset.symbol, asset.country) : 'N/A'}</span>
                       </button>
                     ))}
                     {filteredAssets.length === 0 && (
@@ -293,17 +301,17 @@ export default function QuickTrade({
 
                     <div className="text-right space-y-0.5">
                       <div className="text-xs font-bold font-mono text-white">
-                        {formatCurrency(currentAsset.price, currentAsset.symbol, currentAsset.country)}
+                        {quoteIsFresh ? formatCurrency(currentAsset.price, currentAsset.symbol, currentAsset.country) : 'N/A — no fresh quote'}
                       </div>
                       <div className={`text-[10px] font-bold font-mono flex items-center justify-end gap-0.5 ${
-                        currentAsset.change == null ? 'text-zinc-500' : currentAsset.change >= 0 ? 'text-emerald-400' : 'text-rose-450'
+                        !quoteIsFresh || currentAsset.change == null ? 'text-zinc-500' : currentAsset.change >= 0 ? 'text-emerald-400' : 'text-rose-450'
                       }`}>
-                        {currentAsset.change == null ? null : currentAsset.change >= 0 ? (
+                        {!quoteIsFresh || currentAsset.change == null ? null : currentAsset.change >= 0 ? (
                           <TrendingUp className="h-2.5 w-2.5" />
                         ) : (
                           <TrendingDown className="h-2.5 w-2.5" />
                         )}
-                        <span>{currentAsset.change == null ? 'N/A' : `${currentAsset.change >= 0 ? '+' : ''}${currentAsset.change.toFixed(2)}%`}</span>
+                        <span>{!quoteIsFresh || currentAsset.change == null ? 'N/A' : `${currentAsset.change >= 0 ? '+' : ''}${currentAsset.change.toFixed(2)}%`}</span>
                       </div>
                     </div>
                   </div>
@@ -402,12 +410,12 @@ export default function QuickTrade({
                   <div className="border-t border-zinc-900 pt-3 space-y-2 text-xs font-medium font-sans">
                     <div className="flex justify-between items-center">
                       <span className="text-zinc-500">Execution Price</span>
-                      <span className="font-mono text-zinc-300">{formatCurrency(assetPrice, currentAsset?.symbol, currentAsset?.country)}</span>
+                      <span className="font-mono text-zinc-300">{quoteIsFresh ? formatCurrency(assetPrice, currentAsset?.symbol, currentAsset?.country) : 'N/A — fresh quote required'}</span>
                     </div>
 
                     <div className="flex justify-between items-center text-sm font-semibold pt-1 border-t border-dotted border-zinc-900">
                       <span className="text-zinc-400">Estimated Transaction value</span>
-                      <span className="font-mono text-white text-base font-extrabold">{formatCurrency(estimatedCost)}</span>
+                      <span className="font-mono text-white text-base font-extrabold">{quoteIsFresh ? formatCurrency(estimatedCost) : 'N/A — fresh quote required'}</span>
                     </div>
 
                     {/* Remaining Sandbox cash Projection */}
@@ -415,11 +423,11 @@ export default function QuickTrade({
                       <span>Sandbox Balance (Post-Trade)</span>
                       {tradeType === 'BUY' ? (
                         <span className={isAffordable ? 'text-zinc-400' : 'text-rose-400 font-bold'}>
-                          {formatCurrency(Math.max(0, virtualBalance - estimatedCost))}
+                          {quoteIsFresh ? formatCurrency(Math.max(0, virtualBalance - estimatedCost)) : 'N/A'}
                         </span>
                       ) : (
                         <span className="text-zinc-400">
-                          {formatCurrency(virtualBalance + estimatedCost)}
+                          {quoteIsFresh ? formatCurrency(virtualBalance + estimatedCost) : 'N/A'}
                         </span>
                       )}
                     </div>
@@ -456,7 +464,7 @@ export default function QuickTrade({
                         : 'bg-zinc-900 text-zinc-650 border-zinc-850 cursor-not-allowed'
                     }`}
                   >
-                    SUBMIT {tradeType} SIMULATION
+                    {quoteIsFresh ? `SUBMIT ${tradeType} SIMULATION` : 'QUOTE REQUIRED TO TRADE'}
                   </button>
                 </form>
 
