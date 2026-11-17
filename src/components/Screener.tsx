@@ -416,10 +416,10 @@ export default function Screener({
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">24h volume</td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-semibold font-mono text-zinc-400 text-[10px] sm:text-xs">
-                          {hasFreshProviderQuote(assetA) ? assetA.volumeDisplay : 'N/A'}
+                          {hasFreshProviderQuote(assetA) && assetA.volume != null && Number.isFinite(assetA.volume) ? assetA.volumeDisplay : 'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-semibold font-mono text-zinc-400 text-[10px] sm:text-xs">
-                          {hasFreshProviderQuote(assetB) ? assetB.volumeDisplay : 'N/A'}
+                          {hasFreshProviderQuote(assetB) && assetB.volume != null && Number.isFinite(assetB.volume) ? assetB.volumeDisplay : 'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono font-bold text-zinc-500">
                           —
