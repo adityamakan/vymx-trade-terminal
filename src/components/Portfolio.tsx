@@ -35,6 +35,17 @@ export default function Portfolio({
   formatCurrency: formatCurrencyProp,
   onUpdateTransactionNote,
 }: PortfolioProps) {
+  const hasFreshProviderQuote = (asset: Asset | undefined) => {
+    if (!asset?.quoteAsOf) return false;
+    const observedAt = Date.parse(asset.quoteAsOf);
+    const ageMs = Date.now() - observedAt;
+    return Number.isFinite(observedAt) && ageMs >= -60_000 && ageMs <= 120_000;
+  };
+  const [, setFreshnessTick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setFreshnessTick((tick) => tick + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const formatCurrency = (val: number, type: string = 'cash', assetCountry?: string) => {
     const matchedAsset = assets.find(a => a.symbol === type || a.price === val);
@@ -151,15 +162,15 @@ export default function Portfolio({
 
       const holdingRows = portfolio.map(item => {
         const liveAsset = assets.find(a => a.symbol === item.symbol);
-        const currentPrice = liveAsset ? liveAsset.price : item.avgBuyPrice;
-        const totalValue = item.quantity * currentPrice;
+        const currentPrice = hasFreshProviderQuote(liveAsset) ? liveAsset!.price : null;
+        const totalValue = currentPrice == null ? null : item.quantity * currentPrice;
         return [
           item.symbol,
           item.name,
           item.quantity.toString(),
           formatCurrency(item.avgBuyPrice, item.symbol),
-          formatCurrency(currentPrice, item.symbol),
-          formatCurrency(totalValue)
+          currentPrice == null ? 'N/A — no fresh quote' : formatCurrency(currentPrice, item.symbol),
+          totalValue == null ? 'N/A — no fresh quote' : formatCurrency(totalValue)
         ];
       });
 
@@ -223,15 +234,13 @@ export default function Portfolio({
         name: item.name,
         quantity: item.quantity,
         averageCost: item.avgBuyPrice,
-        currentPrice: typeof price === 'number' && Number.isFinite(price) ? price : null,
+        currentPrice: hasFreshProviderQuote(asset) && typeof price === 'number' && Number.isFinite(price) ? price : null,
         sector: asset?.sector || null
       };
     });
 
-    const totalHoldingsValue = holdings.reduce((total, holding) => {
-      const price = holding.currentPrice ?? holding.averageCost;
-      return total + holding.quantity * price;
-    }, 0);
+    const valuationComplete = holdings.every((holding) => holding.currentPrice != null);
+    const totalHoldingsValue = valuationComplete ? holdings.reduce((total, holding) => total + holding.quantity * (holding.currentPrice ?? 0), 0) : null;
 
     try {
       const response = await fetch('/api/ai/vymx-intelligence', {
@@ -243,7 +252,8 @@ export default function Portfolio({
             holdings,
             cashBalance: virtualBalance,
             totalHoldingsValue,
-            totalAccountValue: virtualBalance + totalHoldingsValue,
+            totalAccountValue: totalHoldingsValue == null ? null : virtualBalance + totalHoldingsValue,
+            valuationStatus: valuationComplete ? 'complete' : 'incomplete — one or more holdings lack fresh provider quotes',
             calculationNotes: 'Current prices are included only when available from the app asset feed; otherwise average cost is supplied and must not be described as a live market valuation.'
           }
         }),
@@ -550,21 +560,21 @@ export default function Portfolio({
     };
   }, [portfolio, assets, virtualBalance]);
 
-  // 1. Calculate active portfolio stats
+  // 1. Calculate active portfolio stats from fresh per-symbol provider observations only.
   let totalHoldingsValue = 0;
   let totalCostBase = 0;
+  let unavailableHoldingCount = 0;
 
   const enrichedHoldings = portfolio.map((item) => {
-    // Find current asset details to get up-to-date live prices
-    const liveAsset = assets.find((a) => a.symbol === item.symbol)!;
-    const currentPrice = liveAsset ? liveAsset.price : item.avgBuyPrice;
-
-    const value = item.quantity * currentPrice;
+    const liveAsset = assets.find((a) => a.symbol === item.symbol);
+    const currentPrice = hasFreshProviderQuote(liveAsset) ? liveAsset!.price : null;
+    const value = currentPrice == null ? null : item.quantity * currentPrice;
     const cost = item.quantity * item.avgBuyPrice;
-    const pnl = value - cost;
-    const pnlPercent = cost !== 0 ? (pnl / cost) * 100 : 0;
+    const pnl = value == null ? null : value - cost;
+    const pnlPercent = pnl == null || cost === 0 ? null : (pnl / cost) * 100;
 
-    totalHoldingsValue += value;
+    if (value == null) unavailableHoldingCount += 1;
+    else totalHoldingsValue += value;
     totalCostBase += cost;
 
     return {
@@ -578,20 +588,21 @@ export default function Portfolio({
     };
   });
 
+  const valuationComplete = unavailableHoldingCount === 0;
   const netEquity = virtualBalance + totalHoldingsValue;
-  const totalPnl = totalHoldingsValue - totalCostBase;
-  const totalPnlPercent = totalCostBase !== 0 ? (totalPnl / totalCostBase) * 100 : 0;
+  const totalPnl = valuationComplete ? totalHoldingsValue - totalCostBase : null;
+  const totalPnlPercent = totalPnl == null || totalCostBase === 0 ? null : (totalPnl / totalCostBase) * 100;
 
   const portfolioBeta = 'N/A'; // A defensible beta requires aligned portfolio and benchmark return series.
 
   // 2. Prepare Recharts Pie Chart data representing asset allocations
-  const chartData = enrichedHoldings.map((hold) => ({
+  const chartData = valuationComplete ? enrichedHoldings.map((hold) => ({
     name: hold.symbol,
-    value: hold.value,
-  }));
+    value: hold.value ?? 0,
+  })) : [];
 
   // Add Cash as an allocation slice
-  if (virtualBalance > 0) {
+  if (valuationComplete && virtualBalance > 0) {
     chartData.push({
       name: 'Unallocated Cash',
       value: virtualBalance,
@@ -662,7 +673,7 @@ export default function Portfolio({
         {/* Net Equity */}
         <div className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-5 space-y-1.5 shadow-md flex flex-col">
           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Total Net Equity</p>
-          <div className="text-xl font-black font-mono tracking-tight text-white">{formatCurrency(netEquity)}</div>
+          <div className="text-xl font-black font-mono tracking-tight text-white">{valuationComplete ? formatCurrency(netEquity) : 'N/A — incomplete quote coverage'}</div>
           <p className="text-[10px] text-zinc-500 font-medium">Virtual cash + asset holdings</p>
           <div className="mt-3 pt-3 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex justify-between items-center text-[10px] font-mono w-full">
             <span className="text-zinc-500 uppercase">Velocity</span>
@@ -684,7 +695,7 @@ export default function Portfolio({
         {/* Holdings Value */}
         <div className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-5 space-y-1.5 shadow-md flex flex-col">
           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Holdings Value</p>
-          <div className="text-xl font-black font-mono tracking-tight text-zinc-200">{formatCurrency(totalHoldingsValue)}</div>
+          <div className="text-xl font-black font-mono tracking-tight text-zinc-200">{valuationComplete ? formatCurrency(totalHoldingsValue) : 'N/A — incomplete quote coverage'}</div>
           <p className="text-[10px] text-zinc-500 font-medium">Current valued assets holdings</p>
           <div className="mt-3 pt-3 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex justify-between items-center text-[10px] font-mono w-full">
             <span className="text-zinc-500 uppercase">Beta vs Market</span>
@@ -695,12 +706,11 @@ export default function Portfolio({
         {/* Total Return P&L */}
         <div className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-5 space-y-1.5 shadow-md flex flex-col">
           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Unrealized P&L Return</p>
-          <div className={`text-xl font-black font-mono tracking-tight flex items-center gap-1.5 ${totalPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-            {totalPnl >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-            <span>{totalPnl >= 0 ? '+' : ''}{formatCurrency(totalPnl)}</span>
+          <div className={`text-xl font-black font-mono tracking-tight flex items-center gap-1.5 ${totalPnl == null ? 'text-zinc-500' : totalPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            {totalPnl == null ? 'N/A — incomplete quote coverage' : <><span>{totalPnl >= 0 ? '+' : ''}{formatCurrency(totalPnl)}</span></>}
           </div>
-          <p className={`text-[10px] font-bold ${totalPnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-            {totalPnl >= 0 ? '+' : ''}{totalPnlPercent.toFixed(2)}% ROI
+          <p className="text-[10px] font-bold text-zinc-500">
+            {totalPnlPercent == null ? 'ROI unavailable until all holdings have fresh quotes' : `${totalPnl >= 0 ? '+' : ''}${totalPnlPercent.toFixed(2)}% ROI`}
           </p>
           <div className="mt-3 pt-3 border-t border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 flex justify-between items-center text-[10px] font-mono w-full">
             <span className="text-zinc-500 uppercase">Alpha</span>
@@ -770,7 +780,7 @@ export default function Portfolio({
           <div className="rounded-2xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 bg-zinc-900/40 backdrop-blur-md p-5 shadow-lg space-y-5">
             <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-900 pb-2">Fund Allocation Matrix</h3>
 
-            {portfolio.length > 0 ? (
+            {portfolio.length > 0 && valuationComplete ? (
               <>
                 <div className="h-48 w-full relative flex items-center justify-center" id="allocation-chart-container">
                   <ChartContainer width="100%" height="100%" minWidth={1} minHeight={1}>
@@ -821,8 +831,8 @@ export default function Portfolio({
               </>
             ) : (
               <div className="py-12 text-center text-zinc-500 font-semibold space-y-2">
-                <p>No active portfolio positions held.</p>
-                <p className="text-[10px] font-sans text-zinc-650">Allocate your cash into stocks, crypto, or commodities to view visualization breakdown grids.</p>
+                <p>{portfolio.length > 0 ? 'Allocation unavailable: one or more holdings do not have fresh provider quotes.' : 'No active portfolio positions held.'}</p>
+                <p className="text-[10px] font-sans text-zinc-650">A complete allocation chart requires a fresh, verified quote for every holding.</p>
               </div>
             )}
           </div>
@@ -853,7 +863,7 @@ export default function Portfolio({
               <tbody className="divide-y divide-zinc-900/60">
                 {enrichedHoldings.length > 0 ? (
                   enrichedHoldings.map((hold) => {
-                    const isPlus = hold.pnl >= 0;
+                    const isPlus = hold.pnl != null && hold.pnl >= 0;
                     return (
                       <tr
                         key={hold.symbol}
@@ -866,17 +876,17 @@ export default function Portfolio({
                         </td>
                         <td className="py-3.5 px-6 text-right font-mono font-semibold">{hold.quantity}</td>
                         <td className="py-3.5 px-6 text-right font-mono text-zinc-400">{formatCurrency(hold.avgBuyPrice, hold.assetType)}</td>
-                        <td className="py-3.5 px-6 text-right font-mono font-bold text-zinc-200">{formatCurrency(hold.currentPrice, hold.assetType)}</td>
+                        <td className="py-3.5 px-6 text-right font-mono font-bold text-zinc-200">{hold.currentPrice == null ? 'N/A — stale/unavailable quote' : formatCurrency(hold.currentPrice, hold.assetType)}</td>
                         <td className="py-3.5 px-6 text-right font-mono text-amber-400 hidden lg:table-cell">N/A</td>
                         <td className="py-3.5 px-6 text-right font-mono text-blue-400 hidden xl:table-cell">N/A</td>
                         <td className="py-3.5 px-6 text-right font-mono text-indigo-400 hidden xl:table-cell">N/A</td>
-                        <td className="py-3.5 px-6 text-right font-mono font-bold text-white">{formatCurrency(hold.value, 'cash')}</td>
+                        <td className="py-3.5 px-6 text-right font-mono font-bold text-white">{hold.value == null ? 'N/A' : formatCurrency(hold.value, 'cash')}</td>
                         <td className={`py-3.5 px-6 text-right font-mono font-bold`}>
                           <div className={isPlus ? 'text-emerald-400' : 'text-rose-455'}>
-                            {isPlus ? '+' : ''}{formatCurrency(hold.pnl)}
+                            {hold.pnl == null ? 'N/A' : `${isPlus ? '+' : ''}${formatCurrency(hold.pnl)}`}
                           </div>
                           <div className={`text-[10px] font-bold ${isPlus ? 'text-emerald-500' : 'text-rose-500'}`}>
-                            {isPlus ? '+' : ''}{hold.pnlPercent.toFixed(1)}%
+                            {hold.pnlPercent == null ? 'N/A' : `${isPlus ? '+' : ''}${hold.pnlPercent.toFixed(1)}%`}
                           </div>
                         </td>
                       </tr>
