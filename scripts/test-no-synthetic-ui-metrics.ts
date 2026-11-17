@@ -54,6 +54,8 @@ assert.match(sentimentGauge, /!computedSentiment\.isAvailable \? 'N\/A'/, 'Senti
 assert.match(sentimentGauge, /equitiesSubset\.length >= 5 && cryptoSubset\.length >= 3 && safeHavenGap != null/, 'Sentiment requires representative equity, crypto and safe-haven coverage');
 assert.equal(sentimentGauge.includes('Traders are actively trimming'), false, 'Sentiment proxy must not claim investor actions from price changes');
 assert.equal(sentimentGauge.includes('speculative volume'), false, 'Daily price-change magnitude must not be mislabeled as traded volume');
+assert.equal(sentimentGauge.includes("price: computedSentiment.score"), false, 'Sentiment proxy score must not be sent to AI as a market price');
+assert.match(sentimentGauge, /proxyName: 'VYMX cross-asset market sentiment proxy'/, 'AI sentiment analysis must receive an explicitly labelled heuristic proxy');
 assert.match(dashboard, /Math\.max\(20, Math\.ceil\(assets\.length \* 0\.5\)\)/, 'Dashboard market breadth must require minimum universe coverage');
 assert.match(heatmap3D, /assets\.filter\(hasFreshQuote\)/, '3D heatmap must exclude stale assets');
 assert.match(commandCenter, /hasFreshQuote\(asset\) \? `\$\{asset\.price\.toLocaleString\(\)\}` : 'N\/A'/, 'Command search must not show stale asset prices');
