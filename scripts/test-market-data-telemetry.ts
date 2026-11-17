@@ -39,6 +39,11 @@ assert.equal(classifyProviderError({ status: 503 }), 'upstream');
 assert.equal(classifyProviderError(new Error('schema validation failed')), 'invalid_response');
 assert.equal(classifyProviderError(new Error('unexpected failure')), 'unknown');
 
+const failureOnly = new ProviderTelemetry();
+failureOnly.recordFailure(100, 'upstream');
+assert.equal(failureOnly.snapshot().status, 'degraded');
+assert.equal(failureOnly.snapshot().operationallyVerified, false);
+
 const oldSuccess = new ProviderTelemetry();
 oldSuccess.recordSuccess(10);
 assert.equal(oldSuccess.snapshot(Date.now() + 6 * 60_000).status, 'degraded');
