@@ -14,7 +14,7 @@ interface PortfolioProps {
   virtualBalance: number;
   portfolio: PortfolioItem[];
   transactions: Transaction[];
-  snapshots: { id: string; capturedAt: number; cashBalance: number; positions: { symbol: string; quantity: number; price: number; marketValue: number; quoteCurrency: string | null; marketValueUSD: number | null }[]; totalEquityUSD: number | null; source: string; currencyNormalization: string }[];
+  snapshots: { id: string; capturedAt: number; cashBalance: number; positions: { symbol: string; quantity: number; price: number; marketValue: number; quoteCurrency: string | null; marketValueUSD: number | null }[]; totalEquityUSD: number | null; quoteCoverageComplete?: boolean; source: string; currencyNormalization: string }[];
   onSelectAsset: (asset: Asset) => void;
   setView: (view: any) => void;
   assets: Asset[];
@@ -92,7 +92,7 @@ export default function Portfolio({
   };
 
   const historicalRisk = useMemo(() => calculatePortfolioRiskMetrics(
-    snapshots.map((snapshot) => ({ capturedAt: snapshot.capturedAt, totalEquityUSD: snapshot.totalEquityUSD }))
+    snapshots.filter((snapshot) => snapshot.quoteCoverageComplete === true).map((snapshot) => ({ capturedAt: snapshot.capturedAt, totalEquityUSD: snapshot.totalEquityUSD }))
   ), [snapshots]);
 
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
