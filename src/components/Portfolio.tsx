@@ -9,6 +9,7 @@ import html2canvas from 'html2canvas';
 import RiskDashboard from './RiskDashboard';
 import CryptoStakingRewards from './CryptoStakingRewards';
 import { calculatePortfolioRiskMetrics } from '../utils/financialAnalytics';
+import { isVerifiedProviderQuote } from '../utils/providerQuote';
 
 interface PortfolioProps {
   virtualBalance: number;
