@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Asset } from '../types';
 import { TrendingUp, TrendingDown, Users } from 'lucide-react';
 
@@ -16,12 +16,17 @@ const hasFreshQuote = (item: Asset) => {
 };
 
 export default function CompetitorDashboard({ asset, assets, formatCurrency }: CompetitorDashboardProps) {
+  const [freshnessTick, setFreshnessTick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setFreshnessTick((tick) => tick + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const topCompetitors = useMemo(() => {
     return assets
       .filter((a) => a.sector === asset.sector && a.symbol !== asset.symbol)
       .sort((a, b) => a.symbol.localeCompare(b.symbol))
       .slice(0, 3);
-  }, [asset, assets]);
+  }, [asset, assets, freshnessTick]);
 
   if (topCompetitors.length === 0) return null;
 
