@@ -43,6 +43,11 @@ export default function QuickTrade({
   const [tradeType, setTradeType] = useState<'BUY' | 'SELL'>('BUY');
   const [quantity, setQuantity] = useState<number>(1);
   const [tradeResult, setTradeResult] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [, setFreshnessTick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setFreshnessTick((tick) => tick + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   // Clear query and results when opened
   useEffect(() => {
@@ -61,7 +66,7 @@ export default function QuickTrade({
   // Find currently selected Asset
   const currentAsset = useMemo(() => {
     return assets.find(a => a.symbol === selectedSymbol) || assets[0];
-  }, [selectedSymbol]);
+  }, [selectedSymbol, assets]);
 
   const hasFreshQuote = (asset: Asset | undefined) => {
     if (!asset?.quoteAsOf) return false;
