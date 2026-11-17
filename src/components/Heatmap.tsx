@@ -805,18 +805,20 @@ export default function Heatmap({
                                 onClick={(e) => e.stopPropagation()}
                               />
                               <button
+                                disabled={!hasFreshQuote(asset)}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (onTradeSubmit) onTradeSubmit('BUY', asset.symbol, tradeQuantity[asset.symbol] || 1, asset.price);
+                                  if (onTradeSubmit && hasFreshQuote(asset)) onTradeSubmit('BUY', asset.symbol, tradeQuantity[asset.symbol] || 1, asset.price);
                                 }}
                                 className="flex-1 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30 rounded text-[10px] font-bold uppercase py-1 flex items-center justify-center gap-1 transition-colors"
                               >
                                 <ShoppingCart className="w-3 h-3" /> Buy
                               </button>
                               <button
+                                disabled={!hasFreshQuote(asset)}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (onTradeSubmit) onTradeSubmit('SELL', asset.symbol, tradeQuantity[asset.symbol] || 1, asset.price);
+                                  if (onTradeSubmit && hasFreshQuote(asset)) onTradeSubmit('SELL', asset.symbol, tradeQuantity[asset.symbol] || 1, asset.price);
                                 }}
                                 className="flex-1 bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 border border-rose-500/30 rounded text-[10px] font-bold uppercase py-1 flex items-center justify-center gap-1 transition-colors"
                               >
@@ -1001,7 +1003,7 @@ export default function Heatmap({
                             hoveredAsset.type === "stock"
                               ? "INR"
                               : "USD",
-                        }).format(hoveredAsset.price) : 'N/A'}
+                        }).format(hoveredAsset.price)) : 'N/A — no fresh quote'}
                 </p>
               </div>
               <div>
