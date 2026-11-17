@@ -7,6 +7,10 @@ export interface HedgeSuggestion {
 }
 
 export function generateHedgeSuggestions(asset: Asset): HedgeSuggestion[] {
+  const observedAt = asset.quoteAsOf ? Date.parse(asset.quoteAsOf) : NaN;
+  const quoteAgeMs = Date.now() - observedAt;
+  if (!Number.isFinite(observedAt) || quoteAgeMs < -60_000 || quoteAgeMs > 120_000) return [];
+
   // Simple heuristic based on asset type or direction
   const isDown = asset.change != null && asset.change < 0;
   const isCrypto = asset.type === 'crypto';
