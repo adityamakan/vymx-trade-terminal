@@ -14,7 +14,7 @@ interface PortfolioProps {
   virtualBalance: number;
   portfolio: PortfolioItem[];
   transactions: Transaction[];
-  snapshots: { id: string; capturedAt: number; cashBalance: number; positions: { symbol: string; quantity: number; price: number; marketValue: number; quoteCurrency: string | null; marketValueUSD: number | null }[]; totalEquityUSD: number | null; quoteCoverageComplete?: boolean; fxConversionComplete?: boolean; source: string; currencyNormalization: string }[];
+  snapshots: { id: string; capturedAt: number; cashBalance: number; positions: { symbol: string; quantity: number; price: number; marketValue: number; quoteCurrency: string | null; marketValueUSD: number | null }[]; totalEquityUSD: number | null; fxRates?: Record<string, number>; fxObservationTimes?: Record<string, string | null>; quoteCoverageComplete?: boolean; fxConversionComplete?: boolean; source: string; currencyNormalization: string }[];
   onSelectAsset: (asset: Asset) => void;
   setView: (view: any) => void;
   assets: Asset[];
@@ -91,8 +91,25 @@ export default function Portfolio({
     document.body.removeChild(downloadAnchor);
   };
 
+  const hasVerifiedFxCoverage = (snapshot: PortfolioProps['snapshots'][number]) => {
+    if (snapshot.fxConversionComplete !== true || !snapshot.fxRates) return false;
+    return snapshot.positions.every((position) => {
+      if (position.quoteCurrency === 'USD') return snapshot.fxRates?.USD === 1;
+      if (!position.quoteCurrency || position.marketValueUSD == null) return false;
+      const asOf = snapshot.fxObservationTimes?.[position.quoteCurrency];
+      return isVerifiedProviderQuote({
+        price: snapshot.fxRates?.[position.quoteCurrency],
+        asOf
+      }, snapshot.capturedAt);
+    });
+  };
+
   const historicalRisk = useMemo(() => calculatePortfolioRiskMetrics(
-    snapshots.filter((snapshot) => snapshot.quoteCoverageComplete === true && snapshot.totalEquityUSD != null).map((snapshot) => ({ capturedAt: snapshot.capturedAt, totalEquityUSD: snapshot.totalEquityUSD }))
+    snapshots.filter((snapshot) =>
+      snapshot.quoteCoverageComplete === true &&
+      hasVerifiedFxCoverage(snapshot) &&
+      snapshot.totalEquityUSD != null
+    ).map((snapshot) => ({ capturedAt: snapshot.capturedAt, totalEquityUSD: snapshot.totalEquityUSD }))
   ), [snapshots]);
 
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
