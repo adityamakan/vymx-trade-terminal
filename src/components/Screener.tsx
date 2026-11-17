@@ -289,7 +289,7 @@ export default function Screener({
             const isAUp = assetA.change != null && assetA.change >= 0;
             const isBUp = assetB.change != null && assetB.change >= 0;
 
-            const pctDelta24h = assetA.change != null && assetB.change != null ? assetA.change - assetB.change : null;
+            const pctDelta24h = hasFreshProviderQuote(assetA) && hasFreshProviderQuote(assetB) && assetA.change != null && assetB.change != null ? assetA.change - assetB.change : null;
 
             // Compute year tracker positions
             const rangePctA = getYearlyRangePercent(assetA.price, assetA.low52w, assetA.high52w);
@@ -302,7 +302,9 @@ export default function Screener({
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-3.5 w-3.5 text-amber-400 shrink-0" />
                     <span className="text-zinc-300 font-medium font-mono text-[10px]">
-                      {Math.abs(pctDelta24h) < 0.1 ? (
+                      {pctDelta24h == null ? (
+                        <span>Comparative move unavailable until both quotes are fresh.</span>
+                      ) : Math.abs(pctDelta24h) < 0.1 ? (
                         <span>Both <strong>{assetA.symbol}</strong> and <strong>{assetB.symbol}</strong> are performing almost identically over the last 24h.</span>
                       ) : pctDelta24h > 0 ? (
                         <span><strong>{assetA.symbol}</strong> is leading <strong>{assetB.symbol}</strong> today with a 24h spread advantage of <strong className="text-emerald-400">+{pctDelta24h.toFixed(2)}%</strong>.</span>
@@ -372,11 +374,11 @@ export default function Screener({
                           {hasFreshProviderQuote(assetB) ? formatCurrency(assetB.price, assetB.symbol) : 'N/A'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-[80x] sm:text-[9px] text-zinc-400">
-                          {assetA.price > assetB.price ? (
+                          {hasFreshProviderQuote(assetA) && hasFreshProviderQuote(assetB) ? (assetA.price > assetB.price ? (
                             <span>{assetA.symbol} &gt; {assetB.symbol}</span>
                           ) : (
                             <span>{assetB.symbol} &gt; {assetA.symbol}</span>
-                          )}
+                          ) : <span>N/A — fresh quotes required</span>}
                         </td>
                       </tr>
 
@@ -414,15 +416,7 @@ export default function Screener({
                           {'N/A — provider fundamentals unavailable'}
                         </td>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center">
-                          {assetA.marketCap > assetB.marketCap ? (
-                            <span className="text-indigo-300 font-mono text-[8px] sm:text-[9px] font-bold">
-                              {assetA.symbol} size advantage
-                            </span>
-                          ) : (
-                            <span className="text-purple-300 font-mono text-[8px] sm:text-[9px] font-bold">
-                              {assetB.symbol} size advantage
-                            </span>
-                          )}
+                          <span className="text-zinc-500">N/A — fundamentals unavailable</span>
                         </td>
                       </tr>
 
@@ -438,7 +432,7 @@ export default function Screener({
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center">
                           {(() => {
                              if (true) {
-                               return <span className="text-zinc-600 font-mono text-[8px] sm:text-[9px]">Alternative Asset metrics</span>;
+                               return <span className="text-zinc-600 font-mono text-[8px] sm:text-[9px]">N/A — verified fundamentals unavailable</span>;
                              }
                              if (assetA.peRatio < assetB.peRatio) {
                                return (
@@ -471,40 +465,12 @@ export default function Screener({
                         </td>
                       </tr>
 
-                      {/* Realtime position within 52w range */}
+                      {/* 52-week range comparison requires field-level provider provenance */}
                       <tr>
                         <td className="py-2 px-2.5 sm:py-3 sm:px-4 font-mono font-bold text-zinc-500 text-[9px] sm:text-[10px] uppercase">52w position marker</td>
-                        <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-indigo-500/5 border-r border-l border-zinc-900/80 font-mono space-y-1.5">
-                          <div className="flex justify-between text-[8px] sm:text-[9px] text-zinc-500 font-semibold font-mono">
-                            <span>L: {formatCurrency(assetA.low52w, assetA.symbol)}</span>
-                            <span>H: {formatCurrency(assetA.high52w, assetA.symbol)}</span>
-                          </div>
-                          {/* Mini slider mockup */}
-                          <div className="w-full h-1 rounded-full bg-zinc-900 border border-zinc-850 relative overflow-visible">
-                            <div className="absolute top-0 bottom-0 rounded-full bg-indigo-500" style={{ left: 0, width: `${rangePctA}%` }} />
-                            <div className="absolute -top-1 h-3 w-3 rounded-full border border-zinc-805 bg-zinc-350 shadow-sm" style={{ left: `calc(${rangePctA}% - 6px)` }} />
-                          </div>
-                          <span className="text-[8px] sm:text-[9px] text-zinc-400 block pt-0.5 font-bold">{rangePctA.toFixed(1)}% above 52w low</span>
-                        </td>
-                        <td className="py-2 px-2.5 sm:py-3 sm:px-4 bg-purple-500/5 border-r border-zinc-900/80 font-mono space-y-1.5">
-                          <div className="flex justify-between text-[8px] sm:text-[9px] text-zinc-500 font-semibold font-mono">
-                            <span>L: {formatCurrency(assetB.low52w, assetB.symbol)}</span>
-                            <span>H: {formatCurrency(assetB.high52w, assetB.symbol)}</span>
-                          </div>
-                          {/* Mini slider mockup */}
-                          <div className="w-full h-1 rounded-full bg-zinc-900 border border-zinc-850 relative overflow-visible">
-                            <div className="absolute top-0 bottom-0 rounded-full bg-purple-500" style={{ left: 0, width: `${rangePctB}%` }} />
-                            <div className="absolute -top-1 h-3 w-3 rounded-full border border-zinc-805 bg-zinc-350 shadow-sm" style={{ left: `calc(${rangePctB}% - 6px)` }} />
-                          </div>
-                          <span className="text-[8px] sm:text-[9px] text-zinc-400 block pt-0.5 font-bold">{rangePctB.toFixed(1)}% above 52w low</span>
-                        </td>
-                        <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center font-mono text-[8px] sm:text-[9px] text-zinc-400">
-                          {rangePctA > rangePctB ? (
-                            <span>{assetA.symbol} stronger</span>
-                          ) : (
-                            <span>{assetB.symbol} stronger</span>
-                          )}
-                        </td>
+                        <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-zinc-500">N/A — verified range unavailable</td>
+                        <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-zinc-500">N/A — verified range unavailable</td>
+                        <td className="py-2 px-2.5 sm:py-3 sm:px-4 text-center text-zinc-500">N/A</td>
                       </tr>
                       {/* Advanced Metrics / Benchmarks */}
                       <tr>
@@ -966,7 +932,7 @@ export default function Screener({
                 ) : (
                   <tr>
                     <td colSpan={9} className="py-12 text-center text-zinc-500 font-semibold">
-                      No assets match the selected filtration parameters. Try clearing some selections.
+                      {filters.peRatio !== 'all' || filters.marketCap !== 'all' ? 'Fundamental filters are unavailable until verified P/E and market-cap data are connected.' : 'No assets match the selected filtration parameters. Try clearing some selections.'}
                     </td>
                   </tr>
                 )}
