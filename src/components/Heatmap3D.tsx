@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -86,10 +86,15 @@ function AssetCube({ asset, position, onSelectAsset }: { asset: Asset; position:
 }
 
 export default function Heatmap3D({ assets, onSelectAsset }: Heatmap3DProps) {
+  const [freshnessTick, setFreshnessTick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setFreshnessTick((tick) => tick + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
   // Sort by absolute provider-reported daily move; no stale market-cap ranking is implied.
   const displayAssets = useMemo(() => {
     return assets.filter(hasFreshQuote).sort((a, b) => Math.abs((b.change ?? 0)) - Math.abs((a.change ?? 0))).slice(0, 64);
-  }, [assets]);
+  }, [assets, freshnessTick]);
 
   // Create a grid layout constraint
   const gridSize = Math.ceil(Math.sqrt(displayAssets.length));
