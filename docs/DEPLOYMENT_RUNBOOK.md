@@ -179,3 +179,6 @@ Vite, Tailwind, TypeScript, esbuild, and tsx are build/test tooling and belong i
 ## Netlify preview build
 
 The Netlify site publishes only `dist/`; it does not run the Node API. Its dependency installation sets `NPM_FLAGS=--include=dev`, and its build command explicitly uses `npm ci --include=dev && npx vite build` so Vite/Tailwind/TypeScript build tools remain available even when the Netlify build environment sets `NODE_ENV=production`. Render separately builds the Node API bundle and prunes development dependencies before runtime.
+
+
+The committed lockfile marks Vite, Tailwind, TypeScript, esbuild and tsx as development-only. CI regenerates this lockfile in a candidate job, tests that exact candidate, checks that the production dependency audit is clean, and commits the resulting lockfile back to the PR branch. The production server smoke test then runs only after `npm prune --omit=dev`.
