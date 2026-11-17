@@ -991,20 +991,16 @@ export default function Heatmap({
                 <p className="text-zinc-500 text-[9px] uppercase font-bold">
                   Standard Price
                 </p>
-                <p className="font-bold text-zinc-100">
-                  {hoveredAsset.type === "bond"
-                    ? hoveredAsset.price.toFixed(4) + "%"
-                    : hoveredAsset.type === "forex"
-                      ? hoveredAsset.price.toFixed(4)
-                      : new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency:
-                            hoveredAsset.country === "India" &&
-                            hoveredAsset.type === "stock"
-                              ? "INR"
-                              : "USD",
-                        }).format(hoveredAsset.price)) : 'N/A — no fresh quote'}
-                </p>
+                <p className="font-bold text-zinc-100">{hasFreshQuote(hoveredAsset)
+                    ? (hoveredAsset.type === "bond"
+                      ? hoveredAsset.price.toFixed(4) + "%"
+                      : hoveredAsset.type === "forex"
+                        ? hoveredAsset.price.toFixed(4)
+                        : new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency: hoveredAsset.country === "India" && hoveredAsset.type === "stock" ? "INR" : "USD",
+                          }).format(hoveredAsset.price))
+                    : 'N/A — no fresh quote'}</p>
               </div>
               <div>
                 <p className="text-zinc-500 text-[9px] uppercase font-bold">
