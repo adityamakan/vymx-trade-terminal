@@ -252,9 +252,9 @@ export default function App() {
           price: (newPriceData.price !== undefined && !isNaN(newPriceData.price)) ? newPriceData.price : asset.price,
           change: typeof newPriceData.change === 'number' && Number.isFinite(newPriceData.change) ? newPriceData.change : null,
           changeAbs: typeof newPriceData.changeAbs === 'number' && Number.isFinite(newPriceData.changeAbs) ? newPriceData.changeAbs : null,
-          low52w: (newPriceData.low52w !== undefined && !isNaN(newPriceData.low52w)) ? newPriceData.low52w : asset.low52w,
-          high52w: (newPriceData.high52w !== undefined && !isNaN(newPriceData.high52w)) ? newPriceData.high52w : asset.high52w,
-          prevClose: (newPriceData.prevClose !== undefined && !isNaN(newPriceData.prevClose)) ? newPriceData.prevClose : asset.prevClose
+          low52w: typeof newPriceData.low52w === 'number' && Number.isFinite(newPriceData.low52w) ? newPriceData.low52w : null,
+          high52w: typeof newPriceData.high52w === 'number' && Number.isFinite(newPriceData.high52w) ? newPriceData.high52w : null,
+          prevClose: typeof newPriceData.prevClose === 'number' && Number.isFinite(newPriceData.prevClose) ? newPriceData.prevClose : null
         };
       });
 
