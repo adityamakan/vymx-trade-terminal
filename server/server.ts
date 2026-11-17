@@ -249,30 +249,51 @@ app.get('/api/fx/rates', async (req: Request, res: Response) => {
   }
   const currencies = [...new Set(requested)];
   const rates: Record<string, number> = { USD: 1 };
+  const observations: Record<string, { rate: number; asOf: string | null; fetchedAt: string | null; source: string }> = {
+    USD: { rate: 1, asOf: null, fetchedAt: null, source: 'USD identity conversion' }
+  };
   const unavailable: string[] = [];
   for (let index = 0; index < currencies.length; index += 6) {
     const batch = currencies.slice(index, index + 6);
     const results = await Promise.all(batch.map(async (currency) => {
-      if (currency === 'USD') return [currency, 1] as const;
+      if (currency === 'USD') return { currency, rate: 1, quote: null as PriceQuote | null };
       const config = USD_FX_QUOTES[currency];
-      if (!config) return [currency, null] as const;
+      if (!config) return { currency, rate: null, quote: null as PriceQuote | null };
       try {
         const quote = await fetchQuote(config.symbol);
+        if (!isFreshProviderTimestamp(quote.asOf)) return { currency, rate: null, quote };
         const rate = config.invert ? 1 / quote.price : quote.price;
-        return [currency, Number.isFinite(rate) && rate > 0 ? rate : null] as const;
+        return { currency, rate: Number.isFinite(rate) && rate > 0 ? rate : null, quote };
       } catch {
-        return [currency, null] as const;
+        return { currency, rate: null, quote: null as PriceQuote | null };
       }
     }));
-    for (const [currency, rate] of results) {
-      if (rate == null) unavailable.push(currency);
-      else rates[currency] = rate;
+    for (const { currency, rate, quote } of results) {
+      if (rate == null || (currency !== 'USD' && (!quote || !isFreshProviderTimestamp(quote.asOf)))) {
+        unavailable.push(currency);
+        continue;
+      }
+      rates[currency] = rate;
+      if (currency !== 'USD' && quote) {
+        observations[currency] = {
+          rate,
+          asOf: quote.asOf,
+          fetchedAt: quote.fetchedAt,
+          source: quote.source
+        };
+      }
     }
   }
   return res.json({
-    success: true, base: 'USD', rates, unavailable,
-    source: 'Yahoo Finance FX quotes', fetchedAt: new Date().toISOString(),
-    note: 'Rates are indicative provider quotes, not executable conversion prices. Historical valuations use the latest retrieved rate available at snapshot time.'
+    success: true,
+    base: 'USD',
+    rates,
+    observations,
+    unavailable,
+    partial: unavailable.length > 0,
+    source: 'Yahoo Finance FX quotes',
+    fetchedAt: new Date().toISOString(),
+    note: 'Non-USD conversion rates are returned only when their provider observation timestamp is fresh (120 seconds maximum, 60 seconds future clock-skew allowance). Rates are indicative, not executable. USD is an identity conversion.'
   });
 });
 
