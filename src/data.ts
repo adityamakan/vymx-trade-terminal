@@ -1377,9 +1377,22 @@ const rawAssets = [
 // Current prices and changes are unavailable until a timestamped provider quote arrives.
 export const assets: Asset[] = rawAssets.map((raw) => ({
   ...raw,
+  // Bundled instrument definitions contain classification metadata only.
+  // All numerical market fields remain unavailable until a provider quote arrives.
+  price: 0,
+  change: null,
   changeAbs: null,
   currency: null,
-  quoteAsOf: null
+  quoteAsOf: null,
+  marketCap: 0,
+  marketCapDisplay: 'N/A',
+  peRatio: null,
+  volume: null,
+  volumeDisplay: 'N/A',
+  high52w: 0,
+  low52w: 0,
+  openPrice: 0,
+  prevClose: 0
 }));
 
 // No bundled market-news fallback. Headlines must come from the configured provider.
