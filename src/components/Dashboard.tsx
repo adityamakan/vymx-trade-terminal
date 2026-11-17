@@ -475,7 +475,7 @@ export default function Dashboard({
             <div className="hidden lg:flex flex-col gap-1.5 bg-zinc-950/70 p-3 rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-colors duration-300 backdrop-blur-md">
                <div className="flex items-center justify-between gap-6">
                   <span className="text-[9px] font-mono text-zinc-500 uppercase">Market quote feed</span>
-                  <span className={`text-[9px] font-mono font-bold ${isDataOffline ? 'text-amber-400' : 'text-emerald-400'}`}>{freshProviderQuoteAssets.length === 0 ? 'NO VERIFIED QUOTES' : freshProviderQuoteAssets.length < assets.length ? 'PARTIAL QUOTE FEED' : 'FULL QUOTE COVERAGE'}</span>
+                  <span className={`text-[9px] font-mono font-bold ${freshProviderQuoteAssets.length < assets.length ? 'text-amber-400' : 'text-emerald-400'}`}>{freshProviderQuoteAssets.length === 0 ? 'NO VERIFIED QUOTES' : freshProviderQuoteAssets.length < assets.length ? 'PARTIAL QUOTE FEED' : 'FULL QUOTE COVERAGE'}</span>
                </div>
                <div className="flex items-center justify-between gap-6">
                   <span className="text-[9px] font-mono text-zinc-500 uppercase">Quote update status</span>
