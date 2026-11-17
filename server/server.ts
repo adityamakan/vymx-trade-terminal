@@ -437,19 +437,24 @@ app.get('/api/macro/indicators', async (_req: Request, res: Response) => {
     getPrices(symbols),
     fetchFredMacroSeries()
   ]);
+  const freshIndicators = Object.fromEntries(
+    Object.entries(marketResult.prices).filter(([, quote]) => isFreshProviderTimestamp(quote.asOf))
+  );
+  const unavailableSymbols = symbols.filter((symbol) => !freshIndicators[symbol]);
   const officialAvailable = officialSeries.some((series) => series.status === 'available');
-  const success = marketResult.returned > 0 || officialAvailable;
+  const success = Object.keys(freshIndicators).length > 0 || officialAvailable;
   return res.status(success ? 200 : 503).json({
     success,
-    indicators: marketResult.prices,
-    unavailable: marketResult.errors,
+    indicators: freshIndicators,
+    unavailable: unavailableSymbols,
+    quoteCoverage: { fresh: Object.keys(freshIndicators).length, requested: symbols.length, unavailable: unavailableSymbols },
     officialSeries,
     sources: {
       marketProxies: 'Yahoo Finance (unofficial market-data provider)',
       officialMacro: 'Federal Reserve Bank of St. Louis FRED'
     },
     fetchedAt: new Date().toISOString(),
-    note: 'Market quotes are cross-asset proxies, not official macroeconomic releases. FRED observations are official published series and retain their observation dates; retrieval time is not substituted for observation time. CPI and core CPI are shown as index levels, not inflation rates.'
+    note: 'Only provider market quotes with observation timestamps within the live freshness window are returned. Market quotes are cross-asset proxies, not official macroeconomic releases. FRED observations are official published series and retain their observation dates; retrieval time is not substituted for observation time. CPI and core CPI are shown as index levels, not inflation rates.'
   });
 });
 
