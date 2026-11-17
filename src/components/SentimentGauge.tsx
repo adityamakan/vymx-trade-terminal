@@ -148,17 +148,20 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
       adviceText = 'Unchecked speculative volume. Consider taking structured profits into high strength.';
     }
 
-    if (totalAssetsCount === 0) {
-      statusText = 'Unavailable';
+    const minimumObservationCount = Math.max(20, Math.ceil(assets.length * 0.5));
+    const isAvailable = totalAssetsCount >= minimumObservationCount;
+    if (!isAvailable) {
+      statusText = 'Insufficient coverage';
       colorClass = 'text-zinc-500';
       strokeColor = '#71717a';
       gradientFrom = 'from-zinc-500';
-      adviceText = 'No fresh provider quote changes are available. Sentiment cannot be calculated.';
+      adviceText = `Only ${totalAssetsCount}/${assets.length} fresh quote changes are available; at least ${minimumObservationCount} are required to calculate this market-wide proxy.`;
     }
 
     return {
       score: finalScore,
       observations: totalAssetsCount,
+      isAvailable,
       status: statusText,
       color: colorClass,
       stroke: strokeColor,
@@ -184,7 +187,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
 
   // AI Sentiment briefing using real server-side prompt!
   const handleConsultAiSentiment = async () => {
-    if (computedSentiment.observations === 0) {
+    if (!computedSentiment.isAvailable) {
       setShowExplanationModal(true);
       setSentimentExplanation('No fresh provider quote observations are available. AI sentiment commentary is disabled rather than inventing a market reading.');
       return;
@@ -301,7 +304,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
             <circle cx="50" cy="48" r="1.5" fill="#fafafa" />
 
             {/* Pivot Needle Indicator */}
-            {computedSentiment.observations > 0 && <g transform={`rotate(${needleAngle}, 50, 48)`}>
+            {computedSentiment.isAvailable && <g transform={`rotate(${needleAngle}, 50, 48)`}>
               <line
                 x1="50"
                 y1="48"
@@ -449,7 +452,7 @@ export default function SentimentGauge({ onSelectAssetBySymbol, assets = staticA
       {/* Consult AI Button */}
         <button
           onClick={handleConsultAiSentiment}
-          disabled={computedSentiment.observations === 0}
+          disabled={!computedSentiment.isAvailable}
           className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-600 hover:to-blue-600 text-[10px] font-bold font-mono uppercase tracking-wider text-white shadow-lg transition flex items-center justify-center gap-1.5 cursor-pointer border border-indigo-500/20"
         >
           <Sparkles className="h-3.5 w-3.5 text-amber-300 animate-pulse" />
