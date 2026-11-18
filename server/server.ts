@@ -7,6 +7,7 @@ import { createServer } from 'http';
 import { WebSocket, WebSocketServer } from 'ws';
 import YahooFinanceExport from 'yahoo-finance2';
 import { normalizeProviderTimestamp } from '../src/utils/providerTimestamp';
+import { marketDataTelemetry, classifyProviderError } from './marketDataTelemetry';
 
 const app = express();
 const server = createServer(app);
@@ -24,7 +25,11 @@ function resolveYahooFinanceConstructor(exported: unknown): typeof YahooFinanceE
 }
 
 const YahooFinanceConstructor = resolveYahooFinanceConstructor(YahooFinanceExport);
-const yahooFinance = new YahooFinanceConstructor();
+const yahooFinance = new YahooFinanceConstructor({
+  // Keep Yahoo's internal queue bounded across quote, history and fundamentals calls.
+  queue: { concurrency: 4 },
+  suppressNotices: ['yahooSurvey']
+});
 const PORT = Number(process.env.PORT || 5000);
 const MAX_SYMBOLS = 100;
 const CACHE_TTL_MS = 30_000;
@@ -102,6 +107,8 @@ function isFreshProviderTimestamp(value: string | null | undefined): boolean {
 const quoteCache = new Map<string, { value: PriceQuote; expiresAt: number }>();
 const historyCache = new Map<string, { value: unknown; expiresAt: number }>();
 const financialCache = new Map<string, { value: unknown; expiresAt: number }>();
+const quoteInFlight = new Map<string, Promise<PriceQuote>>();
+const PROVIDER_REQUEST_TIMEOUT_MS = 10_000;
 
 function setBoundedCache<T>(cache: Map<string, { value: T; expiresAt: number }>, key: string, value: T, ttlMs: number) {
   const now = Date.now();
@@ -135,10 +142,24 @@ function validateSymbols(input: unknown): string[] {
 async function fetchQuote(symbol: string): Promise<PriceQuote> {
   const now = Date.now();
   const cached = quoteCache.get(symbol);
-  if (cached && cached.expiresAt > now) return cached.value;
+  if (cached && cached.expiresAt > now) {
+    marketDataTelemetry.recordCacheHit();
+    return cached.value;
+  }
 
-  const providerSymbol = normalizeSymbol(symbol);
-  const quote: any = await yahooFinance.quote(providerSymbol);
+  const pending = quoteInFlight.get(symbol);
+  if (pending) {
+    marketDataTelemetry.recordInFlightJoin();
+    return pending;
+  }
+
+  const request = (async (): Promise<PriceQuote> => {
+    const startedAt = Date.now();
+    const providerSymbol = normalizeSymbol(symbol);
+    try {
+      const quote: any = await yahooFinance.quote(providerSymbol, {}, {
+        fetchOptions: { signal: AbortSignal.timeout(PROVIDER_REQUEST_TIMEOUT_MS) }
+      });
   const unitScale = symbol === 'US10Y' || providerSymbol === '^TNX' ? 0.1 : 1;
   const rawPrice = Number(quote?.regularMarketPrice);
   const price = rawPrice * unitScale;
@@ -171,8 +192,18 @@ async function fetchQuote(symbol: string): Promise<PriceQuote> {
     fetchedAt: new Date().toISOString(),
     source: 'Yahoo Finance'
   };
-  setBoundedCache(quoteCache, symbol, result, CACHE_TTL_MS);
-  return result;
+      setBoundedCache(quoteCache, symbol, result, CACHE_TTL_MS);
+      marketDataTelemetry.recordSuccess(Date.now() - startedAt);
+      return result;
+    } catch (error) {
+      marketDataTelemetry.recordFailure(Date.now() - startedAt, classifyProviderError(error));
+      throw error;
+    } finally {
+      quoteInFlight.delete(symbol);
+    }
+  })();
+  quoteInFlight.set(symbol, request);
+  return request;
 }
 
 // Bound provider concurrency. A 100-symbol client request should not launch 100
@@ -206,13 +237,34 @@ app.get(['/health', '/api/health', '/api/status'], (_req: Request, res: Response
       heapTotalBytes: memory.heapTotal
     },
     providers: {
-      marketData: { name: 'Yahoo Finance', configured: true, operationallyVerified: false },
+      marketData: { name: 'Yahoo Finance', configured: true, ...marketDataTelemetry.snapshot() },
       gemini: { configured: Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) },
       fred: { configured: Boolean(process.env.FRED_API_KEY) },
       finnhub: { configured: Boolean(process.env.FINNHUB_API_KEY) }
     },
     checkedAt: new Date().toISOString(),
     note: 'This endpoint confirms API process health and configuration only. It does not probe upstream providers, validate quote freshness, or indicate trading/execution availability.'
+  });
+});
+
+
+app.get('/api/providers/status', (_req: Request, res: Response) => {
+  const snapshot = marketDataTelemetry.snapshot();
+  return res.json({
+    success: true,
+    providers: {
+      marketData: {
+        name: 'Yahoo Finance',
+        configured: true,
+        ...snapshot,
+        role: 'Primary quote, FX, historical OHLCV and fundamentals upstream',
+        limitation: 'Unofficial upstream; no independent market-data failover is configured.'
+      },
+      fred: { configured: Boolean(process.env.FRED_API_KEY), role: 'Official macroeconomic observations' },
+      finnhub: { configured: Boolean(process.env.FINNHUB_API_KEY), role: 'Market news only; not a quote failover' }
+    },
+    checkedAt: new Date().toISOString(),
+    note: 'Provider status is derived from requests made by this process. It is not a synthetic probe and resets when the process restarts. A recent successful request does not guarantee every symbol is available.'
   });
 });
 
@@ -351,7 +403,7 @@ app.get('/api/historical/:symbol', async (req: Request, res: Response) => {
   try {
     const chart: any = await (yahooFinance as any).chart(normalizeSymbol(symbol), {
       period1: start, period2: end, interval
-    });
+    }, { fetchOptions: { signal: AbortSignal.timeout(PROVIDER_REQUEST_TIMEOUT_MS) } });
     const quotes = Array.isArray(chart?.quotes) ? chart.quotes : [];
     const historyScale = symbol === 'US10Y' || normalizeSymbol(symbol) === '^TNX' ? 0.1 : 1;
     if (!quotes.length) return res.status(404).json({ success: false, error: 'No historical observations returned', symbol });
@@ -383,7 +435,9 @@ app.get('/api/yahoo/financials/:symbol', async (req: Request, res: Response) => 
   try {
     const modules = ['price', 'summaryDetail', 'defaultKeyStatistics', 'financialData', 'assetProfile',
       'incomeStatementHistory', 'balanceSheetHistory', 'cashflowStatementHistory'];
-    const data = await (yahooFinance as any).quoteSummary(normalizeSymbol(symbol), { modules });
+    const data = await (yahooFinance as any).quoteSummary(normalizeSymbol(symbol), { modules }, {
+      fetchOptions: { signal: AbortSignal.timeout(PROVIDER_REQUEST_TIMEOUT_MS) }
+    });
     const payload = { success: true, symbol, data, source: 'Yahoo Finance', fetchedAt: new Date().toISOString() };
     setBoundedCache(financialCache, symbol, payload, 5 * 60_000);
     return res.json(payload);

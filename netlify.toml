@@ -1,9 +1,10 @@
 [build]
-  command = "npm ci && npm run build"
+  command = "npm ci --include=dev && npx vite build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "22.19.0"
+  NPM_FLAGS = "--include=dev"
   VITE_WS_URL = "wss://vymx-trade-terminal-2.onrender.com/api/prices"
 
 # Keep REST calls same-origin from the preview browser while routing them to Render.

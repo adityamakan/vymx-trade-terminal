@@ -34,6 +34,7 @@ jobs:
           PRODUCTION_BASE_URL: https://vymx-trade-terminal-2.onrender.com
         run: |
           node --input-type=module <<'NODE'
+          import fs from 'node:fs';
           import WebSocket from 'ws';
           const baseUrl = process.env.PRODUCTION_BASE_URL;
           if (!baseUrl || !baseUrl.startsWith('https://')) throw new Error('PRODUCTION_BASE_URL must be an HTTPS origin.');
@@ -74,30 +75,47 @@ jobs:
           if (!bundleResponse.ok) throw new Error(`Production frontend bundle returned HTTP ${bundleResponse.status}`);
           console.log('Frontend HTML shell and built JavaScript asset OK.');
 
+          const monitoredSymbols = ['AAPL', 'RELIANCE.NS', 'BTC-USD', 'INR=X'];
           const pricesResponse = await fetchWithRetry(new URL('/api/prices', baseUrl), {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ symbols: ['AAPL'] })
+            body: JSON.stringify({ symbols: monitoredSymbols })
           });
           if (!pricesResponse.ok) throw new Error(`Market-data endpoint returned HTTP ${pricesResponse.status}`);
           const prices = await pricesResponse.json();
-          if (prices.success !== true || !prices.prices || typeof prices.prices !== 'object' || prices.returned < 1) {
-            throw new Error('Market-data endpoint did not return a provider quote.');
+          if (prices.success !== true || !prices.prices || typeof prices.prices !== 'object') {
+            throw new Error('Market-data endpoint did not return a provider quote payload.');
           }
-          const quote = prices.prices.AAPL;
-          if (!quote || typeof quote.price !== 'number' || !Number.isFinite(quote.price) || quote.price <= 0) {
-            throw new Error('AAPL quote is missing or invalid.');
+          const validQuotes = {};
+          for (const symbol of monitoredSymbols) {
+            const quote = prices.prices[symbol];
+            if (!quote || typeof quote.price !== 'number' || !Number.isFinite(quote.price) || quote.price <= 0) continue;
+            if (quote.source !== 'Yahoo Finance' || typeof quote.asOf !== 'string' || !Number.isFinite(Date.parse(quote.asOf))) continue;
+            const observedAt = Date.parse(quote.asOf);
+            const quoteAgeMs = Date.now() - observedAt;
+            if (observedAt > Date.now() + 5 * 60_000 || quoteAgeMs > 7 * 24 * 60 * 60_000) continue;
+            validQuotes[symbol] = { asOf: quote.asOf, ageHours: Math.round(quoteAgeMs / 3_600_000) };
           }
-          if (quote.source !== 'Yahoo Finance') throw new Error('AAPL quote does not identify the expected provider.');
-          if (typeof quote.asOf !== 'string' || !Number.isFinite(Date.parse(quote.asOf))) {
-            throw new Error('AAPL quote is missing its provider observation timestamp.');
+          if (!validQuotes.AAPL || !validQuotes['BTC-USD']) {
+            throw new Error('Provider smoke test requires fresh-enough US equity and crypto observations.');
           }
-          const observedAt = Date.parse(quote.asOf);
-          const quoteAgeMs = Date.now() - observedAt;
-          if (observedAt > Date.now() + 5 * 60_000 || quoteAgeMs > 7 * 24 * 60 * 60_000) {
-            throw new Error('AAPL provider observation is future-dated or older than seven days.');
+          if (Object.keys(validQuotes).length < 3) {
+            throw new Error(`Cross-asset quote coverage below 3/4: ${Object.keys(validQuotes).length}/4`);
           }
-          console.log(`Market data OK; provider timestamp=${quote.asOf}; ageHours=${Math.round(quoteAgeMs / 3_600_000)}`);
+          const quoteCoverage = { fresh: Object.keys(validQuotes).length, requested: monitoredSymbols.length, symbols: validQuotes };
+          console.log(`Cross-asset market data OK; coverage=${quoteCoverage.fresh}/${quoteCoverage.requested}; ${JSON.stringify(validQuotes)}`);
+
+          const providerStatusResponse = await fetchWithRetry(new URL('/api/providers/status', baseUrl));
+          if (!providerStatusResponse.ok) throw new Error(`Provider status endpoint returned HTTP ${providerStatusResponse.status}`);
+          const providerStatusPayload = await providerStatusResponse.json();
+          const marketProvider = providerStatusPayload?.providers?.marketData;
+          if (!marketProvider || !Number.isFinite(marketProvider.requests) || !Number.isFinite(marketProvider.successes)) {
+            throw new Error('Provider status payload is missing request telemetry.');
+          }
+          if (marketProvider.successes < 1 || !marketProvider.lastSuccessAt || !Number.isFinite(Date.parse(marketProvider.lastSuccessAt))) {
+            throw new Error('No successful upstream market-data request is recorded in this process.');
+          }
+          console.log(`Provider telemetry OK; status=${marketProvider.status}; requests=${marketProvider.requests}; successes=${marketProvider.successes}; failures=${marketProvider.failures}; timeouts=${marketProvider.timeouts}; avgLatencyMs=${marketProvider.averageLatencyMs ?? 'n/a'}`);
 
           const wsUrl = new URL('/api/prices', baseUrl);
           wsUrl.protocol = 'wss:';
@@ -121,4 +139,45 @@ jobs:
             socket.addEventListener('close', event => finish(new Error(`WebSocket closed before heartbeat completed: ${event.code}`)));
           });
           console.log('WebSocket same-origin connection and heartbeat OK.');
+          const productionHealth = {
+            checkedAt: new Date().toISOString(),
+            service: 'vymx-trade-terminal-2',
+            provider: {
+              name: marketProvider.name,
+              status: marketProvider.status,
+              requests: marketProvider.requests,
+              successes: marketProvider.successes,
+              failures: marketProvider.failures,
+              timeouts: marketProvider.timeouts,
+              averageLatencyMs: marketProvider.averageLatencyMs,
+              lastSuccessAt: marketProvider.lastSuccessAt
+            },
+            quoteCoverage,
+            websocket: 'ok'
+          };
+          fs.writeFileSync('production-health.json', JSON.stringify(productionHealth, null, 2));
+          const summary = [
+            '## VYMX production data health',
+            '',
+            `- Checked: ${productionHealth.checkedAt}`,
+            `- Provider: ${marketProvider.name} (${marketProvider.status})`,
+            `- Quote coverage: ${quoteCoverage.fresh}/${quoteCoverage.requested}`,
+            `- Provider requests/successes/failures/timeouts: ${marketProvider.requests}/${marketProvider.successes}/${marketProvider.failures}/${marketProvider.timeouts}`,
+            `- Average quote latency: ${marketProvider.averageLatencyMs ?? 'n/a'} ms`,
+            '- WebSocket heartbeat: OK',
+            '',
+            '| Symbol | Provider observation | Approx. age (hours) |',
+            '|---|---|---:|',
+            ...Object.entries(quoteCoverage.symbols).map(([symbol, quote]) => `| ${symbol} | ${quote.asOf} | ${quote.ageHours} |`)
+          ];
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary.join('\n') + '\n');
           NODE
+
+      - name: Retain structured production health sample
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: production-health-${{ github.run_id }}
+          path: production-health.json
+          if-no-files-found: ignore
+          retention-days: 14

@@ -159,3 +159,26 @@ For the Render full-stack production deployment, configure the variables in the 
 ## Main branch protection is currently missing
 
 The GitHub branch API reported `protected: false` for `main` on 12 November 2026, and the repository returned no rulesets. The connected integration cannot write repository administration settings. An administrator must enable a branch protection rule or ruleset requiring pull requests, successful CI and CodeQL checks, resolved conversations, and prohibiting force pushes and branch deletion. Verify the result through GitHub Settings and the branch API.
+
+
+## Market-data request reliability (Phase: infrastructure)
+
+- Yahoo Finance client queue concurrency is capped at four requests and quote/chart/fundamentals calls carry a 10-second abort timeout.
+- Quote fetches are coalesced per normalized request symbol while in flight. The 30-second bounded in-memory quote cache remains process-local; cache hits never refresh provider observation timestamps.
+- `GET /api/providers/status` reports process-local Yahoo request counters, success/failure/timeout counts, cache hits, in-flight joins, recent latency, last success/failure and a derived status. It is not a scheduled probe, durable metric store, or guarantee of per-symbol coverage.
+- Do not add automatic failover to Finnhub merely because `FINNHUB_API_KEY` exists: the current Finnhub integration is news-only. A second quote provider needs a deliberate symbol/asset-class mapping, entitlement check, normalization, freshness policy, and licensing review.
+- The Render health check should target `/health` (process health only). The current service dashboard configuration must be changed separately; this repository does not currently manage the existing service through a Render Blueprint.
+- Align the Render build command with CI by setting `npm ci && npm run build`. This remains a dashboard setting until a reviewed Blueprint is adopted.
+
+
+## Dependency audit boundary
+
+Vite, Tailwind, TypeScript, esbuild, and tsx are build/test tooling and belong in `devDependencies`. Render's build phase installs development dependencies to create `dist/` and `dist-server/`; the running server uses runtime dependencies. CI blocks on `npm audit --omit=dev` and also publishes the full audit report. Any remaining development-only advisory must be documented with the affected dependency path and upgraded as soon as a compatible upstream fix is available; do not force a semver-incompatible override.
+
+
+## Netlify preview build
+
+The Netlify site publishes only `dist/`; it does not run the Node API. Its dependency installation sets `NPM_FLAGS=--include=dev`, and its build command explicitly uses `npm ci --include=dev && npx vite build` so Vite/Tailwind/TypeScript build tools remain available even when the Netlify build environment sets `NODE_ENV=production`. Render separately builds the Node API bundle and prunes development dependencies before runtime.
+
+
+The committed lockfile marks Vite, Tailwind, TypeScript, esbuild and tsx as development-only. CI regenerates this lockfile in a candidate job, tests that exact candidate, checks that the production dependency audit is clean, and commits the resulting lockfile back to the PR branch. The production server smoke test then runs only after `npm prune --omit=dev`.

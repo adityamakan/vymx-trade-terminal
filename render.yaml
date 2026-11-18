@@ -1,0 +1,14 @@
+# This Blueprint is intentionally scoped to the existing production web service.
+# The name matches the Render service so the first sync can be planned as an adoption.
+# Compute plan, IP allowlist, instance count, and environment variables are omitted
+# to preserve existing values. Auto-deploy is explicitly gated on passing CI checks.
+services:
+  - type: web
+    name: vymx-trade-terminal-2
+    runtime: node
+    region: virginia
+    branch: main
+    autoDeployTrigger: checksPass
+    buildCommand: npm ci --include=dev && npm run build && npm prune --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
